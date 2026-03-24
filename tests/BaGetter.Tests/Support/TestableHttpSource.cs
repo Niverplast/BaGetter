@@ -7,7 +7,7 @@ using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 
-namespace BaGetter.Tests;
+namespace BaGetter.Tests.Support;
 
 public class TestableHttpSource : HttpSource
 {

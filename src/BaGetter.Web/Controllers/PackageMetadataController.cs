@@ -1,14 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Authentication;
-using BaGetter.Core;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Metadata;
 using BaGetter.Protocol.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NuGet.Versioning;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Controllers;
 
 /// <summary>
 /// The Package Metadata resource, used to fetch packages' information.

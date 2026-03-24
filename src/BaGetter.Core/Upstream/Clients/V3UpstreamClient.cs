@@ -4,12 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Extensions;
 using BaGetter.Protocol;
+using BaGetter.Protocol.Extensions;
 using BaGetter.Protocol.Models;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Upstream.Clients;
 
 /// <summary>
 /// The mirroring client for a NuGet server that uses the V3 protocol.

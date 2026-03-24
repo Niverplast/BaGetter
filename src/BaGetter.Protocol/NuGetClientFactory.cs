@@ -2,8 +2,13 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Protocol.Internal;
+using BaGetter.Protocol.Catalog;
+using BaGetter.Protocol.Extensions;
 using BaGetter.Protocol.Models;
+using BaGetter.Protocol.PackageContent;
+using BaGetter.Protocol.PackageMetadata;
+using BaGetter.Protocol.Search;
+using BaGetter.Protocol.ServiceIndex;
 
 namespace BaGetter.Protocol;
 

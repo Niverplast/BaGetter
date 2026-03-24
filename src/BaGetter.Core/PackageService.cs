@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Upstream;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;
 

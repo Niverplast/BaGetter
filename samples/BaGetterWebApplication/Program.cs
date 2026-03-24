@@ -1,5 +1,7 @@
-using BaGetter;
+using BaGetter.Core.Extensions;
+using BaGetter.Database.Sqlite;
 using BaGetter.Web;
+using BaGetter.Web.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
@@ -8,8 +10,8 @@ var builder = WebApplication.CreateBuilder();
 // This will add the BaGetter services and options to the container.
 builder.Services.AddBaGetterWebApplication(bagetter =>
 {
-    bagetter.AddSqliteDatabase();
-    bagetter.AddFileStorage();
+    SqliteApplicationExtensions.AddSqliteDatabase(bagetter);
+    BaGetterApplicationExtensions.AddFileStorage(bagetter);
 });
 var app = builder.Build();
 

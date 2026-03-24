@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Authentication;
-using BaGetter.Core;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Controllers;
 
 [Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
 public class SearchController : Controller

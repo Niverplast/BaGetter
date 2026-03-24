@@ -4,12 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Upstream;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuGet.Versioning;
 using Xunit;
 
-namespace BaGetter.Core.Tests;
+namespace BaGetter.Core.Tests.Services;
 
 public class PackageServiceTests
 {
@@ -94,8 +97,8 @@ public class PackageServiceTests
             IReadOnlyList<Package> localPackages = null,
             IReadOnlyList<NuGetVersion> upstreamPackages = null)
         {
-            localPackages = localPackages ?? new List<Package>();
-            upstreamPackages = upstreamPackages ?? new List<NuGetVersion>();
+            localPackages ??= new List<Package>();
+            upstreamPackages ??= new List<NuGetVersion>();
 
             _db
                 .Setup(p => p.FindAsync(
@@ -184,8 +187,8 @@ public class PackageServiceTests
             IReadOnlyList<Package> localPackages = null,
             IReadOnlyList<Package> upstreamPackages = null)
         {
-            localPackages = localPackages ?? new List<Package>();
-            upstreamPackages = upstreamPackages ?? new List<Package>();
+            localPackages ??= new List<Package>();
+            upstreamPackages ??= new List<Package>();
 
             _db
                 .Setup(p => p.FindAsync(

@@ -3,7 +3,9 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BaGetter.Protocol;
+using BaGetter.Protocol.Extensions;
 using BaGetter.Protocol.Models;
+using BaGetter.Tests.Support;
 using NuGet.Versioning;
 using Xunit;
 using Xunit.Abstractions;
@@ -44,12 +46,12 @@ public class BaGetClientIntegrationTests : IDisposable
         Assert.Equal("3.0.0", index.Version);
         Assert.Equal(12, index.Resources.Count);
 
-        Assert.NotEmpty(index.GetResourceUrl(new[] { "PackageBaseAddress/3.0.0" }));
-        Assert.NotEmpty(index.GetResourceUrl(new[] { "PackagePublish/2.0.0" }));
-        Assert.NotEmpty(index.GetResourceUrl(new[] { "RegistrationsBaseUrl" }));
-        Assert.NotEmpty(index.GetResourceUrl(new[] { "SearchAutocompleteService" }));
-        Assert.NotEmpty(index.GetResourceUrl(new[] { "SearchQueryService" }));
-        Assert.NotEmpty(index.GetResourceUrl(new[] { "SymbolPackagePublish/4.9.0" }));
+        Assert.NotEmpty(ServiceIndexModelExtensions.GetResourceUrl(index, new[] { "PackageBaseAddress/3.0.0" }));
+        Assert.NotEmpty(ServiceIndexModelExtensions.GetResourceUrl(index, new[] { "PackagePublish/2.0.0" }));
+        Assert.NotEmpty(ServiceIndexModelExtensions.GetResourceUrl(index, new[] { "RegistrationsBaseUrl" }));
+        Assert.NotEmpty(ServiceIndexModelExtensions.GetResourceUrl(index, new[] { "SearchAutocompleteService" }));
+        Assert.NotEmpty(ServiceIndexModelExtensions.GetResourceUrl(index, new[] { "SearchQueryService" }));
+        Assert.NotEmpty(ServiceIndexModelExtensions.GetResourceUrl(index, new[] { "SymbolPackagePublish/4.9.0" }));
     }
 
     [Fact]

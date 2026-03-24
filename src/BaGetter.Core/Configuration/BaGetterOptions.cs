@@ -1,7 +1,6 @@
 using System;
-using BaGetter.Core.Configuration;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Configuration;
 
 public class BaGetterOptions
 {

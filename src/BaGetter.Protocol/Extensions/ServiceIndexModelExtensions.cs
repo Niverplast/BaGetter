@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using BaGetter.Protocol.Models;
 
-namespace BaGetter.Protocol;
+namespace BaGetter.Protocol.Extensions;
 
 /// <summary>
 /// These are documented interpretations of values returned by the Service Index resource.

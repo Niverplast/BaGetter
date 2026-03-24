@@ -1,9 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Entities;
 
 public abstract class AbstractContext<TContext> : DbContext, IContext where TContext : DbContext
 {

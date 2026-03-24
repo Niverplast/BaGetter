@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Metadata;
 using BaGetter.Protocol.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Search;
 
 public class DatabaseSearchService : ISearchService
 {

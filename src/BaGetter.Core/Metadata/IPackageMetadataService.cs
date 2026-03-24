@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using BaGetter.Protocol.Models;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Metadata;
 
 /// <summary>
 /// The Package Metadata client, used to fetch packages' metadata.

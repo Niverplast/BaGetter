@@ -1,12 +1,13 @@
 ﻿@page
-@inject IUrlGenerator _url
+@using BaGetter.Core
+@inject IUrlGenerator URL
 
 @{
     ViewData["Title"] = "Upload package";
 
-    var baseUrl = Url.PageLink("/Index");
-    var publishUrl = _url.GetPackagePublishResourceUrl();
-    var serviceIndexUrl = _url.GetServiceIndexUrl();
+    string baseUrl = Url.PageLink("/Index");
+    string publishUrl = URL.GetPackagePublishResourceUrl();
+    string serviceIndexUrl = URL.GetServiceIndexUrl();
 }
 
 <div class="col-sm-12">

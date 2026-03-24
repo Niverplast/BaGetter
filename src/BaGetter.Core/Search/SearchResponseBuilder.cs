@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BaGetter.Core.Metadata;
 using BaGetter.Protocol.Models;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Search;
 
 public class SearchResponseBuilder : ISearchResponseBuilder
 {

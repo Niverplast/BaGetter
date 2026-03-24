@@ -5,11 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Data.Tables;
-using BaGetter.Core;
+using BaGetter.Azure.Configuration;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Metadata;
+using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
 using Microsoft.Extensions.Options;
 
-namespace BaGetter.Azure
+namespace BaGetter.Azure.Table
 {
     public class TableSearchService : ISearchService
     {

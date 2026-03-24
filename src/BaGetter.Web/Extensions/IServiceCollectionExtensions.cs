@@ -1,14 +1,12 @@
 using System;
 using System.Text.Json.Serialization;
-using BaGetter.Authentication;
 using BaGetter.Core;
-using BaGetter.Web;
-using BaGetter.Web.Authentication;
+using BaGetter.Core.Extensions;
+using BaGetter.Web.Controllers;
 using BaGetter.Web.Helper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BaGetter;
+namespace BaGetter.Web.Extensions;
 
 public static class IServiceCollectionExtensions
 {

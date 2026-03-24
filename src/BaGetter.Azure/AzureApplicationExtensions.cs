@@ -2,13 +2,19 @@ using System;
 using Azure.Data.Tables;
 using Azure.Storage;
 using Azure.Storage.Blobs;
-using BaGetter.Azure;
+using BaGetter.Azure.Configuration;
+using BaGetter.Azure.Storage;
+using BaGetter.Azure.Table;
 using BaGetter.Core;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Extensions;
+using BaGetter.Core.Search;
+using BaGetter.Core.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
-namespace BaGetter
+namespace BaGetter.Azure
 {
     public static class AzureApplicationExtensions
     {

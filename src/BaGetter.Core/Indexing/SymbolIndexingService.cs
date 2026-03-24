@@ -5,10 +5,12 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Extensions;
+using BaGetter.Core.Storage;
 using Microsoft.Extensions.Logging;
 using NuGet.Packaging;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Indexing;
 
 // Based off: https://github.com/NuGet/NuGetGallery/blob/master/src/NuGetGallery/Services/SymbolPackageUploadService.cs
 // Based off: https://github.com/NuGet/NuGet.Jobs/blob/master/src/Validation.Symbols/SymbolsValidatorService.cs#L44

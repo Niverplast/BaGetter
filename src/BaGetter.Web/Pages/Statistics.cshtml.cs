@@ -1,9 +1,9 @@
-using BaGetter.Core;
+using BaGetter.Core.Configuration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Pages;
 
 public class StatisticsModel : PageModel
 {

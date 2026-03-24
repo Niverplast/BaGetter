@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using BaGetter.Core.Metadata;
 using BaGetter.Protocol.Models;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Search;
 
 public interface ISearchResponseBuilder
 {

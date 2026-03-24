@@ -12,6 +12,8 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Extensions;
 using Xunit;
 
 namespace BaGetter.Core.Tests.Upstream;

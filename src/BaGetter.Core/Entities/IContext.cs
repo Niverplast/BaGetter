@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Entities;
 
 public interface IContext
 {

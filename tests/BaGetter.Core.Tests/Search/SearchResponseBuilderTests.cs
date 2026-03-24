@@ -1,3 +1,7 @@
+using BaGetter.Core.Entities;
+using BaGetter.Core.Metadata;
+using BaGetter.Core.Search;
+
 namespace BaGetter.Core.Tests.Search;
 
 using System;

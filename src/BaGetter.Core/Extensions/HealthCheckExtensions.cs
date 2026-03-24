@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace BaGetter.Core.Extensions;

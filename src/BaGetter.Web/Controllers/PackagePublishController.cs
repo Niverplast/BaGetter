@@ -2,12 +2,16 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Indexing;
+using BaGetter.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Controllers;
 
 public class PackagePublishController : Controller
 {
