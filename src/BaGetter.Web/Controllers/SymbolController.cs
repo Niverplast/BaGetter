@@ -1,14 +1,17 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Authentication;
-using BaGetter.Core;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Storage;
+using BaGetter.Web.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Controllers;
 
 [Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
 public class SymbolController : Controller

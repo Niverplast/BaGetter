@@ -7,8 +7,8 @@ using System.Text.Encodings.Web;
 using System.Text;
 using System.Threading.Tasks;
 using System;
-using BaGetter.Core;
 using System.Linq;
+using BaGetter.Core.Configuration;
 
 namespace BaGetter.Web.Authentication;
 

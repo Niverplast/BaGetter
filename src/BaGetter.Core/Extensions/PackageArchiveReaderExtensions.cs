@@ -4,10 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
 using NuGet.Common;
 using NuGet.Packaging;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Extensions;
 
 using NuGetPackageType = NuGet.Packaging.Core.PackageType;
 

@@ -2,11 +2,16 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Extensions;
+using BaGetter.Core.Search;
+using BaGetter.Core.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Packaging;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Indexing;
 
 public class PackageIndexingService : IPackageIndexingService
 {

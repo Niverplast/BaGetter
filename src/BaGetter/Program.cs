@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using BaGetter.Core;
-using BaGetter.Web;
+using BaGetter.Core.Upstream;
+using BaGetter.Web.Extensions;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

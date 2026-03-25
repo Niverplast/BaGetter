@@ -1,6 +1,4 @@
-using BaGetter.Core.Configuration;
-
-namespace BaGetter.Core;
+namespace BaGetter.Core.Configuration;
 
 public sealed class NugetAuthenticationOptions
 {

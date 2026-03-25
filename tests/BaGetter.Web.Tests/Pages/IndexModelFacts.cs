@@ -1,11 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Core;
+using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
+using BaGetter.Web.Pages;
 using Moq;
 using Xunit;
 
-namespace BaGetter.Web.Tests;
+namespace BaGetter.Web.Tests.Pages;
 
 public class IndexModelFacts
 {

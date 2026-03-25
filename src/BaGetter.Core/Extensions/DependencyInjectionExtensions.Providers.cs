@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Search;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Extensions;
 
 public static partial class DependencyInjectionExtensions
 {

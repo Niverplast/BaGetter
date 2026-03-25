@@ -6,12 +6,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Data.Tables;
+using BaGetter.Azure.Configuration;
+using BaGetter.Azure.Extensions;
 using BaGetter.Core;
+using BaGetter.Core.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 
-namespace BaGetter.Azure
+namespace BaGetter.Azure.Table
 {
     /// <summary>
     /// Stores the metadata of packages using Azure Table Storage.

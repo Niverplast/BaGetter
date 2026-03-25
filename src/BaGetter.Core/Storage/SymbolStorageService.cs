@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Storage;
 
 public class SymbolStorageService : ISymbolStorageService
 {

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BaGetter.Protocol.Models;
 using NuGet.Versioning;
 using Xunit;
 
@@ -16,7 +15,7 @@ public class Sample03_Metadata
         // Find the metadata for all versions of a package.
         NuGetClient client = new NuGetClient("https://api.nuget.org/v3/index.json");
 
-        IReadOnlyList<PackageMetadata> items = await client.GetPackageMetadataAsync("Newtonsoft.Json");
+        var items = await client.GetPackageMetadataAsync("Newtonsoft.Json");
         if (!items.Any())
         {
             Console.WriteLine($"Package 'Newtonsoft.Json' does not exist");
@@ -42,7 +41,7 @@ public class Sample03_Metadata
         string packageId = "Newtonsoft.Json";
         NuGetVersion packageVersion = new NuGetVersion("12.0.1");
 
-        PackageMetadata metadata = await client.GetPackageMetadataAsync(packageId, packageVersion);
+        var metadata = await client.GetPackageMetadataAsync(packageId, packageVersion);
 
         Console.WriteLine($"Listed: {metadata.Listed}");
         Console.WriteLine($"Tags: {metadata.Tags}");

@@ -2,7 +2,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Storage;
 
 /// <summary>
 /// Stores the content of symbols, also known as PDBs.

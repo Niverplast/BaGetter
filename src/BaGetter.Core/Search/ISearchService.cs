@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Protocol.Models;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Search;
 
 /// <summary>
 /// The service used to search for packages.

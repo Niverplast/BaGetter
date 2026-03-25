@@ -4,6 +4,8 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NuGet.Versioning;

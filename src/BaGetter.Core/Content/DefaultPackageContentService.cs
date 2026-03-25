@@ -3,10 +3,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Storage;
 using BaGetter.Protocol.Models;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Content;
 
 /// <summary>
 /// Implements the NuGet Package Content resource in NuGet's V3 protocol.

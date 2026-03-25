@@ -2,7 +2,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Indexing;
 
 /// <summary>
 /// The result of attempting to index a package.

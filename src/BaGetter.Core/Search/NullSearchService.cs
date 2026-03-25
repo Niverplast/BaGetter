@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Protocol.Models;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Search;
 
 /// <summary>
 /// A minimal search service implementation, used for advanced scenarios.

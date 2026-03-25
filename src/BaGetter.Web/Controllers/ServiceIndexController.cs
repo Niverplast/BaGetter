@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Authentication;
-using BaGetter.Core;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.ServiceIndex;
 using BaGetter.Protocol.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Controllers;
 
 /// <summary>
 /// The NuGet Service Index. This aids NuGet client to discover this server's services.

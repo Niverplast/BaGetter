@@ -5,13 +5,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
+using BaGetter.Core.Content;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Search;
 using Markdig;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using NuGet.Frameworks;
 using NuGet.Versioning;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Pages;
 
 public class PackageModel : PageModel
 {

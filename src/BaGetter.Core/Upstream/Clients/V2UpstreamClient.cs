@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NuGet.Common;
@@ -13,7 +15,7 @@ using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Upstream.Clients;
 
 using ILogger = Microsoft.Extensions.Logging.ILogger<V2UpstreamClient>;
 using INuGetLogger = NuGet.Common.ILogger;

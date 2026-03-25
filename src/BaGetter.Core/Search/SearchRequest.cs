@@ -1,4 +1,4 @@
-namespace BaGetter.Core;
+namespace BaGetter.Core.Search;
 
 /// <summary>
 /// The NuGet V3 search request.

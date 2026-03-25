@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using BaGetter.Core;
+using BaGetter.Core.Entities;
 using BaGetter.Database.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

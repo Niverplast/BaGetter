@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
 using Moq;
 using Xunit;
 

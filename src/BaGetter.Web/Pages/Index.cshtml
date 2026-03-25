@@ -1,4 +1,6 @@
 @page
+@using BaGetter.Protocol.Models
+@using BaGetter.Web.Extensions
 @model IndexModel
 
 @{
@@ -37,7 +39,7 @@
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="package-type">
-                    @foreach (var packageType in PackageTypes)
+                    @foreach (KeyValuePair<string, string> packageType in PackageTypes)
                     {
                         <li><a href="@SearchLink(packageType: packageType.Key, page: 1)">@packageType.Value</a></li>
                     }
@@ -56,7 +58,7 @@
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="framework">
-                    @foreach (var framework in TargetFrameworks)
+                    @foreach (KeyValuePair<string, string> framework in TargetFrameworks)
                     {
                         @if (framework.Key.StartsWith("divider"))
                         {
@@ -101,7 +103,7 @@
 }
 else
 {
-    @foreach (var package in Model.Packages)
+    @foreach (SearchResult package in Model.Packages)
     {
         <div class="row search-result">
             <div class="col-sm-1 hidden-xs hidden-sm">
@@ -150,8 +152,8 @@ else
         </div>
     }
 
-    var showPreviousLink = Model.PageIndex > 1;
-    var showNextLink = Model.Packages.Count >= IndexModel.ResultsPerPage;
+    bool showPreviousLink = Model.PageIndex > 1;
+    bool showNextLink = Model.Packages.Count >= IndexModel.ResultsPerPage;
 
     if (showPreviousLink || showNextLink)
     {
@@ -246,10 +248,10 @@ else
         int? page = null)
     {
         // Use model's value if the argument was skipped.
-        packageType = packageType ?? Model.PackageType;
-        framework = framework ?? Model.Framework;
-        prerelease = prerelease ?? Model.Prerelease;
-        page = page ?? Model.PageIndex;
+        packageType ??= Model.PackageType;
+        framework ??= Model.Framework;
+        prerelease ??= Model.Prerelease;
+        page ??= Model.PageIndex;
 
         // Remove query parameters that have default value
         if (packageType == "any") packageType = null;

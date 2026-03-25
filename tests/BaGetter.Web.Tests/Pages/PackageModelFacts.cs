@@ -5,11 +5,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
+using BaGetter.Core.Content;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Search;
+using BaGetter.Web.Pages;
 using Moq;
 using NuGet.Versioning;
 using Xunit;
 
-namespace BaGetter.Web.Tests;
+namespace BaGetter.Web.Tests.Pages;
 
 public class PackageModelFacts
 {
@@ -341,9 +345,9 @@ public class PackageModelFacts
         IEnumerable<PackageDependency> dependencies = null,
         IEnumerable<string> packageTypes = null)
     {
-        published = published ?? DateTime.Now;
-        dependencies = dependencies ?? Array.Empty<PackageDependency>();
-        packageTypes = packageTypes ?? Array.Empty<string>();
+        published ??= DateTime.Now;
+        dependencies ??= Array.Empty<PackageDependency>();
+        packageTypes ??= Array.Empty<string>();
 
         return new Package
         {

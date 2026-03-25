@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace BaGetter.Azure
+namespace BaGetter.Azure.Configuration
 {
     /// <summary>
     /// BaGetter's configurations to use Azure Blob Storage to store packages.
@@ -22,7 +22,7 @@ namespace BaGetter.Azure
 
         /// <summary>
         /// The Azure Blob Storage access key. Ignored if <see cref="ConnectionString"/> is provided.
-        /// </summary>        
+        /// </summary>
         public string AccessKey { get; set; }
 
         /// <summary>

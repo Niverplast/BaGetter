@@ -1,9 +1,10 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Storage;
 
 /// <summary>
 /// Stores packages' content. Packages' state are stored by the

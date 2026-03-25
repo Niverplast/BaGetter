@@ -2,10 +2,11 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Storage;
 
 public class PackageStorageService : IPackageStorageService
 {

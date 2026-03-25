@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using BaGetter.Protocol.Models;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Metadata;
 
 /// <inheritdoc/>
 public class DefaultPackageMetadataService : IPackageMetadataService

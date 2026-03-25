@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using NuGet.Versioning;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Entities;
 
 // See NuGetGallery's: https://github.com/NuGet/NuGetGallery/blob/master/src/NuGetGallery.Core/Entities/Package.cs
 [DebuggerDisplay("{Id} {Version}")]

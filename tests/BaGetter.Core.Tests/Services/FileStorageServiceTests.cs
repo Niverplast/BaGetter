@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Storage;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;

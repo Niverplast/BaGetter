@@ -4,14 +4,26 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Content;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Metadata;
+using BaGetter.Core.Search;
+using BaGetter.Core.ServiceIndex;
 using BaGetter.Core.Statistics;
+using BaGetter.Core.Storage;
+using BaGetter.Core.Upstream;
+using BaGetter.Core.Upstream.Clients;
+using BaGetter.Core.Validation;
 using BaGetter.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
-namespace BaGetter.Core;
+namespace BaGetter.Core.Extensions;
 
 public static partial class DependencyInjectionExtensions
 {

@@ -1,4 +1,7 @@
 using System;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Search;
 using Moq;
 using Xunit;
 

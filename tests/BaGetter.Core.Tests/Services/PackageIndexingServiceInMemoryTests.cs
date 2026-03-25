@@ -1,8 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Extensions;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Search;
+using BaGetter.Core.Storage;
 using BaGetter.Core.Tests.Support;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,6 +15,7 @@ using Moq;
 using NuGet.Packaging;
 using NuGet.Versioning;
 using Xunit;
+using NullStorageService = BaGetter.Core.Storage.NullStorageService;
 
 namespace BaGetter.Core.Tests.Services;
 

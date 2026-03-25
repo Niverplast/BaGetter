@@ -1,6 +1,11 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Extensions;
+using BaGetter.Core.Indexing;
+using BaGetter.Core.Search;
+using BaGetter.Core.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

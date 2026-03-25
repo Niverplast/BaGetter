@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BaGetter.Protocol.Tests;
+namespace BaGetter.Protocol.Tests.Support;
 
 /// <remarks>
 /// Based off: <see href="https://github.com/NuGet/NuGet.Services.Metadata/blob/0c69b9dd47e01125c22f72c1e27cf3cdafc65233/tests/NuGet.Protocol.Catalog.Tests/TestDataHttpMessageHandler.cs"/>

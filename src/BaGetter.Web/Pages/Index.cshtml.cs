@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Core;
+using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace BaGetter.Web;
+namespace BaGetter.Web.Pages;
 
 public class IndexModel : PageModel
 {

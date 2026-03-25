@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using BaGetter.Core;
+using BaGetter.Core.Configuration;
 using BaGetter.Web.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +13,7 @@ using Microsoft.Extensions.Primitives;
 using Moq;
 using Xunit;
 
-namespace BaGetter.Web.Tests;
+namespace BaGetter.Web.Tests.Authentication;
 
 public class NugetBasicAuthenticationHandlerTests
 {

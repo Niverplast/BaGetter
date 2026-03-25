@@ -4,9 +4,9 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using BaGetter.Authentication;
-using BaGetter.Core;
-using BaGetter.Web.Authentication;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Extensions;
+using BaGetter.Core.Indexing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit.Abstractions;
 
-namespace BaGetter.Tests;
+namespace BaGetter.Tests.Support;
 
 public class BaGetterApplication : WebApplicationFactory<Startup>
 {
