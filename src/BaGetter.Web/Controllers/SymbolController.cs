@@ -16,7 +16,11 @@ namespace BaGetter.Web.Controllers;
 [Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
 public class SymbolController : Controller
 {
+    private const string DefaultFeedId = "default";
+
     private readonly IAuthenticationService _authentication;
+    private readonly IFeedAuthenticationService _feedAuthentication;
+    private readonly IPermissionService _permissionService;
     private readonly ISymbolIndexingService _indexer;
     private readonly ISymbolStorageService _storage;
     private readonly IOptionsSnapshot<BaGetterOptions> _options;
@@ -24,12 +28,16 @@ public class SymbolController : Controller
 
     public SymbolController(
         IAuthenticationService authentication,
+        IFeedAuthenticationService feedAuthentication,
+        IPermissionService permissionService,
         ISymbolIndexingService indexer,
         ISymbolStorageService storage,
         IOptionsSnapshot<BaGetterOptions> options,
         ILogger<SymbolController> logger)
     {
         _authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
+        _feedAuthentication = feedAuthentication ?? throw new ArgumentNullException(nameof(feedAuthentication));
+        _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
         _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -39,7 +47,13 @@ public class SymbolController : Controller
     // See: https://docs.microsoft.com/en-us/nuget/api/package-publish-resource#push-a-package
     public async Task Upload(CancellationToken cancellationToken)
     {
-        if (_options.Value.IsReadOnlyMode || !await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
+        if (_options.Value.IsReadOnlyMode)
+        {
+            HttpContext.Response.StatusCode = 401;
+            return;
+        }
+
+        if (!await AuthorizePushAsync(cancellationToken))
         {
             HttpContext.Response.StatusCode = 401;
             return;
@@ -88,5 +102,25 @@ public class SymbolController : Controller
         }
 
         return File(pdbStream, "application/octet-stream");
+    }
+
+    private async Task<bool> AuthorizePushAsync(CancellationToken cancellationToken)
+    {
+        var authMode = _options.Value.Authentication?.Mode ?? AuthenticationMode.None;
+
+        if (authMode == AuthenticationMode.None)
+        {
+            return await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken);
+        }
+
+        var apiKey = Request.GetApiKey();
+        if (string.IsNullOrEmpty(apiKey))
+            return false;
+
+        var authResult = await _feedAuthentication.AuthenticateByTokenAsync(apiKey, cancellationToken);
+        if (!authResult.IsAuthenticated || !authResult.UserId.HasValue)
+            return false;
+
+        return await _permissionService.CanPushAsync(authResult.UserId.Value, DefaultFeedId, cancellationToken);
     }
 }

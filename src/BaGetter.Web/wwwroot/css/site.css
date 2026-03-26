@@ -191,6 +191,51 @@ h4 {
   margin-left: -15px;
 }
 
+#navbar .navbar-right {
+  margin-left: auto;
+  margin-right: -15px;
+}
+
+.navbar-inverse .navbar-nav.navbar-right > li > a {
+  color: var(--navbar-text-color);
+}
+
+.navbar-inverse .navbar-nav.navbar-right > li > a:hover,
+.navbar-inverse .navbar-nav.navbar-right > li > a:focus {
+  color: var(--navbar-active-text-color);
+}
+
+.navbar-inverse .navbar-nav.navbar-right .dropdown-menu {
+  right: 0;
+  left: auto;
+}
+
+.dropdown-menu .ms-Icon {
+  margin-right: 6px;
+  width: 16px;
+  display: inline-block;
+  text-align: center;
+}
+
+.dropdown-sign-out {
+  width: 100%;
+  text-align: left;
+  padding: 3px 20px;
+  font-weight: normal;
+  line-height: 1.42857143;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.dropdown-sign-out:hover {
+  background-color: #f5f5f5;
+  color: #262626;
+  text-decoration: none;
+}
+
 .navbar-inverse {
   background-color: var(--navbar-bg-color);
   border-color: var(--navbar-border-color);
@@ -585,6 +630,77 @@ h4 {
     text-decoration: underline;
     color: #23527c;
   }
+
+/* Token management page
+-------------------------------------------------- */
+.token-create-form {
+  margin-bottom: 24px;
+}
+
+.token-create-form .form-group {
+  margin-right: 10px;
+}
+
+.token-display {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.token-display code {
+  padding: 6px 10px;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.token-created-alert {
+  border-color: #3c763d;
+}
+
+[x-cloak] {
+  display: none !important;
+}
+
+/* Login page
+-------------------------------------------------- */
+.entra-sign-in-btn {
+  padding: 10px 16px;
+  font-size: 16px;
+  border: 1px solid #8c8c8c;
+  background-color: var(--body-bg-color);
+  color: var(--text-color);
+}
+
+.entra-sign-in-btn:hover,
+.entra-sign-in-btn:focus {
+  background-color: var(--tabbed-info-bg-color);
+  color: var(--text-color);
+  border-color: #666;
+}
+
+.login-divider {
+  text-align: center;
+  margin: 24px 0;
+  position: relative;
+}
+
+.login-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #ccc;
+}
+
+.login-divider span {
+  background-color: var(--body-bg-color);
+  padding: 0 12px;
+  position: relative;
+  color: #888;
+  font-size: 14px;
+}
 
 /* Upload page
 -------------------------------------------------- */

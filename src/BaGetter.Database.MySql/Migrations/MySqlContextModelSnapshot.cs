@@ -3,6 +3,7 @@ using System;
 using BaGetter.Database.MySql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -16,16 +17,84 @@ namespace BaGetter.Database.MySql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "latin1");
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("BaGetter.Core.Package", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("CanPull")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("CanPush")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("FeedId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<Guid>("PrincipalId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("PrincipalType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeedId", "PrincipalType", "PrincipalId")
+                        .IsUnique();
+
+                    b.ToTable("FeedPermissions");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<string>("EntraGroupId")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Groups");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Key"));
 
                     b.Property<string>("Authors")
                         .HasMaxLength(4000)
@@ -134,11 +203,13 @@ namespace BaGetter.Database.MySql.Migrations
                     b.ToTable("Packages");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageDependency", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Key"));
 
                     b.Property<string>("Id")
                         .HasMaxLength(128)
@@ -164,11 +235,13 @@ namespace BaGetter.Database.MySql.Migrations
                     b.ToTable("PackageDependencies");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageType", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageType", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Key"));
 
                     b.Property<string>("Name")
                         .HasMaxLength(512)
@@ -190,11 +263,64 @@ namespace BaGetter.Database.MySql.Migrations
                     b.ToTable("PackageTypes");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.TargetFramework", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PersonalAccessToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRevoked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastUsedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<string>("TokenPrefix")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PersonalAccessTokens");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.TargetFramework", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Key"));
 
                     b.Property<string>("Moniker")
                         .HasMaxLength(256)
@@ -212,18 +338,107 @@ namespace BaGetter.Database.MySql.Migrations
                     b.ToTable("TargetFrameworks");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageDependency", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.User", b =>
                 {
-                    b.HasOne("BaGetter.Core.Package", "Package")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("AuthProvider")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("CanLoginToUI")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("EntraObjectId")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<int>("FailedLoginCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<bool>("IsAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("EntraObjectId")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.UserGroup", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("UserId", "GroupId");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("UserGroups");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Package", "Package")
                         .WithMany("Dependencies")
                         .HasForeignKey("PackageKey");
 
                     b.Navigation("Package");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageType", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageType", b =>
                 {
-                    b.HasOne("BaGetter.Core.Package", "Package")
+                    b.HasOne("BaGetter.Core.Entities.Package", "Package")
                         .WithMany("PackageTypes")
                         .HasForeignKey("PackageKey")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -232,9 +447,20 @@ namespace BaGetter.Database.MySql.Migrations
                     b.Navigation("Package");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.TargetFramework", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PersonalAccessToken", b =>
                 {
-                    b.HasOne("BaGetter.Core.Package", "Package")
+                    b.HasOne("BaGetter.Core.Entities.User", "User")
+                        .WithMany("PersonalAccessTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.TargetFramework", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Package", "Package")
                         .WithMany("TargetFrameworks")
                         .HasForeignKey("PackageKey")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -243,13 +469,54 @@ namespace BaGetter.Database.MySql.Migrations
                     b.Navigation("Package");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.Package", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.User", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.UserGroup", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Group", "Group")
+                        .WithMany("UserGroups")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BaGetter.Core.Entities.User", "User")
+                        .WithMany("UserGroups")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>
+                {
+                    b.Navigation("UserGroups");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
                 {
                     b.Navigation("Dependencies");
 
                     b.Navigation("PackageTypes");
 
                     b.Navigation("TargetFrameworks");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.User", b =>
+                {
+                    b.Navigation("PersonalAccessTokens");
+
+                    b.Navigation("UserGroups");
                 });
 #pragma warning restore 612, 618
         }

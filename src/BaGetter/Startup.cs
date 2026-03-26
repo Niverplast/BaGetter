@@ -66,6 +66,9 @@ public class Startup
         app.AddNugetBasicHttpAuthentication();
         app.AddNugetBasicHttpAuthorization();
 
+        // Add Entra ID (OIDC) authentication when configured
+        app.AddEntraAuthentication(Configuration);
+
         // Add database providers.
         app.AddAzureTableDatabase();
         app.AddMySqlDatabase();

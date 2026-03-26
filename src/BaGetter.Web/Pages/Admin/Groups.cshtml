@@ -1,0 +1,120 @@
+@page
+@model BaGetter.Web.Pages.Admin.GroupsModel
+
+@{
+    ViewData["Title"] = "Groups & Permissions";
+}
+
+<div class="col-sm-12">
+    <h1>Groups &amp; Permissions</h1>
+    <hr class="breadcrumb-divider" />
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">@Model.SuccessMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <h3>Create group</h3>
+    <form method="post" asp-page-handler="CreateGroup">
+        @Html.AntiForgeryToken()
+        <div class="row">
+            <div class="col-sm-6">
+                <div class="form-group">
+                    <label asp-for="NewGroupName">Group Name</label>
+                    <input asp-for="NewGroupName" class="form-control" />
+                    <span asp-validation-for="NewGroupName" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="NewEntraGroupId">Entra Group ID (optional)</label>
+                    <input asp-for="NewEntraGroupId" class="form-control" placeholder="Azure AD Group Object ID" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="NewDescription">Description</label>
+                    <input asp-for="NewDescription" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-primary">Create Group</button>
+            </div>
+        </div>
+    </form>
+
+    <h3>Existing groups</h3>
+    @if (Model.Groups.Count == 0)
+    {
+        <p>No groups found.</p>
+    }
+    else
+    {
+        @foreach (var group in Model.Groups)
+        {
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        @group.Name
+                        @if (!string.IsNullOrEmpty(group.EntraGroupId))
+                        {
+                            <small class="text-muted">(Entra: @group.EntraGroupId)</small>
+                        }
+                    </h4>
+                    @if (!string.IsNullOrEmpty(group.Description))
+                    {
+                        <p class="text-muted" style="margin-bottom:0">@group.Description</p>
+                    }
+                </div>
+                <div class="panel-body">
+                    <h5>Members</h5>
+                    @if (group.UserGroups != null && group.UserGroups.Count > 0)
+                    {
+                        <ul class="list-inline">
+                            @foreach (var ug in group.UserGroups)
+                            {
+                                <li>
+                                    <span class="label label-info">@ug.User?.Username</span>
+                                    <form method="post" asp-page-handler="RemoveUser" style="display:inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="groupId" value="@group.Id" />
+                                        <input type="hidden" name="userId" value="@ug.UserId" />
+                                        <button type="submit" class="btn btn-xs btn-link text-danger" title="Remove">x</button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No members</p>
+                    }
+
+                    <form method="post" asp-page-handler="AddUser" class="form-inline" style="margin-top:8px">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="groupId" value="@group.Id" />
+                        <div class="form-group">
+                            <select name="userId" class="form-control input-sm">
+                                @foreach (var user in Model.AllUsers)
+                                {
+                                    <option value="@user.Id">@user.Username (@user.AuthProvider)</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-xs btn-success">Add Member</button>
+                    </form>
+
+                    <h5 style="margin-top:16px">Feed Permissions</h5>
+                    <form method="post" asp-page-handler="GrantPermission" class="form-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="principalId" value="@group.Id" />
+                        <input type="hidden" name="principalType" value="@BaGetter.Core.Entities.PrincipalType.Group" />
+                        <input type="hidden" name="feedId" value="default" />
+                        <label class="checkbox-inline"><input type="checkbox" name="canPull" value="true" /> Pull</label>
+                        <label class="checkbox-inline"><input type="checkbox" name="canPush" value="true" /> Push</label>
+                        <button type="submit" class="btn btn-xs btn-primary">Set Permissions</button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+</div>

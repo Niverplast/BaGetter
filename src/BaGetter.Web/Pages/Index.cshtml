@@ -1,5 +1,4 @@
 @page
-@using BaGetter.Protocol.Models
 @using BaGetter.Web.Extensions
 @model IndexModel
 
@@ -103,7 +102,7 @@
 }
 else
 {
-    @foreach (SearchResult package in Model.Packages)
+    @foreach (var package in Model.Packages)
     {
         <div class="row search-result">
             <div class="col-sm-1 hidden-xs hidden-sm">
@@ -152,8 +151,8 @@ else
         </div>
     }
 
-    bool showPreviousLink = Model.PageIndex > 1;
-    bool showNextLink = Model.Packages.Count >= IndexModel.ResultsPerPage;
+    var showPreviousLink = Model.PageIndex > 1;
+    var showNextLink = Model.Packages.Count >= IndexModel.ResultsPerPage;
 
     if (showPreviousLink || showNextLink)
     {

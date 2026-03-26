@@ -1,9 +1,16 @@
+using BaGetter.Authentication;
 using BaGetter.Core;
-using BaGetter.Web.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 using BaGetter.Core.Authentication;
+using BaGetter.Core.Configuration;
+using BaGetter.Web.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Identity.Web;
+using System;
+using Microsoft.AspNetCore.Authentication;
 
 namespace BaGetter;
 
@@ -27,14 +34,105 @@ internal static class IServiceCollectionExtensions
 
     internal static BaGetterApplication AddNugetBasicHttpAuthorization(this BaGetterApplication app, Action<AuthorizationPolicyBuilder>? configurePolicy = null)
     {
+        app.Services.AddScoped<IAuthorizationHandler, FeedPermissionHandler>();
+
         app.Services.AddAuthorization(options =>
         {
             options.AddPolicy(AuthenticationConstants.NugetUserPolicy, policy =>
             {
                 policy.RequireAuthenticatedUser();
+                policy.Requirements.Add(new FeedPermissionRequirement(FeedPermissionRequirement.Pull));
                 configurePolicy?.Invoke(policy);
             });
         });
+
+        return app;
+    }
+
+    /// <summary>
+    /// Registers Entra ID (OIDC) authentication with cookie-based session when the
+    /// authentication mode includes Entra (Entra or Hybrid).
+    /// </summary>
+    internal static BaGetterApplication AddEntraAuthentication(
+        this BaGetterApplication app,
+        Microsoft.Extensions.Configuration.IConfiguration configuration)
+    {
+        // Read the authentication mode from configuration to decide whether to register Entra
+        var authSection = configuration.GetSection("Authentication");
+        var modeString = authSection?.GetValue<string>("Mode");
+
+        if (!Enum.TryParse<AuthenticationMode>(modeString, ignoreCase: true, out var mode))
+            mode = AuthenticationMode.None;
+
+        if (mode is not (AuthenticationMode.Entra or AuthenticationMode.Hybrid))
+            return app;
+
+        var entraSection = authSection.GetSection("Entra");
+
+        app.Services.AddAuthentication(options =>
+            {
+                // Keep NugetBasicAuth as the default for NuGet feed API requests.
+                // OIDC + Cookie are used for interactive browser sessions only.
+                options.DefaultScheme = AuthenticationConstants.NugetBasicAuthenticationScheme;
+            })
+            .AddMicrosoftIdentityWebApp(entraSection, AuthenticationConstants.EntraOidcScheme, AuthenticationConstants.CookieScheme);
+
+        // When a request has the session cookie but no Authorization header (i.e. a browser
+        // session after OIDC sign-in), forward authentication to the cookie scheme so the
+        // identity is actually read. Without this the default NugetBasicAuth handler sees no
+        // Authorization header and returns NoResult, leaving the user unauthenticated.
+        app.Services.Configure<AuthenticationSchemeOptions>(
+            AuthenticationConstants.NugetBasicAuthenticationScheme, options =>
+        {
+            options.ForwardDefaultSelector = context =>
+            {
+                if (!context.Request.Headers.ContainsKey("Authorization")
+                    && context.Request.Cookies.ContainsKey("BaGetter.Auth"))
+                {
+                    return AuthenticationConstants.CookieScheme;
+                }
+                return null;
+            };
+        });
+
+        // Configure the cookie scheme registered by AddMicrosoftIdentityWebApp
+        app.Services.Configure<CookieAuthenticationOptions>(AuthenticationConstants.CookieScheme, options =>
+        {
+            options.LoginPath = "/Login";
+            options.LogoutPath = "/Logout";
+            options.Cookie.Name = "BaGetter.Auth";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+            options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+            options.SlidingExpiration = true;
+        });
+
+        // Configure the OIDC options for group claims and token validated handler
+        app.Services.Configure<OpenIdConnectOptions>(AuthenticationConstants.EntraOidcScheme, options =>
+        {
+            // Use authorization code flow instead of implicit flow so that
+            // "ID tokens" does not need to be enabled under Implicit grant
+            // in the Azure app registration.
+            options.ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseType.Code;
+
+            // Request the 'groups' claim in the ID token
+            options.TokenValidationParameters.NameClaimType = "name";
+
+            options.Events ??= new OpenIdConnectEvents();
+            var existingOnTokenValidated = options.Events.OnTokenValidated;
+
+            options.Events.OnTokenValidated = async context =>
+            {
+                if (existingOnTokenValidated != null)
+                    await existingOnTokenValidated(context);
+
+                var syncService = context.HttpContext.RequestServices.GetRequiredService<EntraGroupSyncService>();
+                await syncService.OnTokenValidatedAsync(context.Principal, context.HttpContext.RequestAborted);
+            };
+        });
+
+        app.Services.AddScoped<EntraGroupSyncService>();
 
         return app;
     }

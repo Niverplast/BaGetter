@@ -1,0 +1,116 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using BaGetter.Core.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace BaGetter.Core.Authentication;
+
+public class PermissionService : IPermissionService
+{
+    private readonly IContext _context;
+    private readonly IUserService _userService;
+    private readonly ILogger<PermissionService> _logger;
+
+    public PermissionService(IContext context, IUserService userService, ILogger<PermissionService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<bool> CanPushAsync(Guid userId, string feedId, CancellationToken cancellationToken)
+    {
+        return await HasPermissionAsync(userId, feedId, p => p.CanPush, cancellationToken);
+    }
+
+    public async Task<bool> CanPullAsync(Guid userId, string feedId, CancellationToken cancellationToken)
+    {
+        return await HasPermissionAsync(userId, feedId, p => p.CanPull, cancellationToken);
+    }
+
+    public async Task GrantPermissionAsync(
+        Guid principalId,
+        PrincipalType principalType,
+        string feedId,
+        bool canPush,
+        bool canPull,
+        CancellationToken cancellationToken)
+    {
+        var existing = await _context.FeedPermissions.FirstOrDefaultAsync(
+            p => p.FeedId == feedId && p.PrincipalType == principalType && p.PrincipalId == principalId,
+            cancellationToken);
+
+        if (existing != null)
+        {
+            existing.CanPush = canPush;
+            existing.CanPull = canPull;
+        }
+        else
+        {
+            _context.FeedPermissions.Add(new FeedPermission
+            {
+                Id = Guid.NewGuid(),
+                FeedId = feedId,
+                PrincipalType = principalType,
+                PrincipalId = principalId,
+                CanPush = canPush,
+                CanPull = canPull
+            });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "Audit: {EventType} - Granted permission on feed {FeedId} to {PrincipalType} {PrincipalId}: Push={CanPush}, Pull={CanPull}",
+            "PermissionGranted", feedId, principalType, principalId, canPush, canPull);
+    }
+
+    public async Task RevokePermissionAsync(Guid permissionId, CancellationToken cancellationToken)
+    {
+        var permission = await _context.FeedPermissions
+            .FirstOrDefaultAsync(p => p.Id == permissionId, cancellationToken);
+
+        if (permission == null) return;
+
+        _context.FeedPermissions.Remove(permission);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Audit: {EventType} - Revoked permission {PermissionId}",
+            "PermissionRevoked", permissionId);
+    }
+
+    private async Task<bool> HasPermissionAsync(
+        Guid userId,
+        string feedId,
+        System.Linq.Expressions.Expression<Func<FeedPermission, bool>> permissionSelector,
+        CancellationToken cancellationToken)
+    {
+        // Admins always have permission
+        if (await _userService.IsAdminAsync(userId, cancellationToken))
+            return true;
+
+        // Check direct user permissions
+        var hasDirectPermission = await _context.FeedPermissions
+            .Where(p => p.FeedId == feedId
+                     && p.PrincipalType == PrincipalType.User
+                     && p.PrincipalId == userId)
+            .AnyAsync(permissionSelector, cancellationToken);
+
+        if (hasDirectPermission) return true;
+
+        // Check group permissions via user's group memberships
+        var userGroupIds = _context.UserGroups
+            .Where(ug => ug.UserId == userId)
+            .Select(ug => ug.GroupId);
+
+        var hasGroupPermission = await _context.FeedPermissions
+            .Where(p => p.FeedId == feedId
+                     && p.PrincipalType == PrincipalType.Group
+                     && userGroupIds.Contains(p.PrincipalId))
+            .AnyAsync(permissionSelector, cancellationToken);
+
+        return hasGroupPermission;
+    }
+}

@@ -10,6 +10,11 @@ public interface IContext
     DatabaseFacade Database { get; }
 
     DbSet<Package> Packages { get; set; }
+    DbSet<User> Users { get; set; }
+    DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; }
+    DbSet<Group> Groups { get; set; }
+    DbSet<UserGroup> UserGroups { get; set; }
+    DbSet<FeedPermission> FeedPermissions { get; set; }
 
     /// <summary>
     /// Check whether a <see cref="DbUpdateException"/> is due to a SQL unique constraint violation.

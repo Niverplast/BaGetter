@@ -23,7 +23,72 @@ namespace BaGetter.Database.PostgreSql.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BaGetter.Core.Package", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("CanPull")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("CanPush")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("FeedId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("PrincipalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PrincipalType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeedId", "PrincipalType", "PrincipalId")
+                        .IsUnique();
+
+                    b.ToTable("FeedPermissions");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("EntraGroupId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Groups");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
@@ -138,7 +203,7 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.ToTable("Packages");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageDependency", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
@@ -170,7 +235,7 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.ToTable("PackageDependencies");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageType", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageType", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
@@ -198,7 +263,58 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.ToTable("PackageTypes");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.TargetFramework", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PersonalAccessToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRevoked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastUsedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TokenPrefix")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PersonalAccessTokens");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.TargetFramework", b =>
                 {
                     b.Property<int>("Key")
                         .ValueGeneratedOnAdd()
@@ -222,18 +338,107 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.ToTable("TargetFrameworks");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageDependency", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.User", b =>
                 {
-                    b.HasOne("BaGetter.Core.Package", "Package")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AuthProvider")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("CanLoginToUI")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("EntraObjectId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("FailedLoginCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<bool>("IsAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("EntraObjectId")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.UserGroup", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("UserId", "GroupId");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("UserGroups");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Package", "Package")
                         .WithMany("Dependencies")
                         .HasForeignKey("PackageKey");
 
                     b.Navigation("Package");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.PackageType", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PackageType", b =>
                 {
-                    b.HasOne("BaGetter.Core.Package", "Package")
+                    b.HasOne("BaGetter.Core.Entities.Package", "Package")
                         .WithMany("PackageTypes")
                         .HasForeignKey("PackageKey")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -242,9 +447,20 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.Navigation("Package");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.TargetFramework", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.PersonalAccessToken", b =>
                 {
-                    b.HasOne("BaGetter.Core.Package", "Package")
+                    b.HasOne("BaGetter.Core.Entities.User", "User")
+                        .WithMany("PersonalAccessTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.TargetFramework", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Package", "Package")
                         .WithMany("TargetFrameworks")
                         .HasForeignKey("PackageKey")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -253,13 +469,54 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.Navigation("Package");
                 });
 
-            modelBuilder.Entity("BaGetter.Core.Package", b =>
+            modelBuilder.Entity("BaGetter.Core.Entities.User", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.UserGroup", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Group", "Group")
+                        .WithMany("UserGroups")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BaGetter.Core.Entities.User", "User")
+                        .WithMany("UserGroups")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>
+                {
+                    b.Navigation("UserGroups");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
                 {
                     b.Navigation("Dependencies");
 
                     b.Navigation("PackageTypes");
 
                     b.Navigation("TargetFrameworks");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.User", b =>
+                {
+                    b.Navigation("PersonalAccessTokens");
+
+                    b.Navigation("UserGroups");
                 });
 #pragma warning restore 612, 618
         }

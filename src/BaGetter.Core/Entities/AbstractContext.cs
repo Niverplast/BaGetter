@@ -22,6 +22,18 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
 
     public const int MaxPackageDependencyVersionRangeLength = 256;
 
+    public const int MaxUsernameLength = 256;
+    public const int MaxDisplayNameLength = 256;
+    public const int MaxEmailLength = 256;
+    public const int MaxEntraObjectIdLength = 128;
+    public const int MaxPasswordHashLength = 256;
+    public const int MaxTokenNameLength = 256;
+    public const int MaxTokenHashLength = 128;
+    public const int MaxTokenPrefixLength = 8;
+    public const int MaxGroupNameLength = 256;
+    public const int MaxEntraGroupIdLength = 128;
+    public const int MaxFeedIdLength = 128;
+
     protected AbstractContext(DbContextOptions<TContext> efOptions)
         : base(efOptions)
     { }
@@ -30,6 +42,11 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
     public DbSet<PackageDependency> PackageDependencies { get; set; }
     public DbSet<PackageType> PackageTypes { get; set; }
     public DbSet<TargetFramework> TargetFrameworks { get; set; }
+    public DbSet<User> Users { get; set; }
+    public DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; }
+    public DbSet<Group> Groups { get; set; }
+    public DbSet<UserGroup> UserGroups { get; set; }
+    public DbSet<FeedPermission> FeedPermissions { get; set; }
 
     public Task<int> SaveChangesAsync() => SaveChangesAsync(default);
 
@@ -46,6 +63,11 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         builder.Entity<PackageDependency>(BuildPackageDependencyEntity);
         builder.Entity<PackageType>(BuildPackageTypeEntity);
         builder.Entity<TargetFramework>(BuildTargetFrameworkEntity);
+        builder.Entity<User>(BuildUserEntity);
+        builder.Entity<PersonalAccessToken>(BuildPersonalAccessTokenEntity);
+        builder.Entity<Group>(BuildGroupEntity);
+        builder.Entity<UserGroup>(BuildUserGroupEntity);
+        builder.Entity<FeedPermission>(BuildFeedPermissionEntity);
     }
 
     private void BuildPackageEntity(EntityTypeBuilder<Package> package)
@@ -156,5 +178,131 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         targetFramework.HasIndex(f => f.Moniker);
 
         targetFramework.Property(f => f.Moniker).HasMaxLength(MaxTargetFrameworkLength);
+    }
+
+    private void BuildUserEntity(EntityTypeBuilder<User> user)
+    {
+        user.HasKey(u => u.Id);
+        user.HasIndex(u => u.Username).IsUnique();
+        user.HasIndex(u => u.EntraObjectId).IsUnique().HasFilter(null);
+
+        user.Property(u => u.Username)
+            .HasMaxLength(MaxUsernameLength)
+            .IsRequired();
+
+        user.Property(u => u.DisplayName)
+            .HasMaxLength(MaxDisplayNameLength)
+            .IsRequired();
+
+        user.Property(u => u.Email)
+            .HasMaxLength(MaxEmailLength);
+
+        user.Property(u => u.AuthProvider)
+            .IsRequired();
+
+        user.Property(u => u.EntraObjectId)
+            .HasMaxLength(MaxEntraObjectIdLength);
+
+        user.Property(u => u.PasswordHash)
+            .HasMaxLength(MaxPasswordHashLength);
+
+        user.Property(u => u.IsEnabled)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        user.Property(u => u.IsAdmin)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        user.Property(u => u.CanLoginToUI)
+            .IsRequired();
+
+        user.Property(u => u.FailedLoginCount)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        user.Property(u => u.CreatedAtUtc).IsRequired();
+        user.Property(u => u.UpdatedAtUtc).IsRequired();
+
+        user.HasOne(u => u.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(u => u.CreatedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        user.HasMany(u => u.PersonalAccessTokens)
+            .WithOne(t => t.User)
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        user.HasMany(u => u.UserGroups)
+            .WithOne(ug => ug.User)
+            .HasForeignKey(ug => ug.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private void BuildPersonalAccessTokenEntity(EntityTypeBuilder<PersonalAccessToken> token)
+    {
+        token.HasKey(t => t.Id);
+        token.HasIndex(t => t.TokenHash).IsUnique();
+        token.HasIndex(t => t.UserId);
+
+        token.Property(t => t.Name)
+            .HasMaxLength(MaxTokenNameLength)
+            .IsRequired();
+
+        token.Property(t => t.TokenHash)
+            .HasMaxLength(MaxTokenHashLength)
+            .IsRequired();
+
+        token.Property(t => t.TokenPrefix)
+            .HasMaxLength(MaxTokenPrefixLength)
+            .IsRequired();
+
+        token.Property(t => t.ExpiresAtUtc).IsRequired();
+        token.Property(t => t.CreatedAtUtc).IsRequired();
+        token.Property(t => t.IsRevoked).IsRequired().HasDefaultValue(false);
+    }
+
+    private void BuildGroupEntity(EntityTypeBuilder<Group> group)
+    {
+        group.HasKey(g => g.Id);
+        group.HasIndex(g => g.Name).IsUnique();
+
+        group.Property(g => g.Name)
+            .HasMaxLength(MaxGroupNameLength)
+            .IsRequired();
+
+        group.Property(g => g.EntraGroupId)
+            .HasMaxLength(MaxEntraGroupIdLength);
+
+        group.Property(g => g.Description)
+            .HasMaxLength(DefaultMaxStringLength);
+
+        group.Property(g => g.CreatedAtUtc).IsRequired();
+
+        group.HasMany(g => g.UserGroups)
+            .WithOne(ug => ug.Group)
+            .HasForeignKey(ug => ug.GroupId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private void BuildUserGroupEntity(EntityTypeBuilder<UserGroup> userGroup)
+    {
+        userGroup.HasKey(ug => new { ug.UserId, ug.GroupId });
+    }
+
+    private void BuildFeedPermissionEntity(EntityTypeBuilder<FeedPermission> permission)
+    {
+        permission.HasKey(p => p.Id);
+        permission.HasIndex(p => new { p.FeedId, p.PrincipalType, p.PrincipalId }).IsUnique();
+
+        permission.Property(p => p.FeedId)
+            .HasMaxLength(MaxFeedIdLength)
+            .IsRequired();
+
+        permission.Property(p => p.PrincipalType).IsRequired();
+        permission.Property(p => p.PrincipalId).IsRequired();
+        permission.Property(p => p.CanPush).IsRequired().HasDefaultValue(false);
+        permission.Property(p => p.CanPull).IsRequired().HasDefaultValue(false);
     }
 }
