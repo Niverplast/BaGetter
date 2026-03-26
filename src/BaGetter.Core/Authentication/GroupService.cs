@@ -122,14 +122,7 @@ public class GroupService : IGroupService
 
             var group = await FindByEntraGroupIdAsync(entraGroupId, cancellationToken);
             if (group == null)
-            {
-                // Auto-create group if it doesn't exist yet
-                group = await CreateGroupAsync(
-                    $"Entra-{entraGroupId}",
-                    entraGroupId,
-                    "Auto-created from Entra ID group sync",
-                    cancellationToken);
-            }
+                continue;   // group not configured in BaGetter, skip
 
             _context.UserGroups.Add(new UserGroup
             {
@@ -151,5 +144,27 @@ public class GroupService : IGroupService
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Synced Entra group memberships for user {UserId}: {GroupCount} groups",
             userId, entraGroupIds.Count);
+    }
+
+    public async Task DeleteGroupAsync(Guid groupId, CancellationToken cancellationToken)
+    {
+        var group = await _context.Groups
+            .FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
+        if (group == null) return;
+
+        var memberships = await _context.UserGroups
+            .Where(ug => ug.GroupId == groupId)
+            .ToListAsync(cancellationToken);
+        _context.UserGroups.RemoveRange(memberships);
+
+        var permissions = await _context.FeedPermissions
+            .Where(fp => fp.PrincipalId == groupId && fp.PrincipalType == PrincipalType.Group)
+            .ToListAsync(cancellationToken);
+        _context.FeedPermissions.RemoveRange(permissions);
+
+        _context.Groups.Remove(group);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Deleted group {GroupName} (ID: {GroupId})", group.Name, groupId);
     }
 }

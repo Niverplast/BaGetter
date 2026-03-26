@@ -10,6 +10,7 @@ using System;
 using System.Linq;
 using BaGetter.Core.Configuration;
 using BaGetter.Core.Authentication;
+using BaGetter.Web.Extensions;
 
 namespace BaGetter.Web.Authentication;
 
@@ -81,6 +82,19 @@ public class NugetBasicAuthenticationHandler : AuthenticationHandler<Authenticat
 
     private async Task<AuthenticateResult> HandleNewAuthenticateAsync()
     {
+        // Try X-NuGet-ApiKey first (used by dotnet nuget push -k <token>)
+        var apiKey = Request.Headers[HttpRequestExtensions.ApiKeyHeader].ToString();
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            var tokenResult = await _feedAuthService.AuthenticateByTokenAsync(apiKey, Context.RequestAborted);
+            if (tokenResult.IsAuthenticated)
+            {
+                Logger.LogInformation("Audit: {EventType} - User {Username} ({UserId}) authenticated via API key from {IP}",
+                    "LoginSuccess", tokenResult.Username, tokenResult.UserId, Context.Connection.RemoteIpAddress?.ToString());
+                return await CreateUserAuthenticationResult(tokenResult.Username, tokenResult.UserId?.ToString());
+            }
+        }
+
         if (!Request.Headers.TryGetValue("Authorization", out var auth))
             return AuthenticateResult.NoResult();
 

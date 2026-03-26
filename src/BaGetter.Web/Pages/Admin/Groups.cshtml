@@ -53,12 +53,23 @@
         {
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h4 class="panel-title">
+                    <h4 class="panel-title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         @group.Name
                         @if (!string.IsNullOrEmpty(group.EntraGroupId))
                         {
                             <small class="text-muted">(Entra: @group.EntraGroupId)</small>
+                            <span class="label label-primary">Entra-synced</span>
                         }
+                        else
+                        {
+                            <span class="label label-default">Manual</span>
+                        }
+                        <form method="post" asp-page-handler="DeleteGroup" style="display:inline; margin-left:auto"
+                              onsubmit="return confirm('Are you sure you want to delete this group? All memberships and permissions will be removed.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="groupId" value="@group.Id" />
+                            <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                        </form>
                     </h4>
                     @if (!string.IsNullOrEmpty(group.Description))
                     {

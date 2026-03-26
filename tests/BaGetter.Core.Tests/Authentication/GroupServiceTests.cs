@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Tests.Support;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -232,19 +233,92 @@ public class GroupServiceTests
         }
 
         [Fact]
-        public async Task AutoCreatesGroupForUnknownEntraGroupId()
+        public async Task SkipsUnknownEntraGroupId()
         {
-            var user = await CreateUser("autocreate");
+            var user = await CreateUser("skipunknown");
 
             await _target.SyncEntraGroupMembershipsAsync(
-                user.Id, new List<string> { "new-entra-gid" }, _ct);
+                user.Id, new List<string> { "unknown-entra-gid" }, _ct);
 
-            var createdGroup = await _target.FindByEntraGroupIdAsync("new-entra-gid", _ct);
-            Assert.NotNull(createdGroup);
-            Assert.StartsWith("Entra-", createdGroup.Name);
+            var createdGroup = await _target.FindByEntraGroupIdAsync("unknown-entra-gid", _ct);
+            Assert.Null(createdGroup);
 
             var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
-            Assert.Single(groups);
+            Assert.Empty(groups);
+        }
+    }
+
+    public class DeleteGroupAsync : FactsBase
+    {
+        [Fact]
+        public async Task DoesNothingWhenGroupNotFound()
+        {
+            // Should complete without throwing
+            await _target.DeleteGroupAsync(Guid.NewGuid(), _ct);
+        }
+
+        [Fact]
+        public async Task RemovesGroupAndMemberships()
+        {
+            var user = await CreateUser("deletemember");
+            var group = await _target.CreateGroupAsync("ToDelete", null, null, _ct);
+            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
+
+            await _target.DeleteGroupAsync(group.Id, _ct);
+
+            var found = await _target.FindByIdAsync(group.Id, _ct);
+            Assert.Null(found);
+
+            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            Assert.Empty(groups);
+        }
+
+        [Fact]
+        public async Task RemovesFeedPermissionsForGroup()
+        {
+            var group = await _target.CreateGroupAsync("PermGroup", null, null, _ct);
+
+            _context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
+            {
+                Id = Guid.NewGuid(),
+                FeedId = "myfeed",
+                PrincipalType = BaGetter.Core.Entities.PrincipalType.Group,
+                PrincipalId = group.Id,
+                CanPull = true
+            });
+            await _context.SaveChangesAsync(_ct);
+
+            await _target.DeleteGroupAsync(group.Id, _ct);
+
+            var permCount = await _context.FeedPermissions
+                .CountAsync(fp => fp.PrincipalId == group.Id, _ct);
+            Assert.Equal(0, permCount);
+        }
+
+        [Fact]
+        public async Task DoesNotRemoveOtherGroupsOrPermissions()
+        {
+            var group1 = await _target.CreateGroupAsync("Keep", null, null, _ct);
+            var group2 = await _target.CreateGroupAsync("Delete", null, null, _ct);
+
+            _context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
+            {
+                Id = Guid.NewGuid(),
+                FeedId = "feed1",
+                PrincipalType = BaGetter.Core.Entities.PrincipalType.Group,
+                PrincipalId = group1.Id,
+                CanPull = true
+            });
+            await _context.SaveChangesAsync(_ct);
+
+            await _target.DeleteGroupAsync(group2.Id, _ct);
+
+            var kept = await _target.FindByIdAsync(group1.Id, _ct);
+            Assert.NotNull(kept);
+
+            var permCount = await _context.FeedPermissions
+                .CountAsync(fp => fp.PrincipalId == group1.Id, _ct);
+            Assert.Equal(1, permCount);
         }
     }
 

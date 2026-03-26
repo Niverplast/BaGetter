@@ -154,4 +154,18 @@ public class GroupsModel : PageModel
 
         return RedirectToPage();
     }
+
+    public async Task<IActionResult> OnPostDeleteGroupAsync(
+        Guid groupId, CancellationToken cancellationToken)
+    {
+        if (!await IsCurrentUserAdminAsync(cancellationToken))
+            return RedirectToPage("/Index");
+
+        await _groupService.DeleteGroupAsync(groupId, cancellationToken);
+        SuccessMessage = "Group deleted successfully.";
+
+        Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
+        AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+        return Page();
+    }
 }

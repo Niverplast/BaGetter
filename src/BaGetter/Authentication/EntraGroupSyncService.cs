@@ -126,14 +126,6 @@ public class EntraGroupSyncService
 
         if (isInAdminGroup)
         {
-            // Ensure the admin group exists in our database
-            var adminGroup = await _groupService.FindByEntraGroupIdAsync(adminGroupId, cancellationToken);
-            if (adminGroup == null)
-            {
-                _logger.LogInformation("Creating admin group for Entra group ID {AdminGroupId}", adminGroupId);
-                adminGroup = await _groupService.CreateGroupAsync("BaGetter Admins", adminGroupId, "Administrators synced from Entra", cancellationToken);
-            }
-
             // Grant admin permission on the user if not already granted
             var isAdmin = await _userService.IsAdminAsync(user.Id, cancellationToken);
             if (!isAdmin)

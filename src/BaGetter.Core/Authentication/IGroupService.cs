@@ -17,4 +17,5 @@ public interface IGroupService
     Task AddUserToGroupAsync(Guid userId, Guid groupId, CancellationToken cancellationToken);
     Task RemoveUserFromGroupAsync(Guid userId, Guid groupId, CancellationToken cancellationToken);
     Task SyncEntraGroupMembershipsAsync(Guid userId, IReadOnlyList<string> entraGroupIds, CancellationToken cancellationToken);
+    Task DeleteGroupAsync(Guid groupId, CancellationToken cancellationToken);
 }
