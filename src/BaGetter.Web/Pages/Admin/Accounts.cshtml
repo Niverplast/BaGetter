@@ -2,11 +2,11 @@
 @model BaGetter.Web.Pages.Admin.AccountsModel
 
 @{
-    ViewData["Title"] = "Local Accounts";
+    ViewData["Title"] = "Accounts";
 }
 
 <div class="col-sm-12">
-    <h1>Local Accounts</h1>
+    <h1>Accounts</h1>
     <hr class="breadcrumb-divider" />
 
     @if (!string.IsNullOrEmpty(Model.SuccessMessage))
@@ -61,6 +61,7 @@
                     <th>Username</th>
                     <th>Display Name</th>
                     <th>Provider</th>
+                    <th>Groups</th>
                     <th>Enabled</th>
                     <th>UI Login</th>
                     <th>Created</th>
@@ -81,6 +82,27 @@
                             else
                             {
                                 <span class="label label-default">Local</span>
+                            }
+                        </td>
+                        <td>
+                            @if (Model.UserGroupMemberships.TryGetValue(user.Id, out var groups) && groups.Count > 0)
+                            {
+                                @foreach (var group in groups)
+                                {
+                                    var isRoleSynced = !string.IsNullOrEmpty(group.AppRoleValue);
+                                    if (isRoleSynced)
+                                    {
+                                        <span class="label label-primary" title="Role-synced via '@group.AppRoleValue'">@group.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="label label-default" title="Manual membership">@group.Name</span>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">None</span>
                             }
                         </td>
                         <td>

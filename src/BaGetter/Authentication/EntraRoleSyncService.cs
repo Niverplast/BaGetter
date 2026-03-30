@@ -12,32 +12,32 @@ using Microsoft.Extensions.Options;
 namespace BaGetter.Authentication;
 
 /// <summary>
-/// Handles user provisioning and Entra group synchronization on OIDC token validation.
+/// Handles user provisioning and App Role-based group synchronization on OIDC token validation.
 /// </summary>
-public class EntraGroupSyncService
+public class EntraRoleSyncService
 {
+    private const string AdminRoleValue = "Admin";
+
     private readonly IUserService _userService;
     private readonly IGroupService _groupService;
-    private readonly IPermissionService _permissionService;
     private readonly IOptions<BaGetterOptions> _options;
-    private readonly ILogger<EntraGroupSyncService> _logger;
+    private readonly ILogger<EntraRoleSyncService> _logger;
 
-    public EntraGroupSyncService(
+    public EntraRoleSyncService(
         IUserService userService,
         IGroupService groupService,
-        IPermissionService permissionService,
         IOptions<BaGetterOptions> options,
-        ILogger<EntraGroupSyncService> logger)
+        ILogger<EntraRoleSyncService> logger)
     {
         _userService = userService;
         _groupService = groupService;
-        _permissionService = permissionService;
         _options = options;
         _logger = logger;
     }
 
     /// <summary>
-    /// Provisions or updates a user from Entra ID claims and syncs group memberships.
+    /// Provisions or updates a user from Entra ID claims, syncs admin status and
+    /// group memberships based on App Roles in the token.
     /// Called from the OnTokenValidated OIDC event.
     /// </summary>
     public async Task OnTokenValidatedAsync(ClaimsPrincipal principal, CancellationToken cancellationToken)
@@ -68,7 +68,6 @@ public class EntraGroupSyncService
         }
         else
         {
-            // Update display name if changed
             var changed = false;
             if (user.DisplayName != displayName) { user.DisplayName = displayName; changed = true; }
             if (user.Username != username) { user.Username = username; changed = true; }
@@ -82,63 +81,37 @@ public class EntraGroupSyncService
 
         if (!user.IsEnabled)
         {
-            _logger.LogWarning("Entra user {Username} is disabled, skipping group sync", user.Username);
+            _logger.LogWarning("Entra user {Username} is disabled, skipping role sync", user.Username);
             return;
         }
 
-        // Sync group memberships from the 'groups' claim
-        var groupClaims = principal.FindAll("groups").Select(c => c.Value).ToList();
-        if (groupClaims.Count > 0)
+        // Read roles claim from the token
+        var roleClaim = _options.Value.Authentication?.Entra?.RoleClaim ?? "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+        var roles = principal.FindAll(roleClaim).Select(c => c.Value).ToList();
+
+        // Bidirectional admin sync: grant or revoke based on token
+        var hasAdminRole = roles.Contains(AdminRoleValue, StringComparer.OrdinalIgnoreCase);
+        if (hasAdminRole != user.IsAdmin)
         {
-            await _groupService.SyncEntraGroupMembershipsAsync(user.Id, groupClaims, cancellationToken);
+            _logger.LogInformation(
+                "{Action} admin for Entra user {Username} based on App Role",
+                hasAdminRole ? "Granting" : "Revoking", user.Username);
+            await _userService.SetAdminAsync(user.Id, hasAdminRole, cancellationToken);
         }
 
-        // Check if user is in the admin group and grant admin permissions
-        await EnsureAdminGroupPermissionsAsync(user, groupClaims, cancellationToken);
+        // Sync group memberships from App Roles (full bidirectional reconciliation)
+        await _groupService.SyncAppRoleMembershipsAsync(user.Id, roles, cancellationToken);
 
         // Add BaGetter-specific claims to the principal
         var identity = principal.Identity as ClaimsIdentity;
         if (identity != null)
         {
-            // Remove any existing NameIdentifier claims (e.g. the Entra 'sub' value)
-            // so that FindFirst(NameIdentifier) always returns the BaGetter user ID.
             var existing = identity.FindAll(ClaimTypes.NameIdentifier).ToList();
             foreach (var c in existing)
                 identity.RemoveClaim(c);
 
             identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
             identity.AddClaim(new Claim("auth_provider", AuthProvider.Entra.ToString()));
-        }
-    }
-
-    private async Task EnsureAdminGroupPermissionsAsync(
-        User user,
-        System.Collections.Generic.List<string> entraGroupIds,
-        CancellationToken cancellationToken)
-    {
-        var adminGroupId = _options.Value.Authentication?.Entra?.AdminGroupId;
-        if (string.IsNullOrEmpty(adminGroupId))
-            return;
-
-        // Check if the user's Entra group claims contain the configured admin group ID
-        var isInAdminGroup = entraGroupIds.Contains(adminGroupId, StringComparer.OrdinalIgnoreCase);
-
-        if (isInAdminGroup)
-        {
-            // Grant admin permission on the user if not already granted
-            var isAdmin = await _userService.IsAdminAsync(user.Id, cancellationToken);
-            if (!isAdmin)
-            {
-                _logger.LogInformation("Granting admin permissions to Entra user {Username} via group ID {AdminGroupId}",
-                    user.Username, adminGroupId);
-                await _userService.SetAdminAsync(user.Id, true, cancellationToken);
-
-                // Also ensure pull/push permissions on the default feed
-                await _permissionService.GrantPermissionAsync(
-                    user.Id, PrincipalType.User, "default",
-                    canPush: true, canPull: true,
-                    cancellationToken);
-            }
         }
     }
 }

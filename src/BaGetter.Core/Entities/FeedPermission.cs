@@ -10,4 +10,5 @@ public class FeedPermission
     public Guid PrincipalId { get; set; }
     public bool CanPush { get; set; }
     public bool CanPull { get; set; }
+    public PermissionSource Source { get; set; }
 }

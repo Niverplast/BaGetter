@@ -30,15 +30,15 @@ public class GroupService : IGroupService
         return await _context.Groups.FirstOrDefaultAsync(g => g.Name == name, cancellationToken);
     }
 
-    public async Task<Group> FindByEntraGroupIdAsync(string entraGroupId, CancellationToken cancellationToken)
+    public async Task<Group> FindByAppRoleValueAsync(string appRoleValue, CancellationToken cancellationToken)
     {
         return await _context.Groups.FirstOrDefaultAsync(
-            g => g.EntraGroupId == entraGroupId, cancellationToken);
+            g => g.AppRoleValue == appRoleValue, cancellationToken);
     }
 
     public async Task<Group> CreateGroupAsync(
         string name,
-        string entraGroupId,
+        string appRoleValue,
         string description,
         CancellationToken cancellationToken)
     {
@@ -46,7 +46,7 @@ public class GroupService : IGroupService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            EntraGroupId = entraGroupId,
+            AppRoleValue = appRoleValue,
             Description = description,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -60,7 +60,10 @@ public class GroupService : IGroupService
 
     public async Task<List<Group>> GetAllGroupsAsync(CancellationToken cancellationToken)
     {
-        return await _context.Groups.ToListAsync(cancellationToken);
+        return await _context.Groups
+            .Include(g => g.UserGroups)
+            .ThenInclude(ug => ug.User)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<List<Group>> GetUserGroupsAsync(Guid userId, CancellationToken cancellationToken)
@@ -73,6 +76,12 @@ public class GroupService : IGroupService
 
     public async Task AddUserToGroupAsync(Guid userId, Guid groupId, CancellationToken cancellationToken)
     {
+        if (!await CanManuallyModifyMembershipAsync(groupId, userId, cancellationToken))
+        {
+            throw new InvalidOperationException(
+                "Cannot manually add an Entra user to a role-linked group. Membership is managed by App Roles.");
+        }
+
         var exists = await _context.UserGroups
             .AnyAsync(ug => ug.UserId == userId && ug.GroupId == groupId, cancellationToken);
 
@@ -90,6 +99,12 @@ public class GroupService : IGroupService
 
     public async Task RemoveUserFromGroupAsync(Guid userId, Guid groupId, CancellationToken cancellationToken)
     {
+        if (!await CanManuallyModifyMembershipAsync(groupId, userId, cancellationToken))
+        {
+            throw new InvalidOperationException(
+                "Cannot manually remove an Entra user from a role-linked group. Membership is managed by App Roles.");
+        }
+
         var membership = await _context.UserGroups
             .FirstOrDefaultAsync(ug => ug.UserId == userId && ug.GroupId == groupId, cancellationToken);
 
@@ -100,29 +115,30 @@ public class GroupService : IGroupService
         _logger.LogInformation("Removed user {UserId} from group {GroupId}", userId, groupId);
     }
 
-    public async Task SyncEntraGroupMembershipsAsync(
+    public async Task SyncAppRoleMembershipsAsync(
         Guid userId,
-        IReadOnlyList<string> entraGroupIds,
+        IReadOnlyList<string> appRoleValues,
         CancellationToken cancellationToken)
     {
-        // Get all Entra-linked groups the user is currently a member of
+        // Get all role-linked groups the user is currently a member of
         var currentMemberships = await _context.UserGroups
-            .Where(ug => ug.UserId == userId && ug.Group.EntraGroupId != null)
+            .Where(ug => ug.UserId == userId && ug.Group.AppRoleValue != null)
             .Include(ug => ug.Group)
             .ToListAsync(cancellationToken);
 
-        var currentEntraGroupIds = currentMemberships
-            .Select(ug => ug.Group.EntraGroupId)
+        var currentAppRoleValues = currentMemberships
+            .Select(ug => ug.Group.AppRoleValue)
             .ToHashSet();
 
-        // Add memberships for new Entra groups
-        foreach (var entraGroupId in entraGroupIds)
+        // Add memberships for new App Roles
+        var appRoleValueSet = appRoleValues.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var appRoleValue in appRoleValueSet)
         {
-            if (currentEntraGroupIds.Contains(entraGroupId)) continue;
+            if (currentAppRoleValues.Contains(appRoleValue)) continue;
 
-            var group = await FindByEntraGroupIdAsync(entraGroupId, cancellationToken);
+            var group = await FindByAppRoleValueAsync(appRoleValue, cancellationToken);
             if (group == null)
-                continue;   // group not configured in BaGetter, skip
+                continue;   // no group linked to this role, skip
 
             _context.UserGroups.Add(new UserGroup
             {
@@ -131,19 +147,38 @@ public class GroupService : IGroupService
             });
         }
 
-        // Remove memberships for Entra groups the user is no longer in
-        var entraGroupIdSet = entraGroupIds.ToHashSet();
+        // Remove memberships for role-linked groups whose role is no longer in the token
         foreach (var membership in currentMemberships)
         {
-            if (!entraGroupIdSet.Contains(membership.Group.EntraGroupId))
+            if (!appRoleValueSet.Contains(membership.Group.AppRoleValue))
             {
                 _context.UserGroups.Remove(membership);
             }
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Synced Entra group memberships for user {UserId}: {GroupCount} groups",
-            userId, entraGroupIds.Count);
+        _logger.LogInformation("Synced App Role memberships for user {UserId}: {RoleCount} roles",
+            userId, appRoleValues.Count);
+    }
+
+    public async Task<bool> IsRoleLinkedGroupAsync(Guid groupId, CancellationToken cancellationToken)
+    {
+        var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
+        return group?.AppRoleValue != null;
+    }
+
+    public async Task<bool> CanManuallyModifyMembershipAsync(Guid groupId, Guid userId, CancellationToken cancellationToken)
+    {
+        var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
+        if (group?.AppRoleValue == null)
+            return true; // Manually-managed group: always allow
+
+        // Role-linked group: only allow for local users
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user == null)
+            return false;
+
+        return user.AuthProvider != AuthProvider.Entra;
     }
 
     public async Task DeleteGroupAsync(Guid groupId, CancellationToken cancellationToken)

@@ -49,6 +49,11 @@ namespace BaGetter.Database.SqlServer.Migrations
                     b.Property<int>("PrincipalType")
                         .HasColumnType("int");
 
+                    b.Property<int>("Source")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("FeedId", "PrincipalType", "PrincipalId")
@@ -63,6 +68,10 @@ namespace BaGetter.Database.SqlServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AppRoleValue")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -70,16 +79,15 @@ namespace BaGetter.Database.SqlServer.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<string>("EntraGroupId")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppRoleValue")
+                        .IsUnique();
 
                     b.HasIndex("Name")
                         .IsUnique();

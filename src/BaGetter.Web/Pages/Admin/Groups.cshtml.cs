@@ -39,7 +39,7 @@ public class GroupsModel : PageModel
 
     [BindProperty]
     [MaxLength(128)]
-    public string NewEntraGroupId { get; set; }
+    public string NewAppRoleValue { get; set; }
 
     [BindProperty]
     [MaxLength(4000)]
@@ -94,7 +94,7 @@ public class GroupsModel : PageModel
 
         await _groupService.CreateGroupAsync(
             NewGroupName,
-            string.IsNullOrWhiteSpace(NewEntraGroupId) ? null : NewEntraGroupId,
+            string.IsNullOrWhiteSpace(NewAppRoleValue) ? null : NewAppRoleValue.Trim(),
             NewDescription,
             cancellationToken);
 
@@ -110,6 +110,14 @@ public class GroupsModel : PageModel
         if (!await IsCurrentUserAdminAsync(cancellationToken))
             return RedirectToPage("/Index");
 
+        if (!await _groupService.CanManuallyModifyMembershipAsync(groupId, userId, cancellationToken))
+        {
+            ErrorMessage = "Cannot manually add Entra users to role-linked groups. Membership is managed by Azure AD App Roles.";
+            Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
+            AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+            return Page();
+        }
+
         await _groupService.AddUserToGroupAsync(userId, groupId, cancellationToken);
 
         return RedirectToPage();
@@ -120,6 +128,14 @@ public class GroupsModel : PageModel
     {
         if (!await IsCurrentUserAdminAsync(cancellationToken))
             return RedirectToPage("/Index");
+
+        if (!await _groupService.CanManuallyModifyMembershipAsync(groupId, userId, cancellationToken))
+        {
+            ErrorMessage = "Cannot manually remove Entra users from role-linked groups. Membership is managed by Azure AD App Roles.";
+            Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
+            AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+            return Page();
+        }
 
         await _groupService.RemoveUserFromGroupAsync(userId, groupId, cancellationToken);
 

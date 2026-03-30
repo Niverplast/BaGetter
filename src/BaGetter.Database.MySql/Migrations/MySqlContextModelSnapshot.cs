@@ -50,6 +50,11 @@ namespace BaGetter.Database.MySql.Migrations
                     b.Property<int>("PrincipalType")
                         .HasColumnType("int");
 
+                    b.Property<int>("Source")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("FeedId", "PrincipalType", "PrincipalId")
@@ -64,6 +69,10 @@ namespace BaGetter.Database.MySql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("AppRoleValue")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
@@ -71,16 +80,15 @@ namespace BaGetter.Database.MySql.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("varchar(4000)");
 
-                    b.Property<string>("EntraGroupId")
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppRoleValue")
+                        .IsUnique();
 
                     b.HasIndex("Name")
                         .IsUnique();

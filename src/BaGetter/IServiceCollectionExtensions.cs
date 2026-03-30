@@ -108,7 +108,7 @@ internal static class IServiceCollectionExtensions
             options.SlidingExpiration = true;
         });
 
-        // Configure the OIDC options for group claims and token validated handler
+        // Configure the OIDC options for App Role-based authentication
         app.Services.Configure<OpenIdConnectOptions>(AuthenticationConstants.EntraOidcScheme, options =>
         {
             // Use authorization code flow instead of implicit flow so that
@@ -116,8 +116,8 @@ internal static class IServiceCollectionExtensions
             // in the Azure app registration.
             options.ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseType.Code;
 
-            // Request the 'groups' claim in the ID token
             options.TokenValidationParameters.NameClaimType = "name";
+            options.TokenValidationParameters.RoleClaimType = "roles";
 
             options.Events ??= new OpenIdConnectEvents();
             var existingOnTokenValidated = options.Events.OnTokenValidated;
@@ -127,12 +127,12 @@ internal static class IServiceCollectionExtensions
                 if (existingOnTokenValidated != null)
                     await existingOnTokenValidated(context);
 
-                var syncService = context.HttpContext.RequestServices.GetRequiredService<EntraGroupSyncService>();
+                var syncService = context.HttpContext.RequestServices.GetRequiredService<EntraRoleSyncService>();
                 await syncService.OnTokenValidatedAsync(context.Principal, context.HttpContext.RequestAborted);
             };
         });
 
-        app.Services.AddScoped<EntraGroupSyncService>();
+        app.Services.AddScoped<EntraRoleSyncService>();
 
         return app;
     }

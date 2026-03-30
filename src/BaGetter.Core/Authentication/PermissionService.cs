@@ -37,7 +37,8 @@ public class PermissionService : IPermissionService
         string feedId,
         bool canPush,
         bool canPull,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        PermissionSource source = PermissionSource.Manual)
     {
         var existing = await _context.FeedPermissions.FirstOrDefaultAsync(
             p => p.FeedId == feedId && p.PrincipalType == principalType && p.PrincipalId == principalId,
@@ -47,6 +48,7 @@ public class PermissionService : IPermissionService
         {
             existing.CanPush = canPush;
             existing.CanPull = canPull;
+            existing.Source = source;
         }
         else
         {
@@ -57,14 +59,39 @@ public class PermissionService : IPermissionService
                 PrincipalType = principalType,
                 PrincipalId = principalId,
                 CanPush = canPush,
-                CanPull = canPull
+                CanPull = canPull,
+                Source = source
             });
         }
 
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation(
-            "Audit: {EventType} - Granted permission on feed {FeedId} to {PrincipalType} {PrincipalId}: Push={CanPush}, Pull={CanPull}",
-            "PermissionGranted", feedId, principalType, principalId, canPush, canPull);
+            "Audit: {EventType} - Granted permission on feed {FeedId} to {PrincipalType} {PrincipalId}: Push={CanPush}, Pull={CanPull}, Source={Source}",
+            "PermissionGranted", feedId, principalType, principalId, canPush, canPull, source);
+    }
+
+    public async Task RevokePermissionsBySourceAsync(
+        Guid principalId,
+        PrincipalType principalType,
+        string feedId,
+        PermissionSource source,
+        CancellationToken cancellationToken)
+    {
+        var permissions = await _context.FeedPermissions
+            .Where(p => p.FeedId == feedId
+                     && p.PrincipalType == principalType
+                     && p.PrincipalId == principalId
+                     && p.Source == source)
+            .ToListAsync(cancellationToken);
+
+        if (permissions.Count == 0) return;
+
+        _context.FeedPermissions.RemoveRange(permissions);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Audit: {EventType} - Revoked {Count} {Source} permissions on feed {FeedId} for {PrincipalType} {PrincipalId}",
+            "PermissionRevoked", permissions.Count, source, feedId, principalType, principalId);
     }
 
     public async Task RevokePermissionAsync(Guid permissionId, CancellationToken cancellationToken)

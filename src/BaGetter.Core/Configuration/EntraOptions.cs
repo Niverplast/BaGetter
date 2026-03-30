@@ -32,8 +32,8 @@ public class EntraOptions
     public string CallbackPath { get; set; } = "/signin-oidc";
 
     /// <summary>
-    /// The Entra ID group ID (object ID) whose members are granted administrator access.
-    /// This should be the GUID of the Entra group, as returned in the 'groups' token claim.
+    /// The claim name in the token that contains App Role values.
+    /// Defaults to "roles".
     /// </summary>
-    public string AdminGroupId { get; set; }
+    public string RoleClaim { get; set; } = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 }

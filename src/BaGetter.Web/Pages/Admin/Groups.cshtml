@@ -1,4 +1,5 @@
 @page
+@using System.Linq
 @model BaGetter.Web.Pages.Admin.GroupsModel
 
 @{
@@ -30,8 +31,9 @@
                     <span asp-validation-for="NewGroupName" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="NewEntraGroupId">Entra Group ID (optional)</label>
-                    <input asp-for="NewEntraGroupId" class="form-control" placeholder="Azure AD Group Object ID" />
+                    <label asp-for="NewAppRoleValue">App Role Value (optional)</label>
+                    <input asp-for="NewAppRoleValue" class="form-control" placeholder="Azure App Role value, e.g. TeamFrontend" />
+                    <small class="text-muted">Enter an Azure App Role value to automatically sync members. Leave empty for manual membership management.</small>
                 </div>
                 <div class="form-group">
                     <label asp-for="NewDescription">Description</label>
@@ -55,10 +57,10 @@
                 <div class="panel-heading">
                     <h4 class="panel-title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         @group.Name
-                        @if (!string.IsNullOrEmpty(group.EntraGroupId))
+                        @if (!string.IsNullOrEmpty(group.AppRoleValue))
                         {
-                            <small class="text-muted">(Entra: @group.EntraGroupId)</small>
-                            <span class="label label-primary">Entra-synced</span>
+                            <small class="text-muted">(Role: @group.AppRoleValue)</small>
+                            <span class="label label-primary">Role-synced</span>
                         }
                         else
                         {
@@ -77,20 +79,36 @@
                     }
                 </div>
                 <div class="panel-body">
+                    @{
+                        var isRoleLinked = !string.IsNullOrEmpty(group.AppRoleValue);
+                    }
                     <h5>Members</h5>
+                    @if (isRoleLinked)
+                    {
+                        <p class="text-muted"><em>Membership for Entra users is managed by Azure AD App Roles. Local users can be added manually.</em></p>
+                    }
                     @if (group.UserGroups != null && group.UserGroups.Count > 0)
                     {
                         <ul class="list-inline">
                             @foreach (var ug in group.UserGroups)
                             {
+                                var isEntraUser = ug.User?.AuthProvider == BaGetter.Core.Entities.AuthProvider.Entra;
+                                var canRemove = !isRoleLinked || !isEntraUser;
                                 <li>
-                                    <span class="label label-info">@ug.User?.Username</span>
-                                    <form method="post" asp-page-handler="RemoveUser" style="display:inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="groupId" value="@group.Id" />
-                                        <input type="hidden" name="userId" value="@ug.UserId" />
-                                        <button type="submit" class="btn btn-xs btn-link text-danger" title="Remove">x</button>
-                                    </form>
+                                    <span class="label @(isEntraUser ? "label-info" : "label-default")">@ug.User?.Username</span>
+                                    @if (isEntraUser && isRoleLinked)
+                                    {
+                                        <span class="label label-primary" style="font-size:9px" title="Synced via App Role '@group.AppRoleValue'">synced</span>
+                                    }
+                                    @if (canRemove)
+                                    {
+                                        <form method="post" asp-page-handler="RemoveUser" style="display:inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="groupId" value="@group.Id" />
+                                            <input type="hidden" name="userId" value="@ug.UserId" />
+                                            <button type="submit" class="btn btn-xs btn-link text-danger" title="Remove">x</button>
+                                        </form>
+                                    }
                                 </li>
                             }
                         </ul>
@@ -100,19 +118,27 @@
                         <p class="text-muted">No members</p>
                     }
 
-                    <form method="post" asp-page-handler="AddUser" class="form-inline" style="margin-top:8px">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="groupId" value="@group.Id" />
-                        <div class="form-group">
-                            <select name="userId" class="form-control input-sm">
-                                @foreach (var user in Model.AllUsers)
-                                {
-                                    <option value="@user.Id">@user.Username (@user.AuthProvider)</option>
-                                }
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-xs btn-success">Add Member</button>
-                    </form>
+                    @{
+                        var addableUsers = isRoleLinked
+                            ? Model.AllUsers.Where(u => u.AuthProvider != BaGetter.Core.Entities.AuthProvider.Entra).ToList()
+                            : Model.AllUsers;
+                    }
+                    @if (addableUsers.Any())
+                    {
+                        <form method="post" asp-page-handler="AddUser" class="form-inline" style="margin-top:8px">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="groupId" value="@group.Id" />
+                            <div class="form-group">
+                                <select name="userId" class="form-control input-sm">
+                                    @foreach (var user in addableUsers)
+                                    {
+                                        <option value="@user.Id">@user.Username (@user.AuthProvider)</option>
+                                    }
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-xs btn-success">Add Member</button>
+                        </form>
+                    }
 
                     <h5 style="margin-top:16px">Feed Permissions</h5>
                     <form method="post" asp-page-handler="GrantPermission" class="form-inline">

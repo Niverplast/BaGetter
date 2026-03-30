@@ -195,6 +195,123 @@ public class PermissionServiceTests
         }
     }
 
+    public class GrantPermissionWithSourceAsync : FactsBase
+    {
+        [Fact]
+        public async Task DefaultsToManualSource()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "defaultsource");
+
+            await _target.GrantPermissionAsync(
+                userId, PrincipalType.User, "default",
+                canPush: true, canPull: true, _ct);
+
+            var perm = await _context.FeedPermissions
+                .FirstOrDefaultAsync(p => p.PrincipalId == userId, _ct);
+            Assert.NotNull(perm);
+            Assert.Equal(PermissionSource.Manual, perm.Source);
+        }
+
+        [Fact]
+        public async Task SetsEntraRoleSource()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "entrasource");
+
+            await _target.GrantPermissionAsync(
+                userId, PrincipalType.User, "default",
+                canPush: true, canPull: true, _ct,
+                source: PermissionSource.EntraRole);
+
+            var perm = await _context.FeedPermissions
+                .FirstOrDefaultAsync(p => p.PrincipalId == userId, _ct);
+            Assert.NotNull(perm);
+            Assert.Equal(PermissionSource.EntraRole, perm.Source);
+        }
+
+        [Fact]
+        public async Task UpdateExistingPermissionUpdatesSource()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "updatesource");
+
+            await _target.GrantPermissionAsync(
+                userId, PrincipalType.User, "default",
+                canPush: true, canPull: false, _ct);
+
+            await _target.GrantPermissionAsync(
+                userId, PrincipalType.User, "default",
+                canPush: true, canPull: true, _ct,
+                source: PermissionSource.EntraRole);
+
+            var perm = await _context.FeedPermissions
+                .FirstOrDefaultAsync(p => p.PrincipalId == userId, _ct);
+            Assert.Equal(PermissionSource.EntraRole, perm.Source);
+        }
+    }
+
+    public class RevokePermissionsBySourceAsync : FactsBase
+    {
+        [Fact]
+        public async Task RevokesOnlyMatchingSource()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "sourcerevoke");
+
+            // Create manual permission
+            await _target.GrantPermissionAsync(
+                userId, PrincipalType.User, "feed-a",
+                canPush: true, canPull: true, _ct,
+                source: PermissionSource.Manual);
+
+            // Create EntraRole permission
+            await _target.GrantPermissionAsync(
+                userId, PrincipalType.User, "feed-b",
+                canPush: true, canPull: true, _ct,
+                source: PermissionSource.EntraRole);
+
+            // Revoke only EntraRole permissions on feed-b
+            await _target.RevokePermissionsBySourceAsync(
+                userId, PrincipalType.User, "feed-b", PermissionSource.EntraRole, _ct);
+
+            // Manual permission on feed-a should still exist
+            Assert.True(await _target.CanPushAsync(userId, "feed-a", _ct));
+            // EntraRole permission on feed-b should be revoked
+            Assert.False(await _target.CanPushAsync(userId, "feed-b", _ct));
+        }
+
+        [Fact]
+        public async Task DoesNothingWhenNoMatchingPermissions()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "nomatch");
+
+            await _target.RevokePermissionsBySourceAsync(
+                userId, PrincipalType.User, "default", PermissionSource.EntraRole, _ct);
+
+            // No exception
+        }
+    }
+
+    public class HasPermissionWorksForBothSources : FactsBase
+    {
+        [Fact]
+        public async Task EntraRolePermissionGrantsAccess()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "entraaccesstest");
+
+            await _target.GrantPermissionAsync(
+                userId, PrincipalType.User, "default",
+                canPush: true, canPull: true, _ct,
+                source: PermissionSource.EntraRole);
+
+            Assert.True(await _target.CanPushAsync(userId, "default", _ct));
+            Assert.True(await _target.CanPullAsync(userId, "default", _ct));
+        }
+    }
+
     public class FactsBase : IDisposable
     {
         protected readonly TestDbContext _context;

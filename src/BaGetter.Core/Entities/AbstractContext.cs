@@ -30,7 +30,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
     public const int MaxTokenHashLength = 128;
     public const int MaxTokenPrefixLength = 8;
     public const int MaxGroupNameLength = 256;
-    public const int MaxEntraGroupIdLength = 128;
+    public const int MaxAppRoleValueLength = 128;
     public const int MaxFeedIdLength = 128;
 
     protected AbstractContext(DbContextOptions<TContext> efOptions)
@@ -268,8 +268,12 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
             .HasMaxLength(MaxGroupNameLength)
             .IsRequired();
 
-        group.Property(g => g.EntraGroupId)
-            .HasMaxLength(MaxEntraGroupIdLength);
+        group.Property(g => g.AppRoleValue)
+            .HasMaxLength(MaxAppRoleValueLength);
+
+        group.HasIndex(g => g.AppRoleValue)
+            .IsUnique()
+            .HasFilter(null);
 
         group.Property(g => g.Description)
             .HasMaxLength(DefaultMaxStringLength);
@@ -300,5 +304,6 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         permission.Property(p => p.PrincipalId).IsRequired();
         permission.Property(p => p.CanPush).IsRequired().HasDefaultValue(false);
         permission.Property(p => p.CanPull).IsRequired().HasDefaultValue(false);
+        permission.Property(p => p.Source).IsRequired().HasDefaultValue(PermissionSource.Manual);
     }
 }

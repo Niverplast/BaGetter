@@ -34,7 +34,7 @@ When `Mode` is `None` (or the `Authentication` section is omitted), BaGetter beh
 1. An Azure Entra ID (Azure AD) tenant
 2. An App Registration in your tenant
 3. A client secret for the App Registration
-4. (Optional) A security group for admin users
+4. (Optional) App Roles defined in the App Registration for role-based group sync
 
 ### Step 1: Create an App Registration
 
@@ -51,15 +51,26 @@ When `Mode` is `None` (or the `Authentication` section is omitted), BaGetter beh
 2. Add a description and expiration period
 3. Copy the secret **Value** immediately (it will not be shown again)
 
-### Step 3: Configure group claims (optional)
+### Step 3: Define App Roles (recommended)
 
-To enable group-based admin permissions:
+App Roles allow you to manage admin access and group memberships through Azure AD instead of manually in BaGetter. Roles appear in the `roles` claim of the ID token.
 
-1. In your App Registration, go to **Token configuration** > **Add groups claim**
-2. Select **Security groups**
-3. Under the **ID** token type, ensure **Group ID** is selected
-4. Click **Add**
-5. Create a security group in Entra ID (e.g., "BaGetter Admins") and add your admin users to it
+1. In your App Registration, go to **App roles** > **Create app role**
+2. Create roles matching your team structure:
+
+| Display Name | Value | Allowed Member Types | Description |
+|---|---|---|---|
+| Administrator | `Admin` | Users/Groups | Full admin access to BaGetter |
+| Frontend Team | `TeamFrontend` | Users/Groups | Auto-joins "Frontend Team" group |
+| Backend Team | `TeamBackend` | Users/Groups | Auto-joins "Backend Team" group |
+
+3. In **Enterprise Applications** > your app > **Users and groups**, assign users or Entra security groups to the appropriate App Roles.
+
+:::info
+
+The `Admin` App Role is special and hardcoded. Any user whose token contains a role with value `Admin` is automatically granted `IsAdmin = true` and full access to all feeds. This cannot be overridden. All other role values work through group membership and feed permissions.
+
+:::
 
 ### Step 4: Configure BaGetter
 
@@ -75,7 +86,7 @@ Add the Entra configuration to `appsettings.json`:
             "ClientId": "<your-client-id>",
             "ClientSecret": "<your-client-secret>",
             "CallbackPath": "/signin-oidc",
-            "AdminGroupName": "BaGetter Admins"
+            "RoleClaim": "roles"
         }
     }
 }
@@ -104,7 +115,7 @@ Authentication__Entra__ClientSecret=your-client-secret
 | `ClientId` | Yes | -- | The application (client) ID from your App Registration |
 | `ClientSecret` | Yes | -- | The client secret value |
 | `CallbackPath` | No | `/signin-oidc` | The OIDC callback path. Must match the redirect URI in your App Registration. |
-| `AdminGroupName` | No | -- | Name of the Entra ID group whose members are granted admin permissions on the default feed |
+| `RoleClaim` | No | `roles` | The token claim name to read App Roles from. Change only if your identity provider uses a non-standard claim name. |
 
 ### How Entra authentication works
 
@@ -113,9 +124,10 @@ When a user signs in via Entra ID:
 1. The user is redirected to Microsoft's login page
 2. After successful authentication, the OIDC token is validated
 3. BaGetter automatically provisions a local user record linked to the Entra Object ID
-4. Group memberships from the `groups` claim are synchronized
-5. If the user belongs to the configured `AdminGroupId` group, they are granted admin permissions on the default feed
-6. A session cookie (`BaGetter.Auth`) is issued with a 60-minute sliding expiration
+4. The `roles` claim is read from the token
+5. **Admin sync (bidirectional):** If the token contains the `Admin` role, `IsAdmin` is set to `true`. If not, `IsAdmin` is set to `false`. Admin status is always driven by the token — there is no way to persist admin for an Entra user outside of the App Role.
+6. **Group membership sync (full reconciliation):** The user is added to all BaGetter groups whose `AppRoleValue` matches a role in the token, and removed from role-linked groups whose role is no longer present. Manually-managed groups (no `AppRoleValue`) are never touched.
+7. A session cookie (`BaGetter.Auth`) is issued with a 60-minute sliding expiration
 
 ## Local accounts
 
@@ -206,7 +218,12 @@ Permissions are evaluated by the authorization handler on every NuGet API reques
 
 ### Group permissions
 
-Permissions can be assigned to groups. A user inherits permissions from all groups they belong to. When Entra ID is enabled, group memberships are automatically synchronized from the Entra `groups` claim on each sign-in.
+Permissions can be assigned to groups. A user inherits permissions from all groups they belong to. Groups come in two flavors:
+
+- **Role-linked groups** have an `AppRoleValue` set (e.g., `"TeamFrontend"`). Membership for Entra users is automatically synchronized from the token's `roles` claim on each sign-in. Admins cannot manually add or remove Entra users from these groups — membership is controlled exclusively by Azure AD App Role assignments. Local users can still be manually added.
+- **Manually-managed groups** have no `AppRoleValue`. Membership is managed entirely through the BaGetter admin UI for all user types.
+
+This design lets Azure AD control *who has what role*, while BaGetter controls *what each role grants* (per-feed push/pull permissions).
 
 ## Full configuration reference
 
@@ -220,7 +237,7 @@ Permissions can be assigned to groups. A user inherits permissions from all grou
             "ClientId": "<client-id>",
             "ClientSecret": "<client-secret>",
             "CallbackPath": "/signin-oidc",
-            "AdminGroupId": "<admin-group-object-id>"
+            "RoleClaim": "roles"
         },
         "MaxTokenExpiryDays": 365,
         "MaxFailedAttempts": 5,
@@ -258,7 +275,7 @@ All authentication settings can be provided via environment variables using the 
 | `Authentication__Entra__ClientId` | Application (client) ID |
 | `Authentication__Entra__ClientSecret` | Client secret |
 | `Authentication__Entra__CallbackPath` | OIDC callback path |
-| `Authentication__Entra__AdminGroupId` | Admin group object ID (GUID) |
+| `Authentication__Entra__RoleClaim` | Token claim name for App Roles (default: `roles`) |
 | `Authentication__MaxTokenExpiryDays` | Maximum PAT lifetime in days |
 | `Authentication__MaxFailedAttempts` | Failed login threshold for lockout |
 | `Authentication__LockoutMinutes` | Lockout duration in minutes |
@@ -281,7 +298,7 @@ services:
       - Authentication__Entra__TenantId=your-tenant-id
       - Authentication__Entra__ClientId=your-client-id
       - Authentication__Entra__CallbackPath=/signin-oidc
-      - Authentication__Entra__AdminGroupId=<admin-group-object-id>
+      - Authentication__Entra__RoleClaim=roles
     volumes:
       - bagetter-data:/srv/baget
     secrets:
@@ -320,13 +337,19 @@ This typically means the redirect URI in your Azure App Registration does not ma
 2. Your reverse proxy (if any) is forwarding the `Host` header and the `X-Forwarded-Proto` header correctly
 3. The application is using HTTPS in production
 
-### Group claims are missing from the token
+### App Roles are missing from the token
 
-If users are not getting admin permissions despite being in the configured admin group:
+If users are not getting admin permissions or group memberships despite being assigned App Roles:
 
-1. Verify that **group claims** are configured in the App Registration under **Token configuration**
-2. Check that the token includes the `groups` claim (use [jwt.ms](https://jwt.ms) to decode a token)
-3. If you have more than 150 groups in your tenant, Azure will return a groups overage claim instead of inline groups. Consider using application roles or filtering groups in the App Registration manifest.
+1. Verify that **App Roles** are defined in the App Registration under **App roles**
+2. Verify users are assigned to the roles in **Enterprise Applications** > your app > **Users and groups**
+3. Check that the token includes the `roles` claim (use [jwt.ms](https://jwt.ms) to decode a token)
+4. Ensure the `RoleClaim` config matches the claim name in your token (default: `roles`)
+5. Verify that BaGetter groups have the correct `AppRoleValue` set to match the role values in the token
+
+### Admin role not granting access
+
+The admin role value is hardcoded as `Admin` (case-sensitive). Verify your App Role in Azure AD has exactly `Admin` as the **Value** (not the display name).
 
 ### Local account is locked out
 

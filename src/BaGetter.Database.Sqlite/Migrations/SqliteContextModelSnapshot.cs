@@ -44,6 +44,11 @@ namespace BaGetter.Database.Sqlite.Migrations
                     b.Property<int>("PrincipalType")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Source")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("FeedId", "PrincipalType", "PrincipalId")
@@ -58,15 +63,15 @@ namespace BaGetter.Database.Sqlite.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("AppRoleValue")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EntraGroupId")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -75,6 +80,9 @@ namespace BaGetter.Database.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppRoleValue")
+                        .IsUnique();
 
                     b.HasIndex("Name")
                         .IsUnique();

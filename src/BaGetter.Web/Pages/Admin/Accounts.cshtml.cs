@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,13 +17,16 @@ namespace BaGetter.Web.Pages.Admin;
 public class AccountsModel : PageModel
 {
     private readonly IUserService _userService;
+    private readonly IGroupService _groupService;
 
-    public AccountsModel(IUserService userService)
+    public AccountsModel(IUserService userService, IGroupService groupService)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _groupService = groupService ?? throw new ArgumentNullException(nameof(groupService));
     }
 
     public List<User> Users { get; set; } = new();
+    public Dictionary<Guid, List<Group>> UserGroupMemberships { get; set; } = new();
 
     [BindProperty]
     [Required(ErrorMessage = "Username is required.")]
@@ -59,12 +63,23 @@ public class AccountsModel : PageModel
         return await _userService.IsAdminAsync(userId, cancellationToken);
     }
 
+    private async Task LoadUsersAndGroupsAsync(CancellationToken cancellationToken)
+    {
+        Users = await _userService.GetAllUsersAsync(cancellationToken);
+        var allGroups = await _groupService.GetAllGroupsAsync(cancellationToken);
+        UserGroupMemberships = allGroups
+            .Where(g => g.UserGroups != null)
+            .SelectMany(g => g.UserGroups.Select(ug => new { ug.UserId, Group = g }))
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Group).ToList());
+    }
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (!await IsCurrentUserAdminAsync(cancellationToken))
             return RedirectToPage("/Index");
 
-        Users = await _userService.GetAllUsersAsync(cancellationToken);
+        await LoadUsersAndGroupsAsync(cancellationToken);
         return Page();
     }
 
@@ -75,7 +90,7 @@ public class AccountsModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            Users = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadUsersAndGroupsAsync(cancellationToken);
             return Page();
         }
 
@@ -83,7 +98,7 @@ public class AccountsModel : PageModel
         if (existing != null)
         {
             ErrorMessage = $"Username '{NewUsername}' already exists.";
-            Users = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadUsersAndGroupsAsync(cancellationToken);
             return Page();
         }
 
@@ -96,7 +111,7 @@ public class AccountsModel : PageModel
             cancellationToken);
 
         SuccessMessage = $"Account '{NewUsername}' created successfully.";
-        Users = await _userService.GetAllUsersAsync(cancellationToken);
+        await LoadUsersAndGroupsAsync(cancellationToken);
         return Page();
     }
 
@@ -131,14 +146,14 @@ public class AccountsModel : PageModel
         if (string.IsNullOrEmpty(newPassword) || newPassword.Length < 12)
         {
             ErrorMessage = "Password must be at least 12 characters.";
-            Users = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadUsersAndGroupsAsync(cancellationToken);
             return Page();
         }
 
         await _userService.SetPasswordAsync(userId, newPassword, cancellationToken);
 
         SuccessMessage = "Password reset successfully.";
-        Users = await _userService.GetAllUsersAsync(cancellationToken);
+        await LoadUsersAndGroupsAsync(cancellationToken);
         return Page();
     }
 
@@ -152,14 +167,14 @@ public class AccountsModel : PageModel
         if (user == null)
         {
             ErrorMessage = "User not found.";
-            Users = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadUsersAndGroupsAsync(cancellationToken);
             return Page();
         }
 
         if (user.IsEnabled)
         {
             ErrorMessage = "Cannot delete an enabled account. Disable the account first.";
-            Users = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadUsersAndGroupsAsync(cancellationToken);
             return Page();
         }
 
@@ -167,7 +182,7 @@ public class AccountsModel : PageModel
         await _userService.DeleteUserAsync(userId, cancellationToken);
 
         SuccessMessage = $"Account '{username}' has been deleted.";
-        Users = await _userService.GetAllUsersAsync(cancellationToken);
+        await LoadUsersAndGroupsAsync(cancellationToken);
         return Page();
     }
 }

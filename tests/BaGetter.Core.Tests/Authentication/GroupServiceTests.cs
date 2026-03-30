@@ -58,25 +58,25 @@ public class GroupServiceTests
         }
     }
 
-    public class FindByEntraGroupIdAsync : FactsBase
+    public class FindByAppRoleValueAsync : FactsBase
     {
         [Fact]
         public async Task ReturnsNullWhenNotFound()
         {
-            var result = await _target.FindByEntraGroupIdAsync("no-such-id", _ct);
+            var result = await _target.FindByAppRoleValueAsync("no-such-role", _ct);
 
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task ReturnsGroupByEntraGroupId()
+        public async Task ReturnsGroupByAppRoleValue()
         {
-            await _target.CreateGroupAsync("EntraGroup", "entra-gid-1", "desc", _ct);
+            await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", "desc", _ct);
 
-            var result = await _target.FindByEntraGroupIdAsync("entra-gid-1", _ct);
+            var result = await _target.FindByAppRoleValueAsync("TeamFrontend", _ct);
 
             Assert.NotNull(result);
-            Assert.Equal("EntraGroup", result.Name);
+            Assert.Equal("RoleGroup", result.Name);
         }
     }
 
@@ -85,11 +85,11 @@ public class GroupServiceTests
         [Fact]
         public async Task CreatesGroupWithCorrectProperties()
         {
-            var result = await _target.CreateGroupAsync("NewGroup", "entra-id-1", "A description", _ct);
+            var result = await _target.CreateGroupAsync("NewGroup", "TeamFrontend", "A description", _ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("NewGroup", result.Name);
-            Assert.Equal("entra-id-1", result.EntraGroupId);
+            Assert.Equal("TeamFrontend", result.AppRoleValue);
             Assert.Equal("A description", result.Description);
             Assert.True(result.CreatedAtUtc <= DateTime.UtcNow);
         }
@@ -144,6 +144,28 @@ public class GroupServiceTests
             var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
             Assert.Single(groups);
         }
+
+        [Fact]
+        public async Task ThrowsWhenAddingEntraUserToRoleLinkedGroup()
+        {
+            var user = await CreateUser("entrablock");
+            var group = await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, _ct);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _target.AddUserToGroupAsync(user.Id, group.Id, _ct));
+        }
+
+        [Fact]
+        public async Task AllowsAddingLocalUserToRoleLinkedGroup()
+        {
+            var user = await CreateLocalUser("localok");
+            var group = await _target.CreateGroupAsync("RoleGroup", "TeamBackend", null, _ct);
+
+            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
+
+            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            Assert.Single(groups);
+        }
     }
 
     public class RemoveUserFromGroupAsync : FactsBase
@@ -159,6 +181,16 @@ public class GroupServiceTests
 
             var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
             Assert.Empty(groups);
+        }
+
+        [Fact]
+        public async Task ThrowsWhenRemovingEntraUserFromRoleLinkedGroup()
+        {
+            var user = await CreateUser("entraremoveblock");
+            var group = await _target.CreateGroupAsync("RoleGroupR", "TeamFrontend", null, _ct);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _target.RemoveUserFromGroupAsync(user.Id, group.Id, _ct));
         }
 
         [Fact]
@@ -200,32 +232,34 @@ public class GroupServiceTests
         }
     }
 
-    public class SyncEntraGroupMembershipsAsync : FactsBase
+    public class SyncAppRoleMembershipsAsync : FactsBase
     {
         [Fact]
         public async Task AddsNewGroupMemberships()
         {
             var user = await CreateUser("syncuser");
-            var group = await _target.CreateGroupAsync("EntraSync", "entra-sync-1", null, _ct);
+            var group = await _target.CreateGroupAsync("RoleSync", "TeamFrontend", null, _ct);
 
-            await _target.SyncEntraGroupMembershipsAsync(
-                user.Id, new List<string> { "entra-sync-1" }, _ct);
+            await _target.SyncAppRoleMembershipsAsync(
+                user.Id, new List<string> { "TeamFrontend" }, _ct);
 
             var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
             Assert.Single(groups);
-            Assert.Equal("EntraSync", groups[0].Name);
+            Assert.Equal("RoleSync", groups[0].Name);
         }
 
         [Fact]
         public async Task RemovesOldGroupMemberships()
         {
             var user = await CreateUser("syncremove");
-            var group = await _target.CreateGroupAsync("OldGroup", "entra-old", null, _ct);
+            var group = await _target.CreateGroupAsync("OldGroup", "TeamBackend", null, _ct);
 
-            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
+            // Add membership directly (bypassing service-layer guard, simulating prior sync)
+            _context.UserGroups.Add(new UserGroup { UserId = user.Id, GroupId = group.Id });
+            await _context.SaveChangesAsync(_ct);
 
-            // Sync with empty list removes the Entra group membership
-            await _target.SyncEntraGroupMembershipsAsync(
+            // Sync with empty list removes the role-linked group membership
+            await _target.SyncAppRoleMembershipsAsync(
                 user.Id, new List<string>(), _ct);
 
             var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
@@ -233,18 +267,96 @@ public class GroupServiceTests
         }
 
         [Fact]
-        public async Task SkipsUnknownEntraGroupId()
+        public async Task SkipsUnknownAppRoleValue()
         {
             var user = await CreateUser("skipunknown");
 
-            await _target.SyncEntraGroupMembershipsAsync(
-                user.Id, new List<string> { "unknown-entra-gid" }, _ct);
+            await _target.SyncAppRoleMembershipsAsync(
+                user.Id, new List<string> { "UnknownRole" }, _ct);
 
-            var createdGroup = await _target.FindByEntraGroupIdAsync("unknown-entra-gid", _ct);
+            var createdGroup = await _target.FindByAppRoleValueAsync("UnknownRole", _ct);
             Assert.Null(createdGroup);
 
             var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
             Assert.Empty(groups);
+        }
+    }
+
+    public class IsRoleLinkedGroupAsync : FactsBase
+    {
+        [Fact]
+        public async Task ReturnsTrueForRoleLinkedGroup()
+        {
+            var group = await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, _ct);
+
+            var result = await _target.IsRoleLinkedGroupAsync(group.Id, _ct);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task ReturnsFalseForManualGroup()
+        {
+            var group = await _target.CreateGroupAsync("ManualGroup", null, null, _ct);
+
+            var result = await _target.IsRoleLinkedGroupAsync(group.Id, _ct);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ReturnsFalseForNonExistentGroup()
+        {
+            var result = await _target.IsRoleLinkedGroupAsync(Guid.NewGuid(), _ct);
+
+            Assert.False(result);
+        }
+    }
+
+    public class CanManuallyModifyMembershipAsync : FactsBase
+    {
+        [Fact]
+        public async Task ReturnsFalseForEntraUserOnRoleLinkedGroup()
+        {
+            var user = await CreateUser("entrauser");
+            var group = await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, _ct);
+
+            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ReturnsTrueForLocalUserOnRoleLinkedGroup()
+        {
+            var user = await CreateLocalUser("localuser");
+            var group = await _target.CreateGroupAsync("RoleGroup", "TeamBackend", null, _ct);
+
+            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task ReturnsTrueForEntraUserOnManualGroup()
+        {
+            var user = await CreateUser("entramanual");
+            var group = await _target.CreateGroupAsync("ManualGroup", null, null, _ct);
+
+            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task ReturnsTrueForLocalUserOnManualGroup()
+        {
+            var user = await CreateLocalUser("localmanual");
+            var group = await _target.CreateGroupAsync("ManualGroup", null, null, _ct);
+
+            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+
+            Assert.True(result);
         }
     }
 
@@ -345,6 +457,25 @@ public class GroupServiceTests
                 DisplayName = $"{username} Display",
                 AuthProvider = AuthProvider.Entra,
                 EntraObjectId = $"oid-{username}",
+                IsEnabled = true,
+                CanLoginToUI = true,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync(_ct);
+            return user;
+        }
+
+        protected async Task<User> CreateLocalUser(string username)
+        {
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = username,
+                DisplayName = $"{username} Display",
+                AuthProvider = AuthProvider.Local,
                 IsEnabled = true,
                 CanLoginToUI = true,
                 CreatedAtUtc = DateTime.UtcNow,
