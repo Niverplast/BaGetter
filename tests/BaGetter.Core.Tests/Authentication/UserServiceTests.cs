@@ -73,7 +73,7 @@ public class UserServiceTests
         public async Task ReturnsEntraUser()
         {
             var user = await _target.CreateEntraUserAsync(
-                "oid-123", "entrauser", "Entra User", "entra@test.com", _ct);
+                "oid-123", "entrauser", "Entra User", _ct);
 
             var result = await _target.FindByEntraObjectIdAsync("oid-123", _ct);
 
@@ -89,12 +89,11 @@ public class UserServiceTests
         public async Task CreatesEntraUserWithCorrectProperties()
         {
             var result = await _target.CreateEntraUserAsync(
-                "oid-abc", "entrauser", "Entra Display", "entra@example.com", _ct);
+                "oid-abc", "entrauser", "Entra Display", _ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("entrauser", result.Username);
             Assert.Equal("Entra Display", result.DisplayName);
-            Assert.Equal("entra@example.com", result.Email);
             Assert.Equal(AuthProvider.Entra, result.AuthProvider);
             Assert.Equal("oid-abc", result.EntraObjectId);
             Assert.True(result.IsEnabled);
@@ -109,7 +108,7 @@ public class UserServiceTests
         public async Task CreatesLocalUserWithHashedPassword()
         {
             var result = await _target.CreateLocalUserAsync(
-                "localuser", "Local User", "local@example.com", "MyPassword123!", true, _adminUserId, _ct);
+                "localuser", "Local User", "MyPassword123!", true, _adminUserId, _ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("localuser", result.Username);
@@ -148,7 +147,7 @@ public class UserServiceTests
         public async Task ReturnsFalseWhenNoPasswordHashSet()
         {
             var user = await _target.CreateEntraUserAsync(
-                "oid-1", "entrauser", "Entra", "e@test.com", _ct);
+                "oid-1", "entrauser", "Entra", _ct);
 
             var result = await _target.VerifyPasswordAsync(user, "anything");
 
@@ -391,7 +390,7 @@ public class UserServiceTests
         protected async Task<User> CreateLocalUser(string username, string password = "TestPassword123!")
         {
             return await _target.CreateLocalUserAsync(
-                username, $"{username} Display", $"{username}@test.com",
+                username, $"{username} Display",
                 password, true, _adminUserId, _ct);
         }
 

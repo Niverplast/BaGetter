@@ -64,14 +64,13 @@ public class EntraGroupSyncService
         if (user == null)
         {
             _logger.LogInformation("Provisioning new Entra user: {Username} (OID: {Oid})", username, oid);
-            user = await _userService.CreateEntraUserAsync(oid, username, displayName, email, cancellationToken);
+            user = await _userService.CreateEntraUserAsync(oid, username, displayName, cancellationToken);
         }
         else
         {
-            // Update display name and email if changed
+            // Update display name if changed
             var changed = false;
             if (user.DisplayName != displayName) { user.DisplayName = displayName; changed = true; }
-            if (user.Email != email) { user.Email = email; changed = true; }
             if (user.Username != username) { user.Username = username; changed = true; }
 
             if (changed)

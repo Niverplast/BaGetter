@@ -136,10 +136,6 @@ public class LoginModel : PageModel
             new("AuthProvider", AuthProvider.Local.ToString())
         };
 
-        if (!string.IsNullOrEmpty(user.Email))
-        {
-            claims.Add(new Claim(ClaimTypes.Email, user.Email));
-        }
 
         var identity = new ClaimsIdentity(claims, Core.Authentication.AuthenticationConstants.CookieScheme);
         var principal = new ClaimsPrincipal(identity);

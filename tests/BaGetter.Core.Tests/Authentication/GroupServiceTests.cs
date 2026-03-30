@@ -343,7 +343,6 @@ public class GroupServiceTests
                 Id = Guid.NewGuid(),
                 Username = username,
                 DisplayName = $"{username} Display",
-                Email = $"{username}@test.com",
                 AuthProvider = AuthProvider.Entra,
                 EntraObjectId = $"oid-{username}",
                 IsEnabled = true,

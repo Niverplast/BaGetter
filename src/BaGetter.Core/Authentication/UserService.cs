@@ -49,7 +49,6 @@ public class UserService : IUserService
         string entraObjectId,
         string username,
         string displayName,
-        string email,
         CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
@@ -58,7 +57,6 @@ public class UserService : IUserService
             Id = Guid.NewGuid(),
             Username = username,
             DisplayName = displayName,
-            Email = email,
             AuthProvider = AuthProvider.Entra,
             EntraObjectId = entraObjectId,
             IsEnabled = true,
@@ -78,7 +76,6 @@ public class UserService : IUserService
     public async Task<User> CreateLocalUserAsync(
         string username,
         string displayName,
-        string email,
         string password,
         bool canLoginToUI,
         Guid? createdByUserId,
@@ -90,7 +87,6 @@ public class UserService : IUserService
             Id = Guid.NewGuid(),
             Username = username,
             DisplayName = displayName,
-            Email = email,
             AuthProvider = AuthProvider.Local,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password, BcryptWorkFactor),
             IsEnabled = true,
@@ -227,5 +223,22 @@ public class UserService : IUserService
         var eventType = isAdmin ? "AdminGranted" : "AdminRevoked";
         _logger.LogInformation("Audit: {EventType} - User {UserId} admin state set to {IsAdmin}",
             eventType, userId, isAdmin);
+    }
+
+    public async Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await FindByIdAsync(userId, cancellationToken);
+        if (user == null)
+            throw new InvalidOperationException($"User {userId} not found.");
+
+        if (user.IsEnabled)
+            throw new InvalidOperationException($"User {userId} must be disabled before deletion.");
+
+        var username = user.Username;
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Audit: {EventType} - User {Username} ({UserId}) was deleted",
+            "AccountDeleted", username, userId);
     }
 }

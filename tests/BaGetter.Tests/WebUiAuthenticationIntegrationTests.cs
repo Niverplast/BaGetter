@@ -333,7 +333,7 @@ public class WebUiLocalLoginTests : IDisposable
         var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
 
         var user = await userService.CreateLocalUserAsync(
-            TestUsername, "Test User", "test@example.com",
+            TestUsername, "Test User",
             TestPassword, canLoginToUI,
             createdByUserId: null,
             CancellationToken.None);
@@ -449,7 +449,7 @@ public class WebUiAccessControlTests : IDisposable
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
 
             var user = await userService.CreateLocalUserAsync(
-                "regular", "Regular User", "regular@example.com",
+                "regular", "Regular User",
                 "RegularPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -488,7 +488,7 @@ public class WebUiAccessControlTests : IDisposable
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
 
             var user = await userService.CreateLocalUserAsync(
-                "admin", "Admin User", "admin@example.com",
+                "admin", "Admin User",
                 "AdminPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -532,7 +532,7 @@ public class WebUiAccessControlTests : IDisposable
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
 
             var user = await userService.CreateLocalUserAsync(
-                "localuser", "Local User", "local@example.com",
+                "localuser", "Local User",
                 "LocalPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -662,7 +662,7 @@ public class WebUiAccountToggleTests : IDisposable
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
 
             var admin = await userService.CreateLocalUserAsync(
-                AdminUsername, "Admin", "admin@example.com",
+                AdminUsername, "Admin",
                 AdminPassword, canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -674,7 +674,7 @@ public class WebUiAccountToggleTests : IDisposable
                 CancellationToken.None);
 
             var target = await userService.CreateLocalUserAsync(
-                targetUsername, "Target User", "target@example.com",
+                targetUsername, "Target User",
                 "TargetPassword123!", canLoginToUI: targetCanLoginToUI,
                 createdByUserId: admin.Id, CancellationToken.None);
 
@@ -838,7 +838,7 @@ public class WebUiAccountToggleTests : IDisposable
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
 
             var regularUser = await userService.CreateLocalUserAsync(
-                "nonadmin", "Non Admin", "nonadmin@example.com",
+                "nonadmin", "Non Admin",
                 "NonAdminPass123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -848,7 +848,7 @@ public class WebUiAccountToggleTests : IDisposable
                 CancellationToken.None);
 
             var target = await userService.CreateLocalUserAsync(
-                "victim", "Victim", "victim@example.com",
+                "victim", "Victim",
                 "VictimPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
             targetUserId = target.Id;

@@ -34,11 +34,6 @@
                     <input asp-for="NewDisplayName" class="form-control" />
                 </div>
                 <div class="form-group">
-                    <label asp-for="NewEmail">Email</label>
-                    <input asp-for="NewEmail" class="form-control" type="email" />
-                    <span asp-validation-for="NewEmail" class="text-danger"></span>
-                </div>
-                <div class="form-group">
                     <label asp-for="NewPassword">Password</label>
                     <input asp-for="NewPassword" class="form-control" />
                     <span asp-validation-for="NewPassword" class="text-danger"></span>
@@ -98,7 +93,16 @@
                                 <span class="label label-danger">No</span>
                             }
                         </td>
-                        <td>@(user.CanLoginToUI ? "Yes" : "No")</td>
+                        <td>
+                            @if (user.CanLoginToUI)
+                            {
+                                <span class="label label-success">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="label label-danger">No</span>
+                            }
+                        </td>
                         <td>@user.CreatedAtUtc.ToString("yyyy-MM-dd")</td>
                         <td>
                             <form method="post" asp-page-handler="ToggleEnabled" style="display:inline">
@@ -117,6 +121,17 @@
                                     @(user.CanLoginToUI ? "Revoke Web Access" : "Grant Web Access")
                                 </button>
                             </form>
+                            @if (!user.IsEnabled)
+                            {
+                                <form method="post" asp-page-handler="Delete" style="display:inline"
+                                      onsubmit="return confirm('Are you sure you want to permanently delete the account \'@user.Username\'? This action cannot be undone.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <button type="submit" class="btn btn-xs btn-danger">
+                                        Delete
+                                    </button>
+                                </form>
+                            }
                         </td>
                     </tr>
                 }

@@ -360,10 +360,6 @@ namespace BaGetter.Database.SqlServer.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
                     b.Property<string>("EntraObjectId")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");

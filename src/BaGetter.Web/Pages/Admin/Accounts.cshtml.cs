@@ -33,10 +33,6 @@ public class AccountsModel : PageModel
     [MaxLength(256)]
     public string NewDisplayName { get; set; }
 
-    [BindProperty]
-    [EmailAddress]
-    [MaxLength(256)]
-    public string NewEmail { get; set; }
 
     [BindProperty]
     [Required(ErrorMessage = "Password is required.")]
@@ -94,7 +90,6 @@ public class AccountsModel : PageModel
         await _userService.CreateLocalUserAsync(
             NewUsername,
             NewDisplayName ?? NewUsername,
-            NewEmail,
             NewPassword,
             NewCanLoginToUI,
             GetUserId(),
@@ -143,6 +138,35 @@ public class AccountsModel : PageModel
         await _userService.SetPasswordAsync(userId, newPassword, cancellationToken);
 
         SuccessMessage = "Password reset successfully.";
+        Users = await _userService.GetAllUsersAsync(cancellationToken);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(
+        Guid userId, CancellationToken cancellationToken)
+    {
+        if (!await IsCurrentUserAdminAsync(cancellationToken))
+            return RedirectToPage("/Index");
+
+        var user = await _userService.FindByIdAsync(userId, cancellationToken);
+        if (user == null)
+        {
+            ErrorMessage = "User not found.";
+            Users = await _userService.GetAllUsersAsync(cancellationToken);
+            return Page();
+        }
+
+        if (user.IsEnabled)
+        {
+            ErrorMessage = "Cannot delete an enabled account. Disable the account first.";
+            Users = await _userService.GetAllUsersAsync(cancellationToken);
+            return Page();
+        }
+
+        var username = user.Username;
+        await _userService.DeleteUserAsync(userId, cancellationToken);
+
+        SuccessMessage = $"Account '{username}' has been deleted.";
         Users = await _userService.GetAllUsersAsync(cancellationToken);
         return Page();
     }

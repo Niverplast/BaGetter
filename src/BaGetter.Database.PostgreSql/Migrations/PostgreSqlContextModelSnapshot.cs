@@ -361,10 +361,6 @@ namespace BaGetter.Database.PostgreSql.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
                     b.Property<string>("EntraObjectId")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
