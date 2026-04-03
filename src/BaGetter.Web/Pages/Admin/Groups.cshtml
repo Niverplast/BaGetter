@@ -60,7 +60,7 @@
                         @if (!string.IsNullOrEmpty(group.AppRoleValue))
                         {
                             <small class="text-muted">(Role: @group.AppRoleValue)</small>
-                            <span class="label label-primary">Role-synced</span>
+                            <span class="label label-info">Role-synced</span>
                         }
                         else
                         {
@@ -108,7 +108,7 @@
                                             <span class="label @(isEntraUser ? "label-info" : "label-default")">@ug.User?.AuthProvider</span>
                                             @if (isEntraUser && isRoleLinked)
                                             {
-                                                <span class="label label-primary" style="font-size:9px" title="Synced via App Role '@group.AppRoleValue'">synced</span>
+                                                <span class="label label-info" title="Synced via App Role '@group.AppRoleValue'">Synced</span>
                                             }
                                         </td>
                                         <td>
