@@ -51,6 +51,9 @@ public class LoginModel : PageModel
     public bool IsLocalEnabled =>
         _authOptions.Value.Mode is AuthenticationMode.Local or AuthenticationMode.Hybrid;
 
+    [FromQuery(Name = "error")]
+    public string ExternalError { get; set; }
+
     public IActionResult OnGet()
     {
         if (_authOptions.Value.Mode == AuthenticationMode.None)
@@ -61,6 +64,11 @@ public class LoginModel : PageModel
         if (User.Identity?.IsAuthenticated == true)
         {
             return RedirectToPage("/Index");
+        }
+
+        if (!string.IsNullOrEmpty(ExternalError))
+        {
+            ErrorMessage = ExternalError;
         }
 
         return Page();

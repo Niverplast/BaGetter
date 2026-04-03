@@ -89,29 +89,43 @@
                     }
                     @if (group.UserGroups != null && group.UserGroups.Count > 0)
                     {
-                        <ul class="list-inline">
-                            @foreach (var ug in group.UserGroups)
-                            {
-                                var isEntraUser = ug.User?.AuthProvider == BaGetter.Core.Entities.AuthProvider.Entra;
-                                var canRemove = !isRoleLinked || !isEntraUser;
-                                <li>
-                                    <span class="label @(isEntraUser ? "label-info" : "label-default")">@ug.User?.Username</span>
-                                    @if (isEntraUser && isRoleLinked)
-                                    {
-                                        <span class="label label-primary" style="font-size:9px" title="Synced via App Role '@group.AppRoleValue'">synced</span>
-                                    }
-                                    @if (canRemove)
-                                    {
-                                        <form method="post" asp-page-handler="RemoveUser" style="display:inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="groupId" value="@group.Id" />
-                                            <input type="hidden" name="userId" value="@ug.UserId" />
-                                            <button type="submit" class="btn btn-xs btn-link text-danger" title="Remove">x</button>
-                                        </form>
-                                    }
-                                </li>
-                            }
-                        </ul>
+                        <table class="table table-condensed table-striped" style="margin-bottom:8px">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Provider</th>
+                                    <th style="width:1%"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ug in group.UserGroups.OrderBy(u => u.User?.Username))
+                                {
+                                    var isEntraUser = ug.User?.AuthProvider == BaGetter.Core.Entities.AuthProvider.Entra;
+                                    var canRemove = !isRoleLinked || !isEntraUser;
+                                    <tr>
+                                        <td>@ug.User?.Username</td>
+                                        <td>
+                                            <span class="label @(isEntraUser ? "label-info" : "label-default")">@ug.User?.AuthProvider</span>
+                                            @if (isEntraUser && isRoleLinked)
+                                            {
+                                                <span class="label label-primary" style="font-size:9px" title="Synced via App Role '@group.AppRoleValue'">synced</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (canRemove)
+                                            {
+                                                <form method="post" asp-page-handler="RemoveUser">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="groupId" value="@group.Id" />
+                                                    <input type="hidden" name="userId" value="@ug.UserId" />
+                                                    <button type="submit" class="btn btn-xs btn-danger" title="Remove member">Remove</button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     }
                     else
                     {
@@ -141,14 +155,21 @@
                     }
 
                     <h5 style="margin-top:16px">Feed Permissions</h5>
+                    @{
+                        Model.GroupPermissions.TryGetValue(group.Id, out var groupPerm);
+                    }
                     <form method="post" asp-page-handler="GrantPermission" class="form-inline">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="principalId" value="@group.Id" />
                         <input type="hidden" name="principalType" value="@BaGetter.Core.Entities.PrincipalType.Group" />
                         <input type="hidden" name="feedId" value="default" />
-                        <label class="checkbox-inline"><input type="checkbox" name="canPull" value="true" /> Pull</label>
-                        <label class="checkbox-inline"><input type="checkbox" name="canPush" value="true" /> Push</label>
+                        <label class="checkbox-inline"><input type="checkbox" name="canPull" value="true" @(groupPerm?.CanPull == true ? "checked" : "") /> Pull</label>
+                        <label class="checkbox-inline"><input type="checkbox" name="canPush" value="true" @(groupPerm?.CanPush == true ? "checked" : "") /> Push</label>
                         <button type="submit" class="btn btn-xs btn-primary">Set Permissions</button>
+                        @if (Model.SavedGroupId == group.Id)
+                        {
+                            <span class="text-success" style="margin-left:6px" title="Permissions saved">&#10003;</span>
+                        }
                     </form>
                 </div>
             </div>

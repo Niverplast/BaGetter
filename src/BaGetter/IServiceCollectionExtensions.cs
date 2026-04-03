@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Web;
 using System;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 
 namespace BaGetter;
@@ -100,12 +102,33 @@ internal static class IServiceCollectionExtensions
         {
             options.LoginPath = "/Login";
             options.LogoutPath = "/Logout";
+            options.AccessDeniedPath = "/Login";
             options.Cookie.Name = "BaGetter.Auth";
             options.Cookie.HttpOnly = true;
             options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
             options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
             options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
             options.SlidingExpiration = true;
+
+            options.Events ??= new CookieAuthenticationEvents();
+            options.Events.OnValidatePrincipal = async context =>
+            {
+                var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(AuthenticationConstants.CookieScheme);
+                    return;
+                }
+
+                var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
+                var user = await userService.FindByIdAsync(userId, context.HttpContext.RequestAborted);
+                if (user == null || !user.IsEnabled || !user.CanLoginToUI)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(AuthenticationConstants.CookieScheme);
+                }
+            };
         });
 
         // Configure the OIDC options for App Role-based authentication
@@ -120,6 +143,15 @@ internal static class IServiceCollectionExtensions
             options.TokenValidationParameters.RoleClaimType = "roles";
 
             options.Events ??= new OpenIdConnectEvents();
+
+            options.Events.OnRemoteFailure = context =>
+            {
+                var errorMessage = context.Failure?.Message ?? "Authentication failed.";
+                context.Response.Redirect($"/Login?error={Uri.EscapeDataString(errorMessage)}");
+                context.HandleResponse();
+                return Task.CompletedTask;
+            };
+
             var existingOnTokenValidated = options.Events.OnTokenValidated;
 
             options.Events.OnTokenValidated = async context =>
@@ -128,7 +160,14 @@ internal static class IServiceCollectionExtensions
                     await existingOnTokenValidated(context);
 
                 var syncService = context.HttpContext.RequestServices.GetRequiredService<EntraRoleSyncService>();
-                await syncService.OnTokenValidatedAsync(context.Principal, context.HttpContext.RequestAborted);
+                try
+                {
+                    await syncService.OnTokenValidatedAsync(context.Principal, context.HttpContext.RequestAborted);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    context.Fail(ex.Message);
+                }
             };
         });
 

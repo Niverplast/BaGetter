@@ -31,6 +31,10 @@ public class GroupsModel : PageModel
 
     public List<Group> Groups { get; set; } = new();
     public List<User> AllUsers { get; set; } = new();
+    public Dictionary<Guid, FeedPermission> GroupPermissions { get; set; } = new();
+
+    [FromQuery]
+    public Guid? SavedGroupId { get; set; }
 
     [BindProperty]
     [Required(ErrorMessage = "Group name is required.")]
@@ -61,6 +65,19 @@ public class GroupsModel : PageModel
         return await _userService.IsAdminAsync(userId, cancellationToken);
     }
 
+    private async Task LoadGroupPermissionsAsync(CancellationToken cancellationToken)
+    {
+        foreach (var group in Groups)
+        {
+            var permission = await _permissionService.GetPermissionAsync(
+                group.Id, PrincipalType.Group, "default", cancellationToken);
+            if (permission != null)
+            {
+                GroupPermissions[group.Id] = permission;
+            }
+        }
+    }
+
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
         if (!await IsCurrentUserAdminAsync(cancellationToken))
@@ -68,6 +85,7 @@ public class GroupsModel : PageModel
 
         Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
         AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+        await LoadGroupPermissionsAsync(cancellationToken);
         return Page();
     }
 
@@ -80,6 +98,7 @@ public class GroupsModel : PageModel
         {
             Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
             AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadGroupPermissionsAsync(cancellationToken);
             return Page();
         }
 
@@ -89,6 +108,7 @@ public class GroupsModel : PageModel
             ErrorMessage = $"Group '{NewGroupName}' already exists.";
             Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
             AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadGroupPermissionsAsync(cancellationToken);
             return Page();
         }
 
@@ -101,6 +121,7 @@ public class GroupsModel : PageModel
         SuccessMessage = $"Group '{NewGroupName}' created successfully.";
         Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
         AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+        await LoadGroupPermissionsAsync(cancellationToken);
         return Page();
     }
 
@@ -115,6 +136,7 @@ public class GroupsModel : PageModel
             ErrorMessage = "Cannot manually add Entra users to role-linked groups. Membership is managed by Azure AD App Roles.";
             Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
             AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadGroupPermissionsAsync(cancellationToken);
             return Page();
         }
 
@@ -134,6 +156,7 @@ public class GroupsModel : PageModel
             ErrorMessage = "Cannot manually remove Entra users from role-linked groups. Membership is managed by Azure AD App Roles.";
             Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
             AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadGroupPermissionsAsync(cancellationToken);
             return Page();
         }
 
@@ -157,7 +180,7 @@ public class GroupsModel : PageModel
             principalId, principalType, feedId ?? "default",
             canPush, canPull, cancellationToken);
 
-        return RedirectToPage();
+        return RedirectToPage(new { savedGroupId = principalId });
     }
 
     public async Task<IActionResult> OnPostRevokePermissionAsync(
@@ -182,6 +205,7 @@ public class GroupsModel : PageModel
 
         Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
         AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+        await LoadGroupPermissionsAsync(cancellationToken);
         return Page();
     }
 }

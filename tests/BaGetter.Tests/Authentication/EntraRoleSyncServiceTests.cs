@@ -57,14 +57,32 @@ public class EntraRoleSyncServiceTests
         }
 
         [Fact]
-        public async Task SkipsSyncWhenUserDisabled()
+        public async Task ThrowsWhenUserDisabled()
         {
             var user = CreateUserEntity("oid-3", "disabled@test.com");
             user.IsEnabled = false;
             var principal = CreatePrincipal(oid: "oid-3", roles: new[] { "Admin" });
             _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-3", _ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _target.OnTokenValidatedAsync(principal, _ct));
+
+            _groupService.Verify(
+                s => s.SyncAppRoleMembershipsAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task ThrowsWhenCanLoginToUIDisabled()
+        {
+            var user = CreateUserEntity("oid-nologin", "nologin@test.com");
+            user.IsEnabled = true;
+            user.CanLoginToUI = false;
+            var principal = CreatePrincipal(oid: "oid-nologin", roles: new[] { "Admin" });
+            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-nologin", _ct)).ReturnsAsync(user);
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _target.OnTokenValidatedAsync(principal, _ct));
 
             _groupService.Verify(
                 s => s.SyncAppRoleMembershipsAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()),

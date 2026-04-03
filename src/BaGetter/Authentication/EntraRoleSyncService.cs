@@ -81,8 +81,14 @@ public class EntraRoleSyncService
 
         if (!user.IsEnabled)
         {
-            _logger.LogWarning("Entra user {Username} is disabled, skipping role sync", user.Username);
-            return;
+            _logger.LogWarning("Login denied: Entra user {Username} is disabled", user.Username);
+            throw new UnauthorizedAccessException($"Account '{user.Username}' has been disabled.");
+        }
+
+        if (!user.CanLoginToUI)
+        {
+            _logger.LogWarning("Login denied: Entra user {Username} does not have UI login permission", user.Username);
+            throw new UnauthorizedAccessException($"Account '{user.Username}' is not permitted to sign in to the web UI.");
         }
 
         // Read roles claim from the token

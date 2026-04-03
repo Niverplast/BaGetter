@@ -31,6 +31,17 @@ public class PermissionService : IPermissionService
         return await HasPermissionAsync(userId, feedId, p => p.CanPull, cancellationToken);
     }
 
+    public async Task<FeedPermission> GetPermissionAsync(
+        Guid principalId,
+        PrincipalType principalType,
+        string feedId,
+        CancellationToken cancellationToken)
+    {
+        return await _context.FeedPermissions.FirstOrDefaultAsync(
+            p => p.FeedId == feedId && p.PrincipalType == principalType && p.PrincipalId == principalId,
+            cancellationToken);
+    }
+
     public async Task GrantPermissionAsync(
         Guid principalId,
         PrincipalType principalType,
