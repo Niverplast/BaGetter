@@ -275,8 +275,9 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         request.Content = new ByteArrayContent([]);
         using var response = await _client.SendAsync(request);
 
-        // Assert - push requires API key, not basic auth
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - basic auth is sufficient for push (falls back to user identity),
+        // so we get BadRequest from the empty upload body, not Unauthorized
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
