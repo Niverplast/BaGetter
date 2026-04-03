@@ -1,12 +1,27 @@
 @page "/packages/{id}/{version?}"
+@using BaGetter.Core.Configuration
 @using Humanizer
 @using Microsoft.AspNetCore.Html
+@using Microsoft.Extensions.Options
 @model PackageModel
+@inject IOptions<NugetAuthenticationOptions> AuthOptions
 
 @{
     ViewData["Title"] = Model.Found
         ? Model.Package.Id + " " + Model.Package.NormalizedVersionString
         : Model.Package.Id;
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.None;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
+@if (requiresAuth && !isAuthenticated)
+{
+    <div class="text-center" style="margin-top: 60px;">
+        <h2>Sign in required</h2>
+        <p>You need to sign in to view package details.</p>
+        <a asp-page="/Login" class="btn btn-primary">Sign in</a>
+    </div>
+    return;
 }
 
 @if (!Model.Found)

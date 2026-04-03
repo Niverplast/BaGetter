@@ -4,7 +4,14 @@
 @using Microsoft.Extensions.Options
 
 @inject IOptions<StatisticsOptions> StatisticsOptions
+@inject IOptions<NugetAuthenticationOptions> AuthOptions
 @inject ApplicationVersion Version
+
+@{
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.None;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var showContent = !requiresAuth || isAuthenticated;
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -30,11 +37,14 @@
                 <div class="row">
                     <div id="navbar" class="col-sm-12">
                         <ul class="nav navbar-nav" role="tablist">
-                            <li role="presentation"><a asp-area="" asp-page="/Index" role="tab" nav-link><span>Packages</span></a></li>
-                            <li role="presentation"><a asp-area="" asp-page="/Upload" role="tab" nav-link><span>Upload</span></a></li>
-                            @if (StatisticsOptions.Value.EnableStatisticsPage)
+                            @if (showContent)
                             {
-                                <li role="presentation"><a asp-area="" asp-page="/Statistics" role="tab" nav-link><span>Statistics</span></a></li>
+                                <li role="presentation"><a asp-area="" asp-page="/Index" role="tab" nav-link><span>Packages</span></a></li>
+                                <li role="presentation"><a asp-area="" asp-page="/Upload" role="tab" nav-link><span>Upload</span></a></li>
+                                @if (StatisticsOptions.Value.EnableStatisticsPage)
+                                {
+                                    <li role="presentation"><a asp-area="" asp-page="/Statistics" role="tab" nav-link><span>Statistics</span></a></li>
+                                }
                             }
                             <li role="presentation">
                                 <a role="tab" href="https://www.bagetter.com/docs" target="_blank" rel="noopener noreferrer">
@@ -46,30 +56,33 @@
                     </div>
                 </div>
             </div>
-            <div class="container search-container">
-                <div class="row">
-                    <form class="col-sm-12" action="@Url.Page("/Index")" method="get">
-                        <div class="input-group">
-                            <input type="text"
-                                   name="q"
-                                   value="@ViewData["SearchQuery"]"
-                                   class="form-control"
-                                   autoComplete="off"
-                                   placeholder="Search packages..." />
+            @if (showContent)
+            {
+                <div class="container search-container">
+                    <div class="row">
+                        <form class="col-sm-12" action="@Url.Page("/Index")" method="get">
+                            <div class="input-group">
+                                <input type="text"
+                                       name="q"
+                                       value="@ViewData["SearchQuery"]"
+                                       class="form-control"
+                                       autoComplete="off"
+                                       placeholder="Search packages..." />
 
-                            <span class="input-group-btn">
-                                <button type="submit"
-                                        class="btn btn-default"
-                                        title="Search for packages">
-                                    <span class="ms-Icon ms-Icon--Search" aria-hidden="true"></span>
-                                </button>
-                            </span>
-                        </div>
+                                <span class="input-group-btn">
+                                    <button type="submit"
+                                            class="btn btn-default"
+                                            title="Search for packages">
+                                        <span class="ms-Icon ms-Icon--Search" aria-hidden="true"></span>
+                                    </button>
+                                </span>
+                            </div>
 
-                        @await RenderSectionAsync("SearchForm", required: false)
-                    </form>
+                            @await RenderSectionAsync("SearchForm", required: false)
+                        </form>
+                    </div>
                 </div>
-            </div>
+            }
         </nav>
     </header>
 

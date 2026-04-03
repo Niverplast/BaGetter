@@ -15,6 +15,18 @@
     var authMode = AuthOptions.Value.Mode;
     var hasEntra = authMode is AuthenticationMode.Entra or AuthenticationMode.Hybrid;
     var hasLocal = authMode is AuthenticationMode.Local or AuthenticationMode.Hybrid;
+    var requiresAuth = authMode != AuthenticationMode.None;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
+@if (requiresAuth && !isAuthenticated)
+{
+    <div class="text-center" style="margin-top: 60px;">
+        <h2>Sign in required</h2>
+        <p>You need to sign in to view upload instructions.</p>
+        <a asp-page="/Login" class="btn btn-primary">Sign in</a>
+    </div>
+    return;
 }
 
 <div class="col-sm-12">
