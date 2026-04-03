@@ -53,6 +53,7 @@ public class Startup
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchService>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchIndexer>);
 
+        services.AddRazorPages().AddRazorRuntimeCompilation();
         services.AddSingleton<IConfigureOptions<MvcRazorRuntimeCompilationOptions>, ConfigureRazorRuntimeCompilation>();
 
         services.AddHealthChecks();
@@ -65,6 +66,9 @@ public class Startup
         //Add base authentication and authorization
         app.AddNugetBasicHttpAuthentication();
         app.AddNugetBasicHttpAuthorization();
+
+        // Add Entra ID (OIDC) authentication when configured
+        app.AddEntraAuthentication(Configuration);
 
         // Add database providers.
         app.AddAzureTableDatabase();

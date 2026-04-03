@@ -21,8 +21,9 @@ public class HostIntegrationTests
             { DatabaseTypeKey, "InvalidType" }
         });
 
+        using var scope = provider.CreateScope();
         Assert.Throws<InvalidOperationException>(
-            () => provider.GetRequiredService<IContext>());
+            () => scope.ServiceProvider.GetRequiredService<IContext>());
     }
 
     [Fact]
@@ -34,7 +35,8 @@ public class HostIntegrationTests
             { ConnectionStringKey, "..." }
         });
 
-        Assert.NotNull(provider.GetRequiredService<IContext>());
+        using var scope = provider.CreateScope();
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<IContext>());
     }
 
     [Fact]
@@ -46,7 +48,8 @@ public class HostIntegrationTests
             { ConnectionStringKey, "..." }
         });
 
-        Assert.NotNull(provider.GetRequiredService<SqliteContext>());
+        using var scope = provider.CreateScope();
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<SqliteContext>());
     }
 
     [Fact]
@@ -54,7 +57,8 @@ public class HostIntegrationTests
     {
         var provider = BuildServiceProvider();
 
-        var context = provider.GetRequiredService<IContext>();
+        using var scope = provider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IContext>();
 
         Assert.IsType<SqliteContext>(context);
     }

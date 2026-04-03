@@ -11,6 +11,11 @@ public class NullContext : IContext
     public DatabaseFacade Database => throw new NotImplementedException();
 
     public DbSet<Package> Packages { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public DbSet<User> Users { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public DbSet<PersonalAccessToken> PersonalAccessTokens { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public DbSet<Group> Groups { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public DbSet<UserGroup> UserGroups { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public DbSet<FeedPermission> FeedPermissions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public bool SupportsLimitInSubqueries => throw new NotImplementedException();
 

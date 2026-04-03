@@ -1,4 +1,5 @@
 using System;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
@@ -15,7 +16,11 @@ namespace BaGetter.Web.Controllers;
 
 public class PackagePublishController : Controller
 {
+    private const string DefaultFeedId = "default";
+
     private readonly IAuthenticationService _authentication;
+    private readonly IFeedAuthenticationService _feedAuthentication;
+    private readonly IPermissionService _permissionService;
     private readonly IPackageIndexingService _indexer;
     private readonly IPackageDatabase _packages;
     private readonly IPackageDeletionService _deleteService;
@@ -24,6 +29,8 @@ public class PackagePublishController : Controller
 
     public PackagePublishController(
         IAuthenticationService authentication,
+        IFeedAuthenticationService feedAuthentication,
+        IPermissionService permissionService,
         IPackageIndexingService indexer,
         IPackageDatabase packages,
         IPackageDeletionService deletionService,
@@ -31,6 +38,8 @@ public class PackagePublishController : Controller
         ILogger<PackagePublishController> logger)
     {
         _authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
+        _feedAuthentication = feedAuthentication ?? throw new ArgumentNullException(nameof(feedAuthentication));
+        _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
         _packages = packages ?? throw new ArgumentNullException(nameof(packages));
         _deleteService = deletionService ?? throw new ArgumentNullException(nameof(deletionService));
@@ -41,8 +50,13 @@ public class PackagePublishController : Controller
     // See: https://docs.microsoft.com/en-us/nuget/api/package-publish-resource#push-a-package
     public async Task Upload(CancellationToken cancellationToken)
     {
-        if (_options.Value.IsReadOnlyMode ||
-            !await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
+        if (_options.Value.IsReadOnlyMode)
+        {
+            HttpContext.Response.StatusCode = 401;
+            return;
+        }
+
+        if (!await AuthorizePushAsync(cancellationToken))
         {
             HttpContext.Response.StatusCode = 401;
             return;
@@ -95,7 +109,7 @@ public class PackagePublishController : Controller
             return NotFound();
         }
 
-        if (!await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
+        if (!await AuthorizePushAsync(cancellationToken))
         {
             return Unauthorized();
         }
@@ -123,7 +137,7 @@ public class PackagePublishController : Controller
             return NotFound();
         }
 
-        if (!await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
+        if (!await AuthorizePushAsync(cancellationToken))
         {
             return Unauthorized();
         }
@@ -136,5 +150,32 @@ public class PackagePublishController : Controller
         {
             return NotFound();
         }
+    }
+
+    private async Task<bool> AuthorizePushAsync(CancellationToken cancellationToken)
+    {
+        var authMode = _options.Value.Authentication?.Mode ?? AuthenticationMode.None;
+
+        if (authMode == AuthenticationMode.None)
+        {
+            // Legacy mode: use config-based API key authentication
+            return await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken);
+        }
+
+        // New mode: prefer X-NuGet-ApiKey (dotnet nuget push -k <token>), fall back to
+        // the user identity already established by Basic auth middleware.
+        var apiKey = Request.GetApiKey();
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            var authResult = await _feedAuthentication.AuthenticateByTokenAsync(apiKey, cancellationToken);
+            if (authResult.IsAuthenticated && authResult.UserId.HasValue)
+                return await _permissionService.CanPushAsync(authResult.UserId.Value, DefaultFeedId, cancellationToken);
+        }
+
+        var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            return await _permissionService.CanPushAsync(userId, DefaultFeedId, cancellationToken);
+
+        return false;
     }
 }

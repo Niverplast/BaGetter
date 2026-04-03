@@ -1,11 +1,25 @@
 @page
-@using BaGetter.Protocol.Models
+@using BaGetter.Core.Configuration
 @using BaGetter.Web.Extensions
+@using Microsoft.Extensions.Options
 @model IndexModel
+@inject IOptions<NugetAuthenticationOptions> AuthOptions
 
 @{
     ViewData["Title"] = "Packages";
     ViewData["SearchQuery"] = Model.Query;
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.None;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
+@if (requiresAuth && !isAuthenticated)
+{
+    <div class="text-center" style="margin-top: 60px;">
+        <h2>Sign in required</h2>
+        <p>You need to sign in to browse packages.</p>
+        <a asp-page="/Login" class="btn btn-primary">Sign in</a>
+    </div>
+    return;
 }
 
 @section SearchForm
@@ -39,7 +53,7 @@
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="package-type">
-                    @foreach (KeyValuePair<string, string> packageType in PackageTypes)
+                    @foreach (var packageType in PackageTypes)
                     {
                         <li><a href="@SearchLink(packageType: packageType.Key, page: 1)">@packageType.Value</a></li>
                     }
@@ -58,7 +72,7 @@
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="framework">
-                    @foreach (KeyValuePair<string, string> framework in TargetFrameworks)
+                    @foreach (var framework in TargetFrameworks)
                     {
                         @if (framework.Key.StartsWith("divider"))
                         {
@@ -103,7 +117,7 @@
 }
 else
 {
-    @foreach (SearchResult package in Model.Packages)
+    @foreach (var package in Model.Packages)
     {
         <div class="row search-result">
             <div class="col-sm-1 hidden-xs hidden-sm">
@@ -152,8 +166,8 @@ else
         </div>
     }
 
-    bool showPreviousLink = Model.PageIndex > 1;
-    bool showNextLink = Model.Packages.Count >= IndexModel.ResultsPerPage;
+    var showPreviousLink = Model.PageIndex > 1;
+    var showNextLink = Model.Packages.Count >= IndexModel.ResultsPerPage;
 
     if (showPreviousLink || showNextLink)
     {

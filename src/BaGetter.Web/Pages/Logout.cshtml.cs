@@ -1,0 +1,34 @@
+using System.Threading.Tasks;
+using BaGetter.Core.Configuration;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace BaGetter.Web.Pages;
+
+public class LogoutModel : PageModel
+{
+    private readonly IOptionsSnapshot<NugetAuthenticationOptions> _authOptions;
+    private readonly ILogger<LogoutModel> _logger;
+
+    public LogoutModel(
+        IOptionsSnapshot<NugetAuthenticationOptions> authOptions,
+        ILogger<LogoutModel> logger)
+    {
+        _authOptions = authOptions;
+        _logger = logger;
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        var username = User.Identity?.Name;
+
+        await HttpContext.SignOutAsync(Core.Authentication.AuthenticationConstants.CookieScheme);
+
+        _logger.LogInformation("User '{Username}' signed out", username);
+
+        return RedirectToPage("/Index");
+    }
+}
