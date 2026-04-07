@@ -1,9 +1,11 @@
 using System;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Configuration;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace BaGetter.Web.Authentication;
@@ -52,11 +54,15 @@ public class FeedPermissionHandler : AuthorizationHandler<FeedPermissionRequirem
             return;
         }
 
+        var cancellationToken = context.Resource is HttpContext httpContext
+            ? httpContext.RequestAborted
+            : CancellationToken.None;
+
         var hasPermission = requirement.Permission switch
         {
-            FeedPermissionRequirement.Pull => await _permissionService.CanPullAsync(userId, DefaultFeedId, default),
-            FeedPermissionRequirement.Push => await _permissionService.CanPushAsync(userId, DefaultFeedId, default),
-            FeedPermissionRequirement.Admin => await _userService.IsAdminAsync(userId, default),
+            FeedPermissionRequirement.Pull => await _permissionService.CanPullAsync(userId, DefaultFeedId, cancellationToken),
+            FeedPermissionRequirement.Push => await _permissionService.CanPushAsync(userId, DefaultFeedId, cancellationToken),
+            FeedPermissionRequirement.Admin => await _userService.IsAdminAsync(userId, cancellationToken),
             _ => false
         };
 
