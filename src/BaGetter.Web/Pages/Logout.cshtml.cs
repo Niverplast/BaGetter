@@ -10,14 +10,12 @@ namespace BaGetter.Web.Pages;
 
 public class LogoutModel : PageModel
 {
-    private readonly IOptionsSnapshot<NugetAuthenticationOptions> _authOptions;
     private readonly ILogger<LogoutModel> _logger;
 
     public LogoutModel(
         IOptionsSnapshot<NugetAuthenticationOptions> authOptions,
         ILogger<LogoutModel> logger)
     {
-        _authOptions = authOptions;
         _logger = logger;
     }
 
