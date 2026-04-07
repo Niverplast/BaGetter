@@ -28,10 +28,12 @@ namespace BaGetter;
 public class Startup
 {
     private IConfiguration Configuration { get; }
+    private IWebHostEnvironment Environment { get; }
 
-    public Startup(IConfiguration configuration)
+    public Startup(IConfiguration configuration, IWebHostEnvironment environment)
     {
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        Environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -63,7 +65,7 @@ public class Startup
         app.AddNugetBasicHttpAuthorization();
 
         // Add Entra ID (OIDC) authentication when configured
-        app.AddEntraAuthentication(Configuration);
+        app.AddEntraAuthentication(Configuration, Environment);
 
         // Add database providers.
         app.AddAzureTableDatabase();

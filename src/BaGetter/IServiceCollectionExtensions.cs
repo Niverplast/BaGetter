@@ -13,6 +13,8 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace BaGetter;
@@ -58,7 +60,8 @@ internal static class IServiceCollectionExtensions
     /// </summary>
     internal static BaGetterApplication AddEntraAuthentication(
         this BaGetterApplication app,
-        Microsoft.Extensions.Configuration.IConfiguration configuration)
+        Microsoft.Extensions.Configuration.IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
         // Read the authentication mode from configuration to decide whether to register Entra
         var authSection = configuration.GetSection("Authentication");
@@ -107,7 +110,9 @@ internal static class IServiceCollectionExtensions
             options.AccessDeniedPath = "/Login";
             options.Cookie.Name = "BaGetter.Auth";
             options.Cookie.HttpOnly = true;
-            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+            options.Cookie.SecurePolicy = environment.IsDevelopment()
+                ? Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest //For development, allow non-secure cookies over HTTP to simplify testing.
+                : Microsoft.AspNetCore.Http.CookieSecurePolicy.Always; //In production, require secure cookies to ensure they are only sent over HTTPS.
             options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
             options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
             options.SlidingExpiration = true;
