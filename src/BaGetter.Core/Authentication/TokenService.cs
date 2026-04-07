@@ -39,6 +39,11 @@ public class TokenService : ITokenService
         DateTime expiresAtUtc,
         CancellationToken cancellationToken)
     {
+        if (expiresAtUtc <= DateTime.UtcNow)
+        {
+            throw new ArgumentException("Token expiry must be in the future.");
+        }
+
         var maxExpiry = DateTime.UtcNow.AddDays(_authOptions.MaxTokenExpiryDays);
         if (expiresAtUtc > maxExpiry)
         {
