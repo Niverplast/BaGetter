@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Configuration;
@@ -21,10 +20,10 @@ public class FeedAuthenticationService : IFeedAuthenticationService
         IOptionsSnapshot<NugetAuthenticationOptions> authOptions,
         ILogger<FeedAuthenticationService> logger)
     {
-        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-        _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
-        _authOptions = authOptions?.Value ?? throw new ArgumentNullException(nameof(authOptions));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _userService = userService;
+        _tokenService = tokenService;
+        _authOptions = authOptions?.Value;
+        _logger = logger;
     }
 
     public async Task<AuthResult> AuthenticateByTokenAsync(string token, CancellationToken cancellationToken)

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
 using BaGetter.Tests.Support;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -197,10 +198,21 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         using (var scope = _app.Services.CreateScope())
         {
             var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
-            // Create a token that expired in the past
             var result = await tokenService.CreateTokenAsync(
-                userId, "expired-token", DateTime.UtcNow.AddDays(-1), CancellationToken.None);
+                userId, "expired-token", DateTime.UtcNow.AddDays(1), CancellationToken.None);
             plaintextToken = result.PlaintextToken;
+        }
+
+        // Directly expire the token in the DB to simulate an already-expired token.
+        // TokenService.CreateTokenAsync validates expiry must be in the future, so we
+        // create it valid first and then backdate it.
+        using (var scope = _app.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BaGetter.Core.Entities.IContext>();
+            var pat = await context.PersonalAccessTokens
+                .FirstAsync(t => t.Name == "expired-token");
+            pat.ExpiresAtUtc = DateTime.UtcNow.AddDays(-1);
+            await context.SaveChangesAsync(CancellationToken.None);
         }
 
         // Act - try push with expired PAT
