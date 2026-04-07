@@ -13,6 +13,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 
 namespace BaGetter;
 
@@ -145,8 +146,12 @@ internal static class IServiceCollectionExtensions
 
             options.Events.OnRemoteFailure = context =>
             {
-                var errorMessage = context.Failure?.Message ?? "Authentication failed.";
-                context.Response.Redirect($"/Login?error={Uri.EscapeDataString(errorMessage)}");
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger(nameof(IServiceCollectionExtensions));
+                logger.LogWarning(context.Failure, "Entra authentication remote failure.");
+
+                context.Response.Redirect("/Login?error=authentication_failed");
                 context.HandleResponse();
                 return Task.CompletedTask;
             };
