@@ -30,8 +30,4 @@
     <ProjectReference Include="..\BaGetter.Protocol\BaGetter.Protocol.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="packages\" />
-  </ItemGroup>
-
 </Project>
