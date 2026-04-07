@@ -1,4 +1,5 @@
 using System;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
@@ -110,17 +111,24 @@ public class SymbolController : Controller
 
         if (authMode == AuthenticationMode.None)
         {
+            // Legacy mode: use config-based API key authentication
             return await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken);
         }
 
+        // New mode: prefer X-NuGet-ApiKey (dotnet nuget push -k <token>), fall back to
+        // the user identity already established by Basic auth middleware.
         var apiKey = Request.GetApiKey();
-        if (string.IsNullOrEmpty(apiKey))
-            return false;
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            var authResult = await _feedAuthentication.AuthenticateByTokenAsync(apiKey, cancellationToken);
+            if (authResult.IsAuthenticated && authResult.UserId.HasValue)
+                return await _permissionService.CanPushAsync(authResult.UserId.Value, DefaultFeedId, cancellationToken);
+        }
 
-        var authResult = await _feedAuthentication.AuthenticateByTokenAsync(apiKey, cancellationToken);
-        if (!authResult.IsAuthenticated || !authResult.UserId.HasValue)
-            return false;
+        var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            return await _permissionService.CanPushAsync(userId, DefaultFeedId, cancellationToken);
 
-        return await _permissionService.CanPushAsync(authResult.UserId.Value, DefaultFeedId, cancellationToken);
+        return false;
     }
 }
