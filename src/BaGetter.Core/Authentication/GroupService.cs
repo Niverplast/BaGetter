@@ -128,7 +128,7 @@ public class GroupService : IGroupService
 
         var currentAppRoleValues = currentMemberships
             .Select(ug => ug.Group.AppRoleValue)
-            .ToHashSet();
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // Add memberships for new App Roles
         var appRoleValueSet = appRoleValues.ToHashSet(StringComparer.OrdinalIgnoreCase);
