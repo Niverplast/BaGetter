@@ -32,7 +32,7 @@ Requires .NET SDK 10.0.104 (pinned in `global.json`).
 
 ### Provider Pattern
 
-Storage, database, and search services use a configuration-driven provider pattern (`IProvider<T>`). Multiple implementations coexist in DI; the active one is selected by `appsettings.json` config at runtime. This is the core extensibility mechanism.
+Storage, database, and search services use a configuration-driven provider pattern (`IProvider<T>`). Multiple implementations coexist in DI (registered via `TryAddTransient`); the active one is selected by `appsettings.json` config at runtime. This is the core extensibility mechanism.
 
 ### Project Layout
 
@@ -55,7 +55,30 @@ Storage, database, and search services use a configuration-driven provider patte
 
 ### Authentication
 
-Supports multiple simultaneous auth modes: Basic (username/password), ApiKey (stateless), Entra ID (OIDC), or Hybrid. Users, personal access tokens, groups, and feed permissions are managed via services in `src/BaGetter.Core/Authentication/`. Passwords use bcrypt; tokens store prefix + hash.
+Supports multiple simultaneous auth modes controlled by `AuthenticationMode` enum (None, Local, Entra, Hybrid). Auth services live in `src/BaGetter.Core/Authentication/`.
+
+- **NuGetBasicAuth** is the default scheme; it forwards to the cookie scheme when a session cookie is present without an `Authorization` header (browser vs. client tool detection).
+- **Entra ID** uses `AddMicrosoftIdentityWebApp()` (authorization code flow). `EntraRoleSyncService` syncs Entra app roles to local groups on token validation. Cookie name is `BaGetter.Auth`, 60-minute sliding session.
+- **`IFeedAuthenticationService`** provides two auth paths: `AuthenticateByTokenAsync()` (PAT) and `AuthenticateByCredentialsAsync()` (username/password).
+- **`FeedPermissionHandler`** (AuthorizationHandler) enforces feed-level permissions using the default feed ID `"default"`.
+- Passwords use bcrypt; tokens store prefix + hash.
+
+Authentication config structure:
+```json
+"Authentication": {
+  "Mode": "Hybrid",
+  "Entra": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "",
+    "ClientId": "",
+    "ClientSecret": "",
+    "CallbackPath": "/signin-oidc"
+  },
+  "MaxTokenExpiryDays": 365,
+  "MaxFailedAttempts": 5,
+  "LockoutMinutes": 15
+}
+```
 
 ### Data Model
 
@@ -71,17 +94,37 @@ Routes defined in `BaGetterEndpointBuilder.cs`:
 - Publish: `PUT /api/v2/package`
 - Symbols: `PUT /api/v2/symbol`, `GET /api/download/symbols/...`
 
+### Middleware
+
+- **`OperationCancelledMiddleware`** converts `OperationCanceledException` to HTTP 409 Conflict.
+- **`ConfigureBaGetterServer`** (implements multiple `IConfigureOptions<T>`) configures CORS, `FormOptions` (multipart upload limits via `MaxPackageSizeGiB`), forwarded headers, and IIS options.
+
 ## Configuration
 
 Options class: `BaGetterOptions` in `src/BaGetter.Core/Configuration/`. Config sources (in order): `appsettings.json`, env vars, user secrets, Docker secrets (`/run/secrets/`), optional `BAGET_CONFIG_ROOT` env var.
 
+`ValidateBaGetterOptions` validates all config at startup — database/storage/search types against whitelists, Entra config completeness when required, and numeric minimums (token expiry, failed attempts, lockout).
+
 ## Code Style
 
-Enforced via `.editorconfig`: 4-space indent, PascalCase for public APIs/constants, `_camelCase` for private fields, `var` preferred, System usings first. Suppress CS1591 for non-public XML doc comments.
+Enforced via `.editorconfig`: 4-space indent (2-space for JSON), PascalCase for public APIs/constants, `_camelCase` for private fields, `var` preferred, System usings first, all usings outside namespace.
+
+Additional enforced rules (warning severity):
+- File-scoped namespaces (`namespace Foo;`)
+- Accessibility modifiers always required
+- Readonly fields where possible
+- No `this.` qualification
+- Predefined types (`int`, `string`) over framework types (`Int32`, `String`)
+- No primary constructors (`csharp_style_prefer_primary_constructors = false`)
+- No expression-bodied methods or constructors (properties/accessors OK)
+
+Suppress CS1591 for non-public XML doc comments.
 
 ## Testing
 
 xUnit + Moq. Test projects mirror source: `tests/BaGetter.Core.Tests/`, `tests/BaGetter.Web.Tests/`, `tests/BaGetter.Protocol.Tests/`. Integration tests use in-memory SQLite.
+
+**`BaGetterApplication`** (WebApplicationFactory) is the integration test host — it mocks `SystemTime` to 2020-01-01, creates temp-dir SQLite databases, and wires up `XunitLoggerProvider`. Use `BaGetWebApplicationFactoryExtensions` helpers (`AddPackageAsync`, `AddSymbolPackageAsync`) to seed test data. Override config via in-memory dictionary config sources in test setup.
 
 ## Centralized Package Versions
 
