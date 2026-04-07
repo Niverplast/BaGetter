@@ -33,7 +33,7 @@ public class EntraOptions
 
     /// <summary>
     /// The claim name in the token that contains App Role values.
-    /// Defaults to "roles".
+    /// Defaults to the standard Microsoft claim for roles, but can be overridden if your token uses a different claim.
     /// </summary>
     public string RoleClaim { get; set; } = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 }
