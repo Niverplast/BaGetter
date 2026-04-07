@@ -94,7 +94,7 @@ internal static class IServiceCollectionExtensions
             options.ForwardDefaultSelector = context =>
             {
                 if (!context.Request.Headers.ContainsKey("Authorization")
-                    && context.Request.Cookies.ContainsKey("BaGetter.Auth"))
+                    && context.Request.Cookies.ContainsKey(AuthenticationConstants.CookieName))
                 {
                     return AuthenticationConstants.CookieScheme;
                 }
@@ -108,7 +108,7 @@ internal static class IServiceCollectionExtensions
             options.LoginPath = "/Login";
             options.LogoutPath = "/Logout";
             options.AccessDeniedPath = "/Login";
-            options.Cookie.Name = "BaGetter.Auth";
+            options.Cookie.Name = AuthenticationConstants.CookieName;
             options.Cookie.HttpOnly = true;
             options.Cookie.SecurePolicy = environment.IsDevelopment()
                 ? Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest //For development, allow non-secure cookies over HTTP to simplify testing.
