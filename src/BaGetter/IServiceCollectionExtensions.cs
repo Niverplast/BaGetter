@@ -70,6 +70,7 @@ internal static class IServiceCollectionExtensions
             return app;
 
         var entraSection = authSection.GetSection("Entra");
+        var entraOptions = entraSection.Get<EntraOptions>() ?? new EntraOptions();
 
         app.Services.AddAuthentication(options =>
             {
@@ -140,9 +141,7 @@ internal static class IServiceCollectionExtensions
             options.ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseType.Code;
 
             options.TokenValidationParameters.NameClaimType = "name";
-            options.TokenValidationParameters.RoleClaimType = "roles";
-
-            options.Events ??= new OpenIdConnectEvents();
+            options.TokenValidationParameters.RoleClaimType = entraOptions.RoleClaim;
 
             options.Events.OnRemoteFailure = context =>
             {
