@@ -132,14 +132,17 @@ public class GroupService : IGroupService
 
         // Add memberships for new App Roles
         var appRoleValueSet = appRoleValues.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var appRoleValue in appRoleValueSet)
+        var newRoles = appRoleValueSet.Where(r => !currentAppRoleValues.Contains(r)).ToList();
+
+        // Fetch all groups
+        var groupsForNewRoles = newRoles.Count > 0
+            ? await _context.Groups
+                .Where(g => g.AppRoleValue != null && newRoles.Contains(g.AppRoleValue))
+                .ToListAsync(cancellationToken)
+            : [];
+
+        foreach (var group in groupsForNewRoles)
         {
-            if (currentAppRoleValues.Contains(appRoleValue)) continue;
-
-            var group = await FindByAppRoleValueAsync(appRoleValue, cancellationToken);
-            if (group == null)
-                continue;   // no group linked to this role, skip
-
             _context.UserGroups.Add(new UserGroup
             {
                 UserId = userId,
