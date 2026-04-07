@@ -39,10 +39,14 @@
     {
         <div class="alert alert-warning" style="margin-top:16px">
             <strong>Authentication required.</strong>
+            <br />
             @if (hasEntra && hasLocal)
             {
                 <span>
                     Entra (Microsoft) users: sign in to the web UI to generate a personal access token (PAT), then use it as the API key.
+                </span>
+                <br />
+                <span>
                     Local accounts: use your username and password with basic authentication.
                 </span>
             }

@@ -18,11 +18,9 @@ using BaGetter.Web;
 using BaGetter.Web.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using HealthCheckOptions = Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions;
 
 namespace BaGetter;
@@ -52,9 +50,6 @@ public class Startup
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<IPackageDatabase>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchService>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchIndexer>);
-
-        services.AddRazorPages().AddRazorRuntimeCompilation();
-        services.AddSingleton<IConfigureOptions<MvcRazorRuntimeCompilationOptions>, ConfigureRazorRuntimeCompilation>();
 
         services.AddHealthChecks();
 
