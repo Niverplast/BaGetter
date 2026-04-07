@@ -129,6 +129,19 @@ internal static class IServiceCollectionExtensions
                 {
                     context.RejectPrincipal();
                     await context.HttpContext.SignOutAsync(AuthenticationConstants.CookieScheme);
+                    return;
+                }
+
+                // Refresh the IsAdmin claim so changes take effect without requiring re-login
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                if (identity != null)
+                {
+                    var existing = identity.FindFirst(AuthenticationConstants.IsAdminClaim);
+                    if (existing != null)
+                        identity.RemoveClaim(existing);
+                    identity.AddClaim(new Claim(AuthenticationConstants.IsAdminClaim, user.IsAdmin ? "true" : "false"));
+                    context.ReplacePrincipal(new ClaimsPrincipal(identity));
+                    context.ShouldRenew = true;
                 }
             };
         });

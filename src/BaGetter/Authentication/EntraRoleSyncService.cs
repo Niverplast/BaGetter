@@ -118,6 +118,7 @@ public class EntraRoleSyncService
 
             identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
             identity.AddClaim(new Claim("auth_provider", AuthProvider.Entra.ToString()));
+            identity.AddClaim(new Claim(AuthenticationConstants.IsAdminClaim, user.IsAdmin ? "true" : "false"));
         }
     }
 }

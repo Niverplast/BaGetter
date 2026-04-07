@@ -3,7 +3,6 @@
 @using Microsoft.Extensions.Options
 
 @inject IOptionsSnapshot<NugetAuthenticationOptions> AuthOptions
-@inject IUserService UserService
 
 @{
     var authMode = AuthOptions.Value.Mode;
@@ -16,15 +15,8 @@
                    ?? User.Identity?.Name
                    ?? "User";
 
-    var isAdmin = false;
-    if (isAuthenticated)
-    {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (Guid.TryParse(userId, out var parsedUserId))
-        {
-            isAdmin = await UserService.IsAdminAsync(parsedUserId, default);
-        }
-    }
+    var isAdmin = isAuthenticated &&
+        string.Equals(User.FindFirst(AuthenticationConstants.IsAdminClaim)?.Value, "true", StringComparison.Ordinal);
 }
 
 @if (authMode != AuthenticationMode.None)

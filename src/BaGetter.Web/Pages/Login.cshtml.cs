@@ -141,7 +141,8 @@ public class LoginModel : PageModel
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Username),
             new("DisplayName", user.DisplayName ?? user.Username),
-            new("AuthProvider", AuthProvider.Local.ToString())
+            new("AuthProvider", AuthProvider.Local.ToString()),
+            new(Core.Authentication.AuthenticationConstants.IsAdminClaim, user.IsAdmin ? "true" : "false")
         };
 
 
