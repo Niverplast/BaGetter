@@ -62,7 +62,7 @@ public class WebUiLocalLoginTests : IDisposable
         // Arrange - create app with Mode=None
         using var app = new BaGetterApplication(_output, null, dict =>
         {
-            dict["Authentication:Mode"] = "None";
+            dict["Authentication:Mode"] = "Config";
         });
         using var client = app.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
         {
