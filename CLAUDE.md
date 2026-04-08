@@ -55,7 +55,7 @@ Storage, database, and search services use a configuration-driven provider patte
 
 ### Authentication
 
-Supports multiple simultaneous auth modes controlled by `AuthenticationMode` enum (None, Local, Entra, Hybrid). Auth services live in `src/BaGetter.Core/Authentication/`.
+Supports multiple simultaneous auth modes controlled by `AuthenticationMode` enum (`Config`, `Local`, `Entra`, `Hybrid`). `Config` is the backward-compatible mode. Auth services live in `src/BaGetter.Core/Authentication/`.
 
 - **NuGetBasicAuth** is the default scheme; it forwards to the cookie scheme when a session cookie is present without an `Authorization` header (browser vs. client tool detection).
 - **Entra ID** uses `AddMicrosoftIdentityWebApp()` (authorization code flow). `EntraRoleSyncService` syncs Entra app roles to local groups on token validation. Cookie name is `BaGetter.Auth`, 60-minute sliding session.
