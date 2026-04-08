@@ -87,7 +87,7 @@ public class ValidateBaGetterOptions
 
         var mode = auth.Mode;
 
-        if (mode == AuthenticationMode.None)
+        if (mode == AuthenticationMode.Config)
             return;
 
         if (mode is AuthenticationMode.Entra or AuthenticationMode.Hybrid)

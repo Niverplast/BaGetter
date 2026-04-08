@@ -10,7 +10,7 @@
     ViewData["Title"] = Model.Found
         ? Model.Package.Id + " " + Model.Package.NormalizedVersionString
         : Model.Package.Id;
-    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.None;
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 

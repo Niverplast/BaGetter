@@ -19,7 +19,7 @@
         string.Equals(User.FindFirst(AuthenticationConstants.IsAdminClaim)?.Value, "true", StringComparison.Ordinal);
 }
 
-@if (authMode != AuthenticationMode.None)
+@if (authMode != AuthenticationMode.Config)
 {
     if (isAuthenticated)
     {

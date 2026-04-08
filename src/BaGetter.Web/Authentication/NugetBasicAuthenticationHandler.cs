@@ -33,12 +33,12 @@ public class NugetBasicAuthenticationHandler : AuthenticationHandler<Authenticat
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var authMode = _bagetterOptions.Value.Authentication?.Mode ?? AuthenticationMode.None;
+        var authMode = _bagetterOptions.Value.Authentication?.Mode ?? AuthenticationMode.Config;
 
-        if (authMode == AuthenticationMode.None)
+        if (authMode == AuthenticationMode.Config)
         {
-            // Legacy mode: use config-based credentials
-            return await HandleLegacyAuthenticateAsync();
+            // Static auth mode: use configured credentials
+            return await HandleStaticAuthAsync();
         }
 
         // New mode: use database-backed authentication
@@ -51,9 +51,9 @@ public class NugetBasicAuthenticationHandler : AuthenticationHandler<Authenticat
         await base.HandleChallengeAsync(properties);
     }
 
-    private Task<AuthenticateResult> HandleLegacyAuthenticateAsync()
+    private Task<AuthenticateResult> HandleStaticAuthAsync()
     {
-        if (IsLegacyAnonymousAllowed())
+        if (IsOpenAccessAllowed())
             return CreateAnonymousAuthenticationResult();
 
         if (!Request.Headers.TryGetValue("Authorization", out var auth))
@@ -74,7 +74,7 @@ public class NugetBasicAuthenticationHandler : AuthenticationHandler<Authenticat
             return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization Header"));
         }
 
-        if (!ValidateLegacyCredentials(username, password))
+        if (!ValidateStaticCredentials(username, password))
             return Task.FromResult(AuthenticateResult.Fail("Invalid Username or Password"));
 
         return CreateUserAuthenticationResult(username, null);
@@ -160,7 +160,7 @@ public class NugetBasicAuthenticationHandler : AuthenticationHandler<Authenticat
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 
-    private bool IsLegacyAnonymousAllowed()
+    private bool IsOpenAccessAllowed()
     {
         return _bagetterOptions.Value.Authentication is null ||
             _bagetterOptions.Value.Authentication.Credentials is null ||
@@ -168,7 +168,7 @@ public class NugetBasicAuthenticationHandler : AuthenticationHandler<Authenticat
             _bagetterOptions.Value.Authentication.Credentials.All(a => string.IsNullOrWhiteSpace(a.Username) && string.IsNullOrWhiteSpace(a.Password));
     }
 
-    private bool ValidateLegacyCredentials(string username, string password)
+    private bool ValidateStaticCredentials(string username, string password)
     {
         return _bagetterOptions.Value.Authentication.Credentials.Any(a => a.Username.Equals(username, StringComparison.OrdinalIgnoreCase) && a.Password == password);
     }

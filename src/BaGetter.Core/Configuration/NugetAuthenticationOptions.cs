@@ -4,9 +4,9 @@ public sealed class NugetAuthenticationOptions
 {
     /// <summary>
     /// Controls which authentication mechanisms are active.
-    /// Defaults to <see cref="AuthenticationMode.None"/> for backward compatibility.
+    /// Defaults to <see cref="AuthenticationMode.Config"/> for backward compatibility.
     /// </summary>
-    public AuthenticationMode Mode { get; set; } = AuthenticationMode.None;
+    public AuthenticationMode Mode { get; set; } = AuthenticationMode.Config;
 
     /// <summary>
     /// Azure Entra ID (OIDC) configuration. Required when Mode is Entra or Hybrid.
@@ -29,12 +29,12 @@ public sealed class NugetAuthenticationOptions
     public int LockoutMinutes { get; set; } = 15;
 
     /// <summary>
-    /// Username and password credentials for downloading packages (legacy, used when Mode is None).
+    /// Username and password credentials for downloading packages (used when Mode is Config).
     /// </summary>
     public NugetCredentials[] Credentials { get; set; }
 
     /// <summary>
-    /// Api keys for pushing packages into the feed (legacy, used when Mode is None).
+    /// Api keys for pushing packages into the feed (used when Mode is Config).
     /// </summary>
     public ApiKey[] ApiKeys { get; set; }
 }

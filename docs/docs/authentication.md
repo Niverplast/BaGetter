@@ -8,7 +8,7 @@ The `Authentication.Mode` setting controls which authentication mechanisms are a
 
 | Mode | Description |
 |------|-------------|
-| `None` | (Default) Legacy behavior. Uses config-based API keys and basic auth credentials. No database-backed users. |
+| `Config` | (Default) Config-file-based auth. Uses API keys and basic auth credentials defined in appsettings.json. No database-backed users. |
 | `Entra` | Azure Entra ID (OIDC) authentication only. Users sign in via their organization's Entra ID tenant. |
 | `Local` | Local database-backed accounts only. Admins create user accounts with passwords. |
 | `Hybrid` | Both Entra ID and local accounts are active. Users can sign in with either method. |
@@ -23,7 +23,7 @@ The `Authentication.Mode` setting controls which authentication mechanisms are a
 
 :::info
 
-When `Mode` is `None` (or the `Authentication` section is omitted), BaGetter behaves exactly as before -- using `Credentials` and `ApiKeys` from configuration. Existing deployments require no changes.
+When `Mode` is `Config` (or the `Authentication` section is omitted), BaGetter uses `Credentials` and `ApiKeys` from configuration. Existing deployments require no changes.
 
 :::
 
@@ -259,7 +259,7 @@ This design lets Azure AD control *who has what role*, while BaGetter controls *
 
 :::info
 
-The `Credentials` and `ApiKeys` arrays are only used when `Mode` is `None` (legacy mode). When `Mode` is `Entra`, `Local`, or `Hybrid`, authentication is handled through the database-backed user system and PATs.
+The `Credentials` and `ApiKeys` arrays are only used when `Mode` is `Config`. When `Mode` is `Entra`, `Local`, or `Hybrid`, authentication is handled through the database-backed user system and PATs.
 
 :::
 
@@ -269,7 +269,7 @@ All authentication settings can be provided via environment variables using the 
 
 | Environment Variable | Description |
 |---------------------|-------------|
-| `Authentication__Mode` | Authentication mode (`None`, `Entra`, `Local`, `Hybrid`) |
+| `Authentication__Mode` | Authentication mode (`Config`, `Entra`, `Local`, `Hybrid`) |
 | `Authentication__Entra__Instance` | Azure AD instance URL |
 | `Authentication__Entra__TenantId` | Azure AD tenant ID |
 | `Authentication__Entra__ClientId` | Application (client) ID |

@@ -8,7 +8,7 @@
 @{
     ViewData["Title"] = "Packages";
     ViewData["SearchQuery"] = Model.Query;
-    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.None;
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 

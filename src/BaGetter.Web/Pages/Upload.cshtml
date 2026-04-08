@@ -15,7 +15,7 @@
     var authMode = AuthOptions.Value.Mode;
     var hasEntra = authMode is AuthenticationMode.Entra or AuthenticationMode.Hybrid;
     var hasLocal = authMode is AuthenticationMode.Local or AuthenticationMode.Hybrid;
-    var requiresAuth = authMode != AuthenticationMode.None;
+    var requiresAuth = authMode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 

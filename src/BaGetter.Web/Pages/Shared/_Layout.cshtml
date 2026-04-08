@@ -8,7 +8,7 @@
 @inject ApplicationVersion Version
 
 @{
-    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.None;
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var showContent = !requiresAuth || isAuthenticated;
 }

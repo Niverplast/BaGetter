@@ -6,9 +6,10 @@ namespace BaGetter.Core.Configuration;
 public enum AuthenticationMode
 {
     /// <summary>
-    /// No database-backed authentication. Legacy config-based API key and basic auth behavior is preserved.
+    /// Config-file-based API key and basic auth. No database-backed users.
+    /// Credentials are defined in appsettings.json.
     /// </summary>
-    None = 0,
+    Config = 0,
 
     /// <summary>
     /// Only Entra ID (OIDC) authentication is enabled. Local accounts are not accepted.

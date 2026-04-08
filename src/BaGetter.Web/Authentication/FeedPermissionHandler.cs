@@ -31,16 +31,16 @@ public class FeedPermissionHandler : AuthorizationHandler<FeedPermissionRequirem
         AuthorizationHandlerContext context,
         FeedPermissionRequirement requirement)
     {
-        var authMode = _options.Value.Authentication?.Mode ?? AuthenticationMode.None;
+        var authMode = _options.Value.Authentication?.Mode ?? AuthenticationMode.Config;
 
-        // In legacy mode, the existing auth handler already did its job
-        if (authMode == AuthenticationMode.None)
+        // In static auth mode, the existing auth handler already did its job
+        if (authMode == AuthenticationMode.Config)
         {
             context.Succeed(requirement);
             return;
         }
 
-        // Anonymous users get a pass if they have the Anonymous claim (legacy mode fallback)
+        // Anonymous users get a pass if they have the Anonymous claim (static auth mode fallback)
         if (context.User.HasClaim(c => c.Type == ClaimTypes.Anonymous))
         {
             context.Succeed(requirement);

@@ -68,7 +68,7 @@ internal static class IServiceCollectionExtensions
         var modeString = authSection?.GetValue<string>("Mode");
 
         if (!Enum.TryParse<AuthenticationMode>(modeString, ignoreCase: true, out var mode))
-            mode = AuthenticationMode.None;
+            mode = AuthenticationMode.Config;
 
         if (mode is not (AuthenticationMode.Entra or AuthenticationMode.Hybrid))
             return app;

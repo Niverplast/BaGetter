@@ -107,11 +107,11 @@ public class SymbolController : Controller
 
     private async Task<bool> AuthorizePushAsync(CancellationToken cancellationToken)
     {
-        var authMode = _options.Value.Authentication?.Mode ?? AuthenticationMode.None;
+        var authMode = _options.Value.Authentication?.Mode ?? AuthenticationMode.Config;
 
-        if (authMode == AuthenticationMode.None)
+        if (authMode == AuthenticationMode.Config)
         {
-            // Legacy mode: use config-based API key authentication
+            // Static auth mode: use configured API key
             return await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken);
         }
 
