@@ -29,7 +29,7 @@ public class BaGetterServiceIndex : IServiceIndexService
         }
     }
 
-    public Task<ServiceIndexResponse> GetAsync(CancellationToken cancellationToken = default)
+    public Task<ServiceIndexResponse>  GetAsync(CancellationToken cancellationToken = default)
     {
         var resources = new List<ServiceIndexItem>();
 

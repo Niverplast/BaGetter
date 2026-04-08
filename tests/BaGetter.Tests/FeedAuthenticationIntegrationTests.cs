@@ -39,10 +39,20 @@ public class FeedAuthenticationIntegrationTests : IDisposable
     public async Task AnonymousAccess_WhenLocalModeEnabled_ReturnsUnauthorized()
     {
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ServiceIndex_WhenLocalModeEnabled_AllowsAnonymousAccess()
+    {
+        // Act - service index is unauthenticated (NuGet protocol requires it for endpoint discovery)
+        using var response = await _client.GetAsync("v3/index.json");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -53,7 +63,7 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         SetBasicAuth(LocalUsername, LocalPassword);
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -67,7 +77,7 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         SetBasicAuth(LocalUsername, LocalPassword);
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -81,7 +91,7 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         SetBasicAuth(LocalUsername, "WrongPassword");
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -100,7 +110,7 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         SetBasicAuth(LocalUsername, LocalPassword);
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -312,7 +322,7 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         SetBasicAuth(LocalUsername, LocalPassword);
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -375,19 +385,35 @@ public class HybridFeedAuthenticationIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task PatAsPassword_WithPullPermission_CanPullServiceIndex()
+    public async Task PatAsPassword_WithPullPermission_CanPullSearch()
     {
         // Arrange
         var (_, plaintextToken) = await SeedUserWithPatAsync(canPull: true, canPush: false);
 
-        // Use PAT as basic auth password (NuGet client pattern)
-        SetBasicAuth("PAT", plaintextToken);
+        // Use PAT as basic auth password with correct username (NuGet client pattern)
+        SetBasicAuth("hybriduser", plaintextToken);
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PatAsPassword_WithWrongUsername_ReturnsUnauthorized()
+    {
+        // Arrange
+        var (_, plaintextToken) = await SeedUserWithPatAsync(canPull: true, canPush: false);
+
+        // Use PAT with a different username than the token owner
+        SetBasicAuth("wronguser", plaintextToken);
+
+        // Act
+        using var response = await _client.GetAsync("v3/search");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -426,7 +452,7 @@ public class HybridFeedAuthenticationIntegrationTests : IDisposable
     public async Task AnonymousAccess_InHybridMode_ReturnsUnauthorized()
     {
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

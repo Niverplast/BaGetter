@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace BaGetter.Database.SqlServer.Migrations
+namespace BaGetter.Database.PostgreSql.Migrations
 {
     /// <inheritdoc />
     public partial class AddAuthEntities : Migration
@@ -15,13 +15,13 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "FeedPermissions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FeedId = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    PrincipalType = table.Column<int>(type: "int", nullable: false),
-                    PrincipalId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CanPush = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    CanPull = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    IsAdmin = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    FeedId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    PrincipalType = table.Column<int>(type: "integer", nullable: false),
+                    PrincipalId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CanPush = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    CanPull = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    Source = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
                 },
                 constraints: table =>
                 {
@@ -32,11 +32,11 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "Groups",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    EntraGroupId = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
-                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    AppRoleValue = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    Description = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
+                    CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -47,20 +47,20 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Username = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    AuthProvider = table.Column<int>(type: "int", nullable: false),
-                    EntraObjectId = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    PasswordHash = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    IsEnabled = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    CanLoginToUI = table.Column<bool>(type: "bit", nullable: false),
-                    FailedLoginCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    LockedUntilUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Username = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    AuthProvider = table.Column<int>(type: "integer", nullable: false),
+                    EntraObjectId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    PasswordHash = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    IsAdmin = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    CanLoginToUI = table.Column<bool>(type: "boolean", nullable: false),
+                    FailedLoginCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    LockedUntilUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -77,16 +77,16 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "PersonalAccessTokens",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    TokenHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    TokenPrefix = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
-                    ExpiresAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    LastUsedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RevokedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsRevoked = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    TokenHash = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    TokenPrefix = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
+                    ExpiresAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUsedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    RevokedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsRevoked = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -103,8 +103,8 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "UserGroups",
                 columns: table => new
                 {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GroupId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -127,6 +127,12 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "IX_FeedPermissions_FeedId_PrincipalType_PrincipalId",
                 table: "FeedPermissions",
                 columns: new[] { "FeedId", "PrincipalType", "PrincipalId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Groups_AppRoleValue",
+                table: "Groups",
+                column: "AppRoleValue",
                 unique: true);
 
             migrationBuilder.CreateIndex(

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Configuration;
@@ -65,7 +66,16 @@ public class FeedAuthenticationService : IFeedAuthenticationService
         {
             var tokenResult = await AuthenticateByTokenAsync(password, cancellationToken);
             if (tokenResult.IsAuthenticated)
+            {
+                if (!string.Equals(tokenResult.Username, username, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Audit: {EventType} - PAT username mismatch: supplied {SuppliedUsername}, token belongs to {TokenUsername}",
+                        "LoginFailure", username, tokenResult.Username);
+                    return new AuthResult(false, null, null);
+                }
+
                 return tokenResult;
+            }
         }
 
         _logger.LogWarning("Audit: {EventType} - Credential authentication failed for username {Username}",

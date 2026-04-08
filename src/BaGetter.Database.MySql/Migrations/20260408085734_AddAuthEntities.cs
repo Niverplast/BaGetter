@@ -59,7 +59,7 @@ namespace BaGetter.Database.MySql.Migrations
                     PrincipalId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CanPush = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
                     CanPull = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
-                    IsAdmin = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false)
+                    Source = table.Column<int>(type: "int", nullable: false, defaultValue: 0)
                 },
                 constraints: table =>
                 {
@@ -74,7 +74,7 @@ namespace BaGetter.Database.MySql.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Name = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
                         .Annotation("MySql:CharSet", "latin1"),
-                    EntraGroupId = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: true)
+                    AppRoleValue = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: true)
                         .Annotation("MySql:CharSet", "latin1"),
                     Description = table.Column<string>(type: "varchar(4000)", maxLength: 4000, nullable: true)
                         .Annotation("MySql:CharSet", "latin1"),
@@ -95,14 +95,13 @@ namespace BaGetter.Database.MySql.Migrations
                         .Annotation("MySql:CharSet", "latin1"),
                     DisplayName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
                         .Annotation("MySql:CharSet", "latin1"),
-                    Email = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
-                        .Annotation("MySql:CharSet", "latin1"),
                     AuthProvider = table.Column<int>(type: "int", nullable: false),
                     EntraObjectId = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: true)
                         .Annotation("MySql:CharSet", "latin1"),
                     PasswordHash = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                         .Annotation("MySql:CharSet", "latin1"),
                     IsEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
+                    IsAdmin = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
                     CanLoginToUI = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     FailedLoginCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     LockedUntilUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -181,6 +180,12 @@ namespace BaGetter.Database.MySql.Migrations
                 name: "IX_FeedPermissions_FeedId_PrincipalType_PrincipalId",
                 table: "FeedPermissions",
                 columns: new[] { "FeedId", "PrincipalType", "PrincipalId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Groups_AppRoleValue",
+                table: "Groups",
+                column: "AppRoleValue",
                 unique: true);
 
             migrationBuilder.CreateIndex(
