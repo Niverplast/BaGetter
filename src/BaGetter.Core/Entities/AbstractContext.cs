@@ -183,7 +183,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
     {
         user.HasKey(u => u.Id);
         user.HasIndex(u => u.Username).IsUnique();
-        user.HasIndex(u => u.EntraObjectId).IsUnique().HasFilter(null);
+        user.HasIndex(u => u.EntraObjectId).IsUnique();
 
         user.Property(u => u.Username)
             .HasMaxLength(MaxUsernameLength)
@@ -272,8 +272,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
             .HasMaxLength(MaxAppRoleValueLength);
 
         group.HasIndex(g => g.AppRoleValue)
-            .IsUnique()
-            .HasFilter(null);
+            .IsUnique();
 
         group.Property(g => g.Description)
             .HasMaxLength(DefaultMaxStringLength);

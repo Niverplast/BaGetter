@@ -87,7 +87,8 @@ namespace BaGetter.Database.SqlServer.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AppRoleValue")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[AppRoleValue] IS NOT NULL");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -407,7 +408,8 @@ namespace BaGetter.Database.SqlServer.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("EntraObjectId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[EntraObjectId] IS NOT NULL");
 
                     b.HasIndex("Username")
                         .IsUnique();

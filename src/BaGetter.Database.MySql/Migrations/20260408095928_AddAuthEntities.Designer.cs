@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BaGetter.Database.MySql.Migrations
 {
     [DbContext(typeof(MySqlContext))]
-    [Migration("20260408085734_AddAuthEntities")]
+    [Migration("20260408095928_AddAuthEntities")]
     partial class AddAuthEntities
     {
         /// <inheritdoc />

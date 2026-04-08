@@ -133,7 +133,8 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "IX_Groups_AppRoleValue",
                 table: "Groups",
                 column: "AppRoleValue",
-                unique: true);
+                unique: true,
+                filter: "[AppRoleValue] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Groups_Name",
@@ -166,7 +167,8 @@ namespace BaGetter.Database.SqlServer.Migrations
                 name: "IX_Users_EntraObjectId",
                 table: "Users",
                 column: "EntraObjectId",
-                unique: true);
+                unique: true,
+                filter: "[EntraObjectId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Username",
