@@ -1,10 +1,8 @@
 using System.Threading.Tasks;
-using BaGetter.Core.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace BaGetter.Web.Pages;
 
@@ -13,7 +11,6 @@ public class LogoutModel : PageModel
     private readonly ILogger<LogoutModel> _logger;
 
     public LogoutModel(
-        IOptionsSnapshot<NugetAuthenticationOptions> authOptions,
         ILogger<LogoutModel> logger)
     {
         _logger = logger;

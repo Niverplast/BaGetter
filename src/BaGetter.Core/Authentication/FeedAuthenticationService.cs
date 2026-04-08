@@ -21,9 +21,14 @@ public class FeedAuthenticationService : IFeedAuthenticationService
         IOptionsSnapshot<NugetAuthenticationOptions> authOptions,
         ILogger<FeedAuthenticationService> logger)
     {
+        ArgumentNullException.ThrowIfNull(userService);
+        ArgumentNullException.ThrowIfNull(tokenService);
+        ArgumentNullException.ThrowIfNull(authOptions);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _userService = userService;
         _tokenService = tokenService;
-        _authOptions = authOptions?.Value;
+        _authOptions = authOptions.Value;
         _logger = logger;
     }
 
