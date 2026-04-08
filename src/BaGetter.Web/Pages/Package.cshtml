@@ -1,13 +1,27 @@
 @page "/packages/{id}/{version?}"
-@using BaGetter.Core.Search
+@using BaGetter.Core.Configuration
 @using Humanizer
 @using Microsoft.AspNetCore.Html
+@using Microsoft.Extensions.Options
 @model PackageModel
+@inject IOptions<NugetAuthenticationOptions> AuthOptions
 
 @{
     ViewData["Title"] = Model.Found
         ? Model.Package.Id + " " + Model.Package.NormalizedVersionString
         : Model.Package.Id;
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
+@if (requiresAuth && !isAuthenticated)
+{
+    <div class="text-center" style="margin-top: 60px;">
+        <h2>Sign in required</h2>
+        <p>You need to sign in to view package details.</p>
+        <a asp-page="/Login" class="btn btn-primary">Sign in</a>
+    </div>
+    return;
 }
 
 @if (!Model.Found)
@@ -97,7 +111,7 @@ else
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (PackageDependent package in Model.UsedBy)
+                                        @foreach (var package in Model.UsedBy)
                                         {
                                             <tr>
                                                 <td>
@@ -131,7 +145,7 @@ else
                     }
                     else
                     {
-                        foreach (PackageModel.DependencyGroupModel group in Model.DependencyGroups)
+                        foreach (var group in Model.DependencyGroups)
                         {
                             <h4>
                                 <span>@group.Name</span>
@@ -144,7 +158,7 @@ else
                                 }
                                 else
                                 {
-                                    @foreach (PackageModel.DependencyModel dependency in group.Dependencies)
+                                    @foreach (var dependency in group.Dependencies)
                                     {
                                         <li>
                                             <a asp-page="Package"
@@ -174,10 +188,10 @@ else
                             </tr>
                         </thead>
                         <tbody class="no-border">
-                            @for (int i = 0; i < Model.Versions.Count; i++)
+                            @for (var i = 0; i < Model.Versions.Count; i++)
                             {
-                                PackageModel.VersionModel version = Model.Versions[i];
-                                IHtmlContent alwaysShow = Json.Serialize(i < DefaultVisibleVersions);
+                                var version = Model.Versions[i];
+                                var alwaysShow = Json.Serialize(i < DefaultVisibleVersions);
 
                                 <tr class="@(version.Selected ? "bg-info" : "")" x-show="showAll || @alwaysShow">
                                     <td><a asp-page="Package" asp-route-version="@version.Version">@version.Version.ToNormalizedString()</a></td>
@@ -272,7 +286,7 @@ else
                     <h2>Tags</h2>
 
                     <p>
-                        @foreach(string tag in Model.Package.Tags)
+                        @foreach(var tag in Model.Package.Tags)
                         {
                             <span class="tag">@tag</span>
                         }

@@ -84,6 +84,7 @@ public static partial class DependencyInjectionExtensions
         services.AddBaGetterOptions<SearchOptions>(nameof(BaGetterOptions.Search));
         services.AddBaGetterOptions<StorageOptions>(nameof(BaGetterOptions.Storage));
         services.AddBaGetterOptions<StatisticsOptions>(nameof(BaGetterOptions.Statistics));
+        services.AddBaGetterOptions<NugetAuthenticationOptions>(nameof(BaGetterOptions.Authentication));
     }
 
     private static void AddBaGetServices(this IServiceCollection services)
@@ -105,6 +106,11 @@ public static partial class DependencyInjectionExtensions
         services.TryAddScoped<DownloadsImporter>();
 
         services.TryAddTransient<IAuthenticationService, ApiKeyAuthenticationService>();
+        services.TryAddTransient<IUserService, UserService>();
+        services.TryAddTransient<IGroupService, GroupService>();
+        services.TryAddTransient<IPermissionService, PermissionService>();
+        services.TryAddTransient<ITokenService, TokenService>();
+        services.TryAddTransient<IFeedAuthenticationService, FeedAuthenticationService>();
         services.TryAddTransient<IPackageContentService, DefaultPackageContentService>();
         services.TryAddTransient<IPackageDeletionService, PackageDeletionService>();
         services.TryAddTransient<IPackageIndexingService, PackageIndexingService>();

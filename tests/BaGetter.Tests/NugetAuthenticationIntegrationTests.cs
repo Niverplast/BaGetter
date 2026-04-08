@@ -33,7 +33,7 @@ public class NugetAuthenticationIntegrationTests : IDisposable
     public async Task AnonymousAccess_WhenAnonymousNotAllowed_ReturnsUnauthorized()
     {
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -46,7 +46,7 @@ public class NugetAuthenticationIntegrationTests : IDisposable
         _client.DefaultRequestHeaders.Authorization = new(AuthenticationConstants.NugetBasicAuthenticationScheme, $"{Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Username}:{Password}"))}");
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -59,7 +59,7 @@ public class NugetAuthenticationIntegrationTests : IDisposable
         _client.DefaultRequestHeaders.Authorization = new(AuthenticationConstants.NugetBasicAuthenticationScheme, $"{Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Username}:{Password}x"))}");
 
         // Act
-        using var response = await _client.GetAsync("v3/index.json");
+        using var response = await _client.GetAsync("v3/search");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

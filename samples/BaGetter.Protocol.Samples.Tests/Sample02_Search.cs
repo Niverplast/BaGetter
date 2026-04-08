@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using BaGetter.Protocol.Models;
 using NuGet.Versioning;
 using Xunit;
 
@@ -13,7 +11,7 @@ public class Sample02_Search
     public async Task Exists()
     {
         // Check if a package exists.
-        NuGetClient client = new NuGetClient("https://api.nuget.org/v3/index.json");
+        var client = new NuGetClient("https://api.nuget.org/v3/index.json");
 
         if (!await client.ExistsAsync("newtonsoft.json"))
         {
@@ -31,11 +29,11 @@ public class Sample02_Search
     public async Task Search()
     {
         // Search for packages that are relevant to "json".
-        NuGetClient client = new NuGetClient("https://api.nuget.org/v3/index.json");
-        IReadOnlyList<SearchResult> results = await client.SearchAsync("json");
+        var client = new NuGetClient("https://api.nuget.org/v3/index.json");
+        var results = await client.SearchAsync("json");
 
         var index = 1;
-        foreach (SearchResult result in results)
+        foreach (var result in results)
         {
             Console.WriteLine($"Result #{index}");
             Console.WriteLine($"Package id: {result.PackageId}");
@@ -52,10 +50,10 @@ public class Sample02_Search
     public async Task Autocomplete()
     {
         // Search for packages whose names' start with "Newt".
-        NuGetClient client = new NuGetClient("https://api.nuget.org/v3/index.json");
-        IReadOnlyList<string> packageIds = await client.AutocompleteAsync("Newt");
+        var client = new NuGetClient("https://api.nuget.org/v3/index.json");
+        var packageIds = await client.AutocompleteAsync("Newt");
 
-        foreach (string packageId in packageIds)
+        foreach (var packageId in packageIds)
         {
             Console.WriteLine($"Found package ID '{packageId}'");
         }

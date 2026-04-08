@@ -4,9 +4,11 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Extensions;
 using BaGetter.Core.Indexing;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -92,6 +94,11 @@ public class BaGetterApplication : WebApplicationFactory<Startup>
                 }
 
                 services.Configure<HealthCheckServiceOptions>(opts => opts.Registrations.Clear());
+
+                // The test server uses HTTP, so cookies must not require HTTPS.
+                services.PostConfigure<CookieAuthenticationOptions>(
+                    AuthenticationConstants.CookieScheme,
+                    options => options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest);
 
                 // Setup the integration test database.
                 var provider = services.BuildServiceProvider();

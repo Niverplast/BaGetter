@@ -8,11 +8,24 @@
 @using Microsoft.Extensions.Options
 
 @inject IOptionsSnapshot<StatisticsOptions> Options
+@inject IOptionsSnapshot<NugetAuthenticationOptions> AuthOptions
 @inject IStatisticsService StatisticsService
 @inject ApplicationVersion Version
 
 @{
     ViewData["Title"] = "Stats";
+    var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
+@if (requiresAuth && !isAuthenticated)
+{
+    <div class="text-center" style="margin-top: 60px;">
+        <h2>Sign in required</h2>
+        <p>You need to sign in to view statistics.</p>
+        <a asp-page="/Login" class="btn btn-primary">Sign in</a>
+    </div>
+    return;
 }
 
 <div class="col-sm-12">

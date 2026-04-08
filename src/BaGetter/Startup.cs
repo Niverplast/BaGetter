@@ -18,11 +18,9 @@ using BaGetter.Web;
 using BaGetter.Web.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using HealthCheckOptions = Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions;
 
 namespace BaGetter;
@@ -30,10 +28,12 @@ namespace BaGetter;
 public class Startup
 {
     private IConfiguration Configuration { get; }
+    private IWebHostEnvironment Environment { get; }
 
-    public Startup(IConfiguration configuration)
+    public Startup(IConfiguration configuration, IWebHostEnvironment environment)
     {
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        Environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -53,8 +53,6 @@ public class Startup
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchService>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchIndexer>);
 
-        services.AddSingleton<IConfigureOptions<MvcRazorRuntimeCompilationOptions>, ConfigureRazorRuntimeCompilation>();
-
         services.AddHealthChecks();
 
         services.AddCors();
@@ -65,6 +63,9 @@ public class Startup
         //Add base authentication and authorization
         app.AddNugetBasicHttpAuthentication();
         app.AddNugetBasicHttpAuthorization();
+
+        // Add Entra ID (OIDC) authentication when configured
+        app.AddEntraAuthentication(Configuration, Environment);
 
         // Add database providers.
         app.AddAzureTableDatabase();
