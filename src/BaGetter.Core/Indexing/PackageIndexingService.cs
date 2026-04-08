@@ -45,7 +45,12 @@ public class PackageIndexingService : IPackageIndexingService
 #pragma warning restore CS0618 // Type or member is obsolete
     }
 
-    public async Task<PackageIndexingResult> IndexAsync(Stream packageStream, CancellationToken cancellationToken)
+    public Task<PackageIndexingResult> IndexAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        return IndexAsync(stream, null, cancellationToken);
+    }
+
+    public async Task<PackageIndexingResult> IndexAsync(Stream packageStream, string cacheFeedUrl = null, CancellationToken cancellationToken = default)
     {
         // Try to extract all the necessary information from the package.
         Package package;
@@ -57,6 +62,7 @@ public class PackageIndexingService : IPackageIndexingService
         {
             using var packageReader = new PackageArchiveReader(packageStream, leaveStreamOpen: true);
             package = packageReader.GetPackageMetadata();
+            package.CachedFrom = cacheFeedUrl;
             package.Published = _time.UtcNow;
 
             nuspecStream = await packageReader.GetNuspecAsync(cancellationToken);
@@ -167,7 +173,8 @@ public class PackageIndexingService : IPackageIndexingService
 
         if (_retentionOptions.Value.MaxMajorVersions.HasValue)
         {
-            try { 
+            try
+            {
                 _logger.LogInformation(
                     "Deleting older packages for package {PackageId} {PackageVersion}",
                     package.Id,

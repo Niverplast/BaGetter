@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,5 +30,10 @@ public class DisabledUpstreamClient : IUpstreamClient
         CancellationToken cancellationToken)
     {
         return Task.FromResult<Stream>(null);
+    }
+
+    public string GetServiceIndexUrl()
+    {
+        return null;
     }
 }

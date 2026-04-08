@@ -30,6 +30,10 @@ namespace BaGetter.Database.SqlServer.Migrations
                         .HasColumnType("nvarchar(4000)")
                         .HasMaxLength(4000);
 
+                    b.Property<string>("CachedFrom")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(4000)")
                         .HasMaxLength(4000);
