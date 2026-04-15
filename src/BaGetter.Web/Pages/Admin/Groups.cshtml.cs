@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -18,15 +19,18 @@ public class GroupsModel : PageModel
     private readonly IGroupService _groupService;
     private readonly IUserService _userService;
     private readonly IPermissionService _permissionService;
+    private readonly IFeedService _feedService;
 
     public GroupsModel(
         IGroupService groupService,
         IUserService userService,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IFeedService feedService)
     {
         _groupService = groupService ?? throw new ArgumentNullException(nameof(groupService));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
+        _feedService = feedService ?? throw new ArgumentNullException(nameof(feedService));
     }
 
     public List<Group> Groups { get; set; } = new();
@@ -67,10 +71,13 @@ public class GroupsModel : PageModel
 
     private async Task LoadGroupPermissionsAsync(CancellationToken cancellationToken)
     {
+        var defaultFeed = await _feedService.GetDefaultFeedAsync(cancellationToken);
+        if (defaultFeed == null) return;
+
         foreach (var group in Groups)
         {
             var permission = await _permissionService.GetPermissionAsync(
-                group.Id, PrincipalType.Group, "default", cancellationToken);
+                group.Id, PrincipalType.Group, defaultFeed.Id, cancellationToken);
             if (permission != null)
             {
                 GroupPermissions[group.Id] = permission;
@@ -168,7 +175,7 @@ public class GroupsModel : PageModel
     public async Task<IActionResult> OnPostGrantPermissionAsync(
         Guid principalId,
         PrincipalType principalType,
-        string feedId,
+        Guid? feedId,
         bool canPush,
         bool canPull,
         CancellationToken cancellationToken)
@@ -176,8 +183,19 @@ public class GroupsModel : PageModel
         if (!await IsCurrentUserAdminAsync(cancellationToken))
             return RedirectToPage("/Index");
 
+        Guid resolvedFeedId;
+        if (feedId.HasValue && feedId.Value != Guid.Empty)
+        {
+            resolvedFeedId = feedId.Value;
+        }
+        else
+        {
+            var defaultFeed = await _feedService.GetDefaultFeedAsync(cancellationToken);
+            resolvedFeedId = defaultFeed?.Id ?? Guid.Empty;
+        }
+
         await _permissionService.GrantPermissionAsync(
-            principalId, principalType, feedId ?? "default",
+            principalId, principalType, resolvedFeedId,
             canPush, canPull, cancellationToken);
 
         return RedirectToPage(new { savedGroupId = principalId });

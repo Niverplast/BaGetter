@@ -1,5 +1,8 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
 using BaGetter.Web.Pages;
@@ -24,7 +27,15 @@ public class IndexModelFacts
             .Callback((SearchRequest r, CancellationToken c) => _capturedRequest = r)
             .ReturnsAsync(_response);
 
-        _target = new IndexModel(search.Object);
+        var feedContext = new Mock<IFeedContext>();
+        feedContext.Setup(f => f.CurrentFeed).Returns(new Feed
+        {
+            Id = Guid.Empty,
+            Slug = Feed.DefaultSlug,
+            Name = "Default",
+        });
+
+        _target = new IndexModel(search.Object, feedContext.Object);
     }
 
     [Fact]

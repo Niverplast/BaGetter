@@ -1,3 +1,5 @@
+using System;
+
 namespace BaGetter.Core.Search;
 
 /// <summary>
@@ -6,6 +8,8 @@ namespace BaGetter.Core.Search;
 /// <remarks>See: <see href="https://docs.microsoft.com/en-us/nuget/api/search-autocomplete-service-resource#request-parameters"/></remarks>
 public class AutocompleteRequest
 {
+    public Guid FeedId { get; set; }
+
     /// <summary>
     /// The number of results to skip, for pagination.
     /// </summary>

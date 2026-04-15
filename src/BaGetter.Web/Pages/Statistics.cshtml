@@ -3,19 +3,25 @@
 @model StatisticsModel
 
 @using BaGetter.Core.Configuration
+@using BaGetter.Core.Entities
+@using BaGetter.Core.Feeds
 @using BaGetter.Core.Statistics
 @using BaGetter.Web.Helper
+@using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Options
 
 @inject IOptionsSnapshot<StatisticsOptions> Options
 @inject IOptionsSnapshot<NugetAuthenticationOptions> AuthOptions
 @inject IStatisticsService StatisticsService
 @inject ApplicationVersion Version
+@inject IFeedContext FeedContext
+@inject IContext DbContext
 
 @{
-    ViewData["Title"] = "Stats";
+    ViewData["Title"] = "Stats \u2014 " + FeedContext.CurrentFeed.Name;
     var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var feedId = FeedContext.CurrentFeed.Id;
 }
 
 @if (requiresAuth && !isAuthenticated)
@@ -29,7 +35,7 @@
 }
 
 <div class="col-sm-12">
-    <h1>Statistics</h1>
+    <h1>Statistics &mdash; @FeedContext.CurrentFeed.Name</h1>
     <hr class="breadcrumb-divider" />
     <div class="row">
         <article class="col-sm-4">
@@ -44,7 +50,7 @@
             <h4>Total amount of packages</h4>
         </article>
         <div class="col-sm-8">
-            <h4>@await StatisticsService.GetPackagesTotalAmount()</h4>
+            <h4>@await DbContext.Packages.Where(p => p.FeedId == feedId).GroupBy(p => p.Id).CountAsync()</h4>
         </div>
     </div>
     <div class="row">
@@ -52,7 +58,7 @@
             <h4>Total amount of package versions</h4>
         </article>
         <div class="col-sm-8">
-            <h4>@await StatisticsService.GetVersionsTotalAmount()</h4>
+            <h4>@await DbContext.Packages.Where(p => p.FeedId == feedId).CountAsync()</h4>
         </div>
     </div>
     @if (Options.Value.ListConfiguredServices)

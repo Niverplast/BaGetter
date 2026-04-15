@@ -22,6 +22,91 @@ namespace BaGetter.Database.SqlServer.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("BaGetter.Core.Entities.Feed", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("AllowPackageOverwrites")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool?>("IsReadOnlyMode")
+                        .HasColumnType("bit");
+
+                    b.Property<long?>("MaxPackageSizeGiB")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("MirrorAuthCustomHeaders")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MirrorAuthPassword")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MirrorAuthToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("MirrorAuthType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MirrorAuthUsername")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("MirrorDownloadTimeoutSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("MirrorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MirrorLegacy")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MirrorPackageSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int?>("PackageDeletionBehavior")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RetentionMaxMajorVersions")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RetentionMaxMinorVersions")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RetentionMaxPatchVersions")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RetentionMaxPrereleaseVersions")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Feeds");
+                });
+
             modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -38,10 +123,8 @@ namespace BaGetter.Database.SqlServer.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<string>("FeedId")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                    b.Property<Guid>("FeedId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("PrincipalId")
                         .HasColumnType("uniqueidentifier");
@@ -114,6 +197,9 @@ namespace BaGetter.Database.SqlServer.Migrations
 
                     b.Property<long>("Downloads")
                         .HasColumnType("bigint");
+
+                    b.Property<Guid>("FeedId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("HasEmbeddedIcon")
                         .HasColumnType("bit");
@@ -203,9 +289,9 @@ namespace BaGetter.Database.SqlServer.Migrations
 
                     b.HasKey("Key");
 
-                    b.HasIndex("Id");
+                    b.HasIndex("FeedId", "Id");
 
-                    b.HasIndex("Id", "NormalizedVersionString")
+                    b.HasIndex("FeedId", "Id", "NormalizedVersionString")
                         .IsUnique();
 
                     b.ToTable("Packages");
@@ -432,6 +518,28 @@ namespace BaGetter.Database.SqlServer.Migrations
                     b.ToTable("UserGroups");
                 });
 
+            modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Permissions")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Packages")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
             modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
                 {
                     b.HasOne("BaGetter.Core.Entities.Package", "Package")
@@ -501,6 +609,13 @@ namespace BaGetter.Database.SqlServer.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Feed", b =>
+                {
+                    b.Navigation("Packages");
+
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using BaGetter.Core;
 using BaGetter.Core.Content;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
 using BaGetter.Web.Pages;
 using Moq;
@@ -21,9 +22,12 @@ public class PackageModelFacts
     private readonly Mock<IPackageService> _packages;
     private readonly Mock<ISearchService> _search;
     private readonly Mock<IUrlGenerator> _url;
+    private readonly Mock<IFeedContext> _feedContext;
     private readonly PackageModel _target;
 
     private readonly CancellationToken _cancellation = CancellationToken.None;
+    private static readonly Guid DefaultFeedId = Guid.Empty;
+    private const string DefaultFeedSlug = "default";
 
     public PackageModelFacts()
     {
@@ -31,14 +35,20 @@ public class PackageModelFacts
         _packages = new Mock<IPackageService>();
         _search = new Mock<ISearchService>();
         _url = new Mock<IUrlGenerator>();
+        _feedContext = new Mock<IFeedContext>();
+
+        var defaultFeed = new Feed { Id = DefaultFeedId, Slug = DefaultFeedSlug };
+        _feedContext.Setup(f => f.CurrentFeed).Returns(defaultFeed);
+
         _target = new PackageModel(
             _packages.Object,
             _content.Object,
             _search.Object,
-            _url.Object);
+            _url.Object,
+            _feedContext.Object);
 
         _search
-            .Setup(s => s.FindDependentsAsync("testpackage", _cancellation))
+            .Setup(s => s.FindDependentsAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new DependentsResponse());
     }
 
@@ -46,7 +56,7 @@ public class PackageModelFacts
     public async Task ReturnsNotFound()
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>());
 
         await _target.OnGetAsync("testpackage", "1.0.0", _cancellation);
@@ -61,7 +71,7 @@ public class PackageModelFacts
     public async Task ReturnsNotFoundIfAllUnlisted()
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0", listed: false),
@@ -79,7 +89,7 @@ public class PackageModelFacts
     public async Task ReturnsRequestedVersion()
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0"),
@@ -106,7 +116,7 @@ public class PackageModelFacts
     public async Task ReturnsRequestedUnlistedVersion()
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0"),
@@ -131,7 +141,7 @@ public class PackageModelFacts
     public async Task FallsBackToLatestListedVersion()
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0"),
@@ -161,7 +171,7 @@ public class PackageModelFacts
     public async Task HandlesPackageTypes(IEnumerable<string> packageTypes, bool expectDotnetTemplate, bool expectDotnetTool)
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0", packageTypes: packageTypes)
@@ -178,14 +188,14 @@ public class PackageModelFacts
     public async Task FindsDependentPackages()
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0")
             });
 
         _search
-            .Setup(s => s.FindDependentsAsync("testpackage", _cancellation))
+            .Setup(s => s.FindDependentsAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new DependentsResponse
             {
                 Data = new List<PackageDependent>
@@ -206,7 +216,7 @@ public class PackageModelFacts
     public async Task GroupsVersions()
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0", dependencies: new[]
@@ -261,7 +271,7 @@ public class PackageModelFacts
     public async Task PrettifiesTargetFramework(string targetFramework, string expectedResult)
     {
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0", dependencies: new[]
@@ -288,7 +298,7 @@ public class PackageModelFacts
         var now = DateTime.Now;
 
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0", downloads: 10, published: DateTime.Now.AddDays(-2)),
@@ -316,7 +326,7 @@ public class PackageModelFacts
         readmeStream.Position = 0;
 
         _packages
-            .Setup(m => m.FindPackagesAsync("testpackage", _cancellation))
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
             .ReturnsAsync(new List<Package>
             {
                 CreatePackage("1.0.0", hasReadme: true),
@@ -324,6 +334,8 @@ public class PackageModelFacts
 
         _content
             .Setup(c => c.GetPackageReadmeStreamOrNullAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
                 "testpackage",
                 It.Is<NuGetVersion>(v => v.OriginalVersion == "1.0.0"),
                 _cancellation))

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using BaGetter.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -25,7 +26,6 @@ public class WebUiLocalLoginTests : IDisposable
 
     private const string TestUsername = "localui";
     private const string TestPassword = "TestPassword123!";
-    private const string DefaultFeedId = "default";
 
     public WebUiLocalLoginTests(ITestOutputHelper output)
     {
@@ -331,6 +331,7 @@ public class WebUiLocalLoginTests : IDisposable
         using var scope = _app.Services.CreateScope();
         var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
         var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+        var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
         var user = await userService.CreateLocalUserAsync(
             TestUsername, "Test User",
@@ -338,8 +339,9 @@ public class WebUiLocalLoginTests : IDisposable
             createdByUserId: null,
             CancellationToken.None);
 
+        var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
         await permissionService.GrantPermissionAsync(
-            user.Id, PrincipalType.User, DefaultFeedId,
+            user.Id, PrincipalType.User, defaultFeed.Id,
             canPush: false, canPull: canPull,
             CancellationToken.None);
 
@@ -447,14 +449,16 @@ public class WebUiAccessControlTests : IDisposable
         {
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+            var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var user = await userService.CreateLocalUserAsync(
                 "regular", "Regular User",
                 "RegularPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
+            var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
             await permissionService.GrantPermissionAsync(
-                user.Id, PrincipalType.User, "default",
+                user.Id, PrincipalType.User, defaultFeed.Id,
                 canPush: false, canPull: true,
                 CancellationToken.None);
         }
@@ -486,6 +490,7 @@ public class WebUiAccessControlTests : IDisposable
         {
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+            var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var user = await userService.CreateLocalUserAsync(
                 "admin", "Admin User",
@@ -494,8 +499,9 @@ public class WebUiAccessControlTests : IDisposable
 
             await userService.SetAdminAsync(user.Id, true, CancellationToken.None);
 
+            var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
             await permissionService.GrantPermissionAsync(
-                user.Id, PrincipalType.User, "default",
+                user.Id, PrincipalType.User, defaultFeed.Id,
                 canPush: true, canPull: true,
                 CancellationToken.None);
         }
@@ -530,14 +536,16 @@ public class WebUiAccessControlTests : IDisposable
         {
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+            var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var user = await userService.CreateLocalUserAsync(
                 "localuser", "Local User",
                 "LocalPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
+            var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
             await permissionService.GrantPermissionAsync(
-                user.Id, PrincipalType.User, "default",
+                user.Id, PrincipalType.User, defaultFeed.Id,
                 canPush: false, canPull: true,
                 CancellationToken.None);
         }
@@ -660,6 +668,7 @@ public class WebUiAccountToggleTests : IDisposable
         {
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+            var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var admin = await userService.CreateLocalUserAsync(
                 AdminUsername, "Admin",
@@ -668,8 +677,9 @@ public class WebUiAccountToggleTests : IDisposable
 
             await userService.SetAdminAsync(admin.Id, true, CancellationToken.None);
 
+            var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
             await permissionService.GrantPermissionAsync(
-                admin.Id, PrincipalType.User, "default",
+                admin.Id, PrincipalType.User, defaultFeed.Id,
                 canPush: true, canPull: true,
                 CancellationToken.None);
 
@@ -836,14 +846,16 @@ public class WebUiAccountToggleTests : IDisposable
         {
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+            var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var regularUser = await userService.CreateLocalUserAsync(
                 "nonadmin", "Non Admin",
                 "NonAdminPass123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
+            var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
             await permissionService.GrantPermissionAsync(
-                regularUser.Id, PrincipalType.User, "default",
+                regularUser.Id, PrincipalType.User, defaultFeed.Id,
                 canPush: false, canPull: true,
                 CancellationToken.None);
 

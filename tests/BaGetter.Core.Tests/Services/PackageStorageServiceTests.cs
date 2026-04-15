@@ -22,6 +22,7 @@ public class PackageStorageServiceTests
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _target.SavePackageContentAsync(
+                    "default",
                     null,
                     packageStream: Stream.Null,
                     nuspecStream: Stream.Null,
@@ -34,6 +35,7 @@ public class PackageStorageServiceTests
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _target.SavePackageContentAsync(
+                    "default",
                     _package,
                     packageStream: null,
                     nuspecStream: Stream.Null,
@@ -46,6 +48,7 @@ public class PackageStorageServiceTests
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _target.SavePackageContentAsync(
+                    "default",
                     _package,
                     packageStream: Stream.Null,
                     nuspecStream: null,
@@ -65,6 +68,7 @@ public class PackageStorageServiceTests
             using var iconStream = StringStream("My icon");
             // Act
             await _target.SavePackageContentAsync(
+                "default",
                 _package,
                 packageStream: packageStream,
                 nuspecStream: nuspecStream,
@@ -100,6 +104,7 @@ public class PackageStorageServiceTests
             {
                 // Act
                 await _target.SavePackageContentAsync(
+                    "default",
                     _package,
                     packageStream: packageStream,
                     nuspecStream: nuspecStream,
@@ -125,6 +130,7 @@ public class PackageStorageServiceTests
             {
                 // Act
                 await _target.SavePackageContentAsync(
+                    "default",
                     _package,
                     packageStream: packageStream,
                     nuspecStream: nuspecStream,
@@ -149,6 +155,7 @@ public class PackageStorageServiceTests
             using var readmeStream = StringStream("My readme");
             using var iconStream = StringStream("My icon");
             await _target.SavePackageContentAsync(
+                "default",
                 _package,
                 packageStream: packageStream,
                 nuspecStream: nuspecStream,
@@ -186,6 +193,7 @@ public class PackageStorageServiceTests
             // Act
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _target.SavePackageContentAsync(
+                    "default",
                     _package,
                     packageStream: packageStream,
                     nuspecStream: nuspecStream,
@@ -204,10 +212,14 @@ public class PackageStorageServiceTests
             _storage
                 .Setup(s => s.GetAsync(PackagePath, cancellationToken))
                 .ThrowsAsync(new DirectoryNotFoundException());
+            // The default-feed legacy fallback also tries the non-slug path; set it up to throw too.
+            _storage
+                .Setup(s => s.GetAsync(LegacyPackagePath, cancellationToken))
+                .ThrowsAsync(new DirectoryNotFoundException());
 
             // Act
             await Assert.ThrowsAsync<DirectoryNotFoundException>(() =>
-                _target.GetPackageStreamAsync(_package.Id, _package.Version, cancellationToken));
+                _target.GetPackageStreamAsync("default", _package.Id, _package.Version, cancellationToken));
         }
 
         [Fact]
@@ -221,7 +233,7 @@ public class PackageStorageServiceTests
                 .ReturnsAsync(packageStream);
 
             // Act
-            var result = await _target.GetPackageStreamAsync(_package.Id, _package.Version, cancellationToken);
+            var result = await _target.GetPackageStreamAsync("default", _package.Id, _package.Version, cancellationToken);
 
             // Assert
             Assert.Equal("My package", await ToStringAsync(result));
@@ -240,10 +252,14 @@ public class PackageStorageServiceTests
             _storage
                 .Setup(s => s.GetAsync(NuspecPath, cancellationToken))
                 .ThrowsAsync(new DirectoryNotFoundException());
+            // The default-feed legacy fallback also tries the non-slug path; set it up to throw too.
+            _storage
+                .Setup(s => s.GetAsync(LegacyNuspecPath, cancellationToken))
+                .ThrowsAsync(new DirectoryNotFoundException());
 
             // Act
             await Assert.ThrowsAsync<DirectoryNotFoundException>(() =>
-                _target.GetNuspecStreamAsync(_package.Id, _package.Version, cancellationToken));
+                _target.GetNuspecStreamAsync("default", _package.Id, _package.Version, cancellationToken));
         }
 
         [Fact]
@@ -257,7 +273,7 @@ public class PackageStorageServiceTests
                 .ReturnsAsync(nuspecStream);
 
             // Act
-            var result = await _target.GetNuspecStreamAsync(_package.Id, _package.Version, cancellationToken);
+            var result = await _target.GetNuspecStreamAsync("default", _package.Id, _package.Version, cancellationToken);
 
             // Assert
             Assert.Equal("My nuspec", await ToStringAsync(result));
@@ -276,10 +292,14 @@ public class PackageStorageServiceTests
             _storage
                 .Setup(s => s.GetAsync(ReadmePath, cancellationToken))
                 .ThrowsAsync(new DirectoryNotFoundException());
+            // The default-feed legacy fallback also tries the non-slug path; set it up to throw too.
+            _storage
+                .Setup(s => s.GetAsync(LegacyReadmePath, cancellationToken))
+                .ThrowsAsync(new DirectoryNotFoundException());
 
             // Act
             await Assert.ThrowsAsync<DirectoryNotFoundException>(() =>
-                _target.GetReadmeStreamAsync(_package.Id, _package.Version, cancellationToken));
+                _target.GetReadmeStreamAsync("default", _package.Id, _package.Version, cancellationToken));
         }
 
         [Fact]
@@ -293,7 +313,7 @@ public class PackageStorageServiceTests
                 .ReturnsAsync(readmeStream);
 
             // Act
-            var result = await _target.GetReadmeStreamAsync(_package.Id, _package.Version, cancellationToken);
+            var result = await _target.GetReadmeStreamAsync("default", _package.Id, _package.Version, cancellationToken);
 
             // Assert
             Assert.Equal("My readme", await ToStringAsync(result));
@@ -309,7 +329,7 @@ public class PackageStorageServiceTests
         {
             // Act
             var cancellationToken = CancellationToken.None;
-            await _target.DeleteAsync(_package.Id, _package.Version, cancellationToken);
+            await _target.DeleteAsync("default", _package.Id, _package.Version, cancellationToken);
 
             _storage.Verify(s => s.DeleteAsync(PackagePath, cancellationToken), Times.Once);
             _storage.Verify(s => s.DeleteAsync(NuspecPath, cancellationToken), Times.Once);
@@ -338,10 +358,15 @@ public class PackageStorageServiceTests
             _puts = new Dictionary<string, (Stream Content, string ContentType)>();
         }
 
-        protected string PackagePath => Path.Combine("packages", "my.package", "1.2.3", "my.package.1.2.3.nupkg");
-        protected string NuspecPath => Path.Combine("packages", "my.package", "1.2.3", "my.package.nuspec");
-        protected string ReadmePath => Path.Combine("packages", "my.package", "1.2.3", "readme");
-        protected string IconPath => Path.Combine("packages", "my.package", "1.2.3", "icon");
+        protected string PackagePath => Path.Combine("packages", "default", "my.package", "1.2.3", "my.package.1.2.3.nupkg");
+        protected string NuspecPath => Path.Combine("packages", "default", "my.package", "1.2.3", "my.package.nuspec");
+        protected string ReadmePath => Path.Combine("packages", "default", "my.package", "1.2.3", "readme");
+        protected string IconPath => Path.Combine("packages", "default", "my.package", "1.2.3", "icon");
+
+        // Legacy paths (no feed-slug prefix) — used by the default-feed legacy fallback.
+        protected string LegacyPackagePath => Path.Combine("packages", "my.package", "1.2.3", "my.package.1.2.3.nupkg");
+        protected string LegacyNuspecPath => Path.Combine("packages", "my.package", "1.2.3", "my.package.nuspec");
+        protected string LegacyReadmePath => Path.Combine("packages", "my.package", "1.2.3", "readme");
 
         protected Stream StringStream(string input)
         {

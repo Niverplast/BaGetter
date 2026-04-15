@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Extensions;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Indexing;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
@@ -116,12 +117,67 @@ public class BaGetterApplication : WebApplicationFactory<Startup>
 
                 dbCreator.Create();
                 ctx.Database.Migrate();
+
+                var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
+                feedService.EnsureDefaultFeedExistsAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+                // When an upstream client is provided, configure the default feed for mirroring
+                // so that the per-feed UpstreamClientFactory returns a live client.
+                if (_upstreamClient != null)
+                {
+                    var defaultFeed = feedService.GetDefaultFeedAsync(CancellationToken.None).GetAwaiter().GetResult();
+                    defaultFeed.MirrorEnabled = true;
+                    defaultFeed.MirrorPackageSource = "http://localhost/v3/index.json";
+                    defaultFeed.MirrorLegacy = false;
+                    feedService.UpdateFeedAsync(defaultFeed, CancellationToken.None).GetAwaiter().GetResult();
+                }
             });
     }
 }
 
 internal static class BaGetWebApplicationFactoryExtensions
 {
+    public static async Task<Feed> CreateFeedAsync(
+        this WebApplicationFactory<Startup> factory,
+        string slug,
+        string name = null,
+        CancellationToken cancellationToken = default)
+    {
+        var scopeFactory = factory.Services.GetRequiredService<IServiceScopeFactory>();
+
+        using var scope = scopeFactory.CreateScope();
+        var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
+
+        return await feedService.CreateFeedAsync(new Feed
+        {
+            Slug = slug,
+            Name = name ?? slug,
+            MirrorEnabled = false,
+            MirrorLegacy = false,
+        }, cancellationToken);
+    }
+
+    public static async Task AddPackageToFeedAsync(
+        this WebApplicationFactory<Startup> factory,
+        Stream package,
+        string feedSlug,
+        CancellationToken cancellationToken = default)
+    {
+        var scopeFactory = factory.Services.GetRequiredService<IServiceScopeFactory>();
+
+        using var scope = scopeFactory.CreateScope();
+        var indexer = scope.ServiceProvider.GetRequiredService<IPackageIndexingService>();
+        var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
+        var feed = await feedService.GetFeedBySlugAsync(feedSlug, cancellationToken)
+            ?? throw new InvalidOperationException($"Feed '{feedSlug}' not found.");
+
+        var result = await indexer.IndexAsync(feed.Id, feed.Slug, package, cancellationToken);
+        if (result != PackageIndexingResult.Success)
+        {
+            throw new InvalidOperationException($"Unexpected indexing result {result}");
+        }
+    }
+
     public static async Task AddPackageAsync(
         this WebApplicationFactory<Startup> factory,
         Stream package,
@@ -131,8 +187,10 @@ internal static class BaGetWebApplicationFactoryExtensions
 
         using var scope = scopeFactory.CreateScope();
         var indexer = scope.ServiceProvider.GetRequiredService<IPackageIndexingService>();
+        var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
+        var feed = await feedService.GetDefaultFeedAsync(cancellationToken);
 
-        var result = await indexer.IndexAsync(package, cancellationToken);
+        var result = await indexer.IndexAsync(feed.Id, feed.Slug, package, cancellationToken);
         if (result != PackageIndexingResult.Success)
         {
             throw new InvalidOperationException($"Unexpected indexing result {result}");
@@ -148,8 +206,10 @@ internal static class BaGetWebApplicationFactoryExtensions
 
         using var scope = scopeFactory.CreateScope();
         var indexer = scope.ServiceProvider.GetRequiredService<ISymbolIndexingService>();
+        var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
+        var feed = await feedService.GetDefaultFeedAsync(cancellationToken);
 
-        var result = await indexer.IndexAsync(symbolPackage, cancellationToken);
+        var result = await indexer.IndexAsync(feed.Id, feed.Slug, symbolPackage, cancellationToken);
         if (result != SymbolIndexingResult.Success)
         {
             throw new InvalidOperationException($"Unexpected indexing result {result}");

@@ -393,7 +393,7 @@ public class GroupServiceTests
             _context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
             {
                 Id = Guid.NewGuid(),
-                FeedId = "myfeed",
+                FeedId = new Guid("00000000-0000-0000-0000-000000000011"),
                 PrincipalType = BaGetter.Core.Entities.PrincipalType.Group,
                 PrincipalId = group.Id,
                 CanPull = true
@@ -416,7 +416,7 @@ public class GroupServiceTests
             _context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
             {
                 Id = Guid.NewGuid(),
-                FeedId = "feed1",
+                FeedId = new Guid("00000000-0000-0000-0000-000000000012"),
                 PrincipalType = BaGetter.Core.Entities.PrincipalType.Group,
                 PrincipalId = group1.Id,
                 CanPull = true
@@ -443,6 +443,13 @@ public class GroupServiceTests
         protected FactsBase()
         {
             _context = TestDbContext.Create();
+
+            // Seed feeds referenced in DeleteGroupAsync tests to satisfy FK constraints.
+            _context.Feeds.AddRange(
+                new Feed { Id = new Guid("00000000-0000-0000-0000-000000000011"), Slug = "feed-11", Name = "Feed 11", MirrorEnabled = false, MirrorLegacy = false, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow },
+                new Feed { Id = new Guid("00000000-0000-0000-0000-000000000012"), Slug = "feed-12", Name = "Feed 12", MirrorEnabled = false, MirrorLegacy = false, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow });
+            _context.SaveChanges();
+
             _target = new GroupService(
                 _context,
                 Mock.Of<ILogger<GroupService>>());

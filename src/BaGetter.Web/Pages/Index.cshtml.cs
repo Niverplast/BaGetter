@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +14,12 @@ namespace BaGetter.Web.Pages;
 public class IndexModel : PageModel
 {
     private readonly ISearchService _search;
+    private readonly IFeedContext _feedContext;
 
-    public IndexModel(ISearchService search)
+    public IndexModel(ISearchService search, IFeedContext feedContext)
     {
         _search = search ?? throw new ArgumentNullException(nameof(search));
+        _feedContext = feedContext ?? throw new ArgumentNullException(nameof(feedContext));
     }
 
     public const int ResultsPerPage = 20;
@@ -49,6 +52,7 @@ public class IndexModel : PageModel
         var search = await _search.SearchAsync(
             new SearchRequest
             {
+                FeedId = _feedContext.CurrentFeed.Id,
                 Skip = (PageIndex - 1) * ResultsPerPage,
                 Take = ResultsPerPage,
                 IncludePrerelease = Prerelease,

@@ -11,6 +11,7 @@ public class BaGetterEndpointBuilder
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapRazorPages();
+        endpoints.MapControllers();
 
         MapServiceIndexRoutes(endpoints);
         MapPackagePublishRoutes(endpoints);

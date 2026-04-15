@@ -32,7 +32,7 @@ public class DatabaseSearchService : ISearchService
     {
         var frameworks = GetCompatibleFrameworksOrNull(request.Framework);
 
-        IQueryable<Package> search = _context.Packages;
+        IQueryable<Package> search = _context.Packages.Where(p => p.FeedId == request.FeedId);
         search = ApplySearchQuery(search, request.Query);
         search = ApplySearchFilters(
             search,
@@ -56,13 +56,13 @@ public class DatabaseSearchService : ISearchService
         //   2. Find all package versions for these package IDs
         if (_context.SupportsLimitInSubqueries)
         {
-            search = _context.Packages.Where(p => packageIds.Contains(p.Id));
+            search = _context.Packages.Where(p => p.FeedId == request.FeedId && packageIds.Contains(p.Id));
         }
         else
         {
             var packageIdResults = await packageIds.ToListAsync(cancellationToken);
 
-            search = _context.Packages.Where(p => packageIdResults.Contains(p.Id));
+            search = _context.Packages.Where(p => p.FeedId == request.FeedId && packageIdResults.Contains(p.Id));
         }
 
         search = ApplySearchFilters(
@@ -83,7 +83,7 @@ public class DatabaseSearchService : ISearchService
 
     public async Task<AutocompleteResponse> AutocompleteAsync(AutocompleteRequest request, CancellationToken cancellationToken)
     {
-        IQueryable<Package> search = _context.Packages;
+        IQueryable<Package> search = _context.Packages.Where(p => p.FeedId == request.FeedId);
 
         search = ApplySearchQuery(search, request.Query);
         search = ApplySearchFilters(
@@ -109,7 +109,7 @@ public class DatabaseSearchService : ISearchService
         var packageId = request.PackageId.ToLower();
         var search = _context
             .Packages
-            .Where(p => p.Id.ToLower().Equals(packageId));
+            .Where(p => p.FeedId == request.FeedId && p.Id.ToLower().Equals(packageId));
 
         search = ApplySearchFilters(
             search,
@@ -125,11 +125,11 @@ public class DatabaseSearchService : ISearchService
         return _searchBuilder.BuildAutocomplete(packageVersions);
     }
 
-    public async Task<DependentsResponse> FindDependentsAsync(string packageId, CancellationToken cancellationToken)
+    public async Task<DependentsResponse> FindDependentsAsync(Guid feedId, string packageId, CancellationToken cancellationToken)
     {
         var dependents = await _context
             .Packages
-            .Where(p => p.Listed)
+            .Where(p => p.FeedId == feedId && p.Listed)
             .OrderByDescending(p => p.Downloads)
             .Where(p => p.Dependencies.Any(d => d.Id == packageId))
             .Take(20)

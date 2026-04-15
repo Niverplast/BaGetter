@@ -1,11 +1,12 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Configuration;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Indexing;
 using BaGetter.Core.Storage;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using NuGet.Versioning;
 using Xunit;
@@ -21,6 +22,8 @@ public class PackageDeletionServiceTests
     private readonly Mock<IPackageStorageService> _storage;
 
     private readonly BaGetterOptions _options;
+    private readonly Mock<IFeedSettingsResolver> _feedSettings;
+    private readonly Mock<IFeedContext> _feedContext;
     private readonly PackageDeletionService _target;
 
     public PackageDeletionServiceTests()
@@ -29,13 +32,25 @@ public class PackageDeletionServiceTests
         _storage = new Mock<IPackageStorageService>();
         _options = new BaGetterOptions();
 
-        var optionsSnapshot = new Mock<IOptionsSnapshot<BaGetterOptions>>();
-        optionsSnapshot.Setup(o => o.Value).Returns(_options);
+        _feedSettings = new Mock<IFeedSettingsResolver>();
+        _feedContext = new Mock<IFeedContext>();
+        _feedContext.Setup(f => f.CurrentFeed).Returns(new Feed
+        {
+            Id = Guid.Empty,
+            Slug = Feed.DefaultSlug,
+            Name = "Default",
+        });
+
+        // Default: delegate deletion behavior from _options (mirrors old behavior)
+        _feedSettings
+            .Setup(r => r.GetPackageDeletionBehavior(It.IsAny<Feed>()))
+            .Returns(() => _options.PackageDeletionBehavior);
 
         _target = new PackageDeletionService(
             _packages.Object,
             _storage.Object,
-            optionsSnapshot.Object,
+            _feedSettings.Object,
+            _feedContext.Object,
             Mock.Of<ILogger<PackageDeletionService>>());
     }
 
@@ -49,24 +64,24 @@ public class PackageDeletionServiceTests
         _options.PackageDeletionBehavior = PackageDeletionBehavior.Unlist;
 
         _packages
-            .Setup(p => p.UnlistPackageAsync(PackageId, PackageVersion, cancellationToken))
+            .Setup(p => p.UnlistPackageAsync(It.IsAny<Guid>(), PackageId, PackageVersion, cancellationToken))
             .ReturnsAsync(packageExists);
 
         // Act
-        var result = await _target.TryDeletePackageAsync(PackageId, PackageVersion, cancellationToken);
+        var result = await _target.TryDeletePackageAsync(Guid.Empty, "default", PackageId, PackageVersion, cancellationToken);
 
         // Assert
         Assert.Equal(packageExists, result);
 
         _packages.Verify(
-            p => p.UnlistPackageAsync(PackageId, PackageVersion, cancellationToken),
+            p => p.UnlistPackageAsync(It.IsAny<Guid>(), PackageId, PackageVersion, cancellationToken),
             Times.Once);
 
         _packages.Verify(
-            p => p.HardDeletePackageAsync(It.IsAny<string>(), It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),
+            p => p.HardDeletePackageAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _storage.Verify(
-            s => s.DeleteAsync(It.IsAny<string>(), It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),
+            s => s.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -84,17 +99,17 @@ public class PackageDeletionServiceTests
         var cancellationToken = CancellationToken.None;
 
         _packages
-            .Setup(p => p.HardDeletePackageAsync(PackageId, PackageVersion, cancellationToken))
+            .Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), PackageId, PackageVersion, cancellationToken))
             .Callback(() => databaseStep = step++)
             .ReturnsAsync(packageExists);
 
         _storage
-            .Setup(s => s.DeleteAsync(PackageId, PackageVersion, cancellationToken))
+            .Setup(s => s.DeleteAsync(It.IsAny<string>(), PackageId, PackageVersion, cancellationToken))
             .Callback(() => storageStep = step++)
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.TryDeletePackageAsync(PackageId, PackageVersion, cancellationToken);
+        var result = await _target.TryDeletePackageAsync(Guid.Empty, "default", PackageId, PackageVersion, cancellationToken);
 
         // Assert - The database step MUST happen before the storage step.
         Assert.Equal(packageExists, result);
@@ -104,14 +119,14 @@ public class PackageDeletionServiceTests
         // The storage deletion should happen even if the package couldn't
         // be found in the database. This ensures consistency.
         _packages.Verify(
-            p => p.HardDeletePackageAsync(PackageId, PackageVersion, cancellationToken),
+            p => p.HardDeletePackageAsync(It.IsAny<Guid>(), PackageId, PackageVersion, cancellationToken),
             Times.Once);
         _storage.Verify(
-            s => s.DeleteAsync(PackageId, PackageVersion, cancellationToken),
+            s => s.DeleteAsync(It.IsAny<string>(), PackageId, PackageVersion, cancellationToken),
             Times.Once);
 
         _packages.Verify(
-            p => p.UnlistPackageAsync(It.IsAny<string>(), It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),
+            p => p.UnlistPackageAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -126,7 +141,7 @@ public class PackageDeletionServiceTests
         var databaseStep = 0;
         var storageStep = 0;
         _packages
-            .Setup(p => p.FindAsync(PackageId, true, cancellationToken))
+            .Setup(p => p.FindAsync(It.IsAny<Guid>(), PackageId, true, cancellationToken))
             .ReturnsAsync([
                 new Package { Id = PackageId, Version = new NuGetVersion("1.0.0-dev") },
                 new Package { Id = PackageId, Version = new NuGetVersion("1.0.0") },
@@ -137,18 +152,19 @@ public class PackageDeletionServiceTests
                 new Package { Id = PackageId, Version = new NuGetVersion("3.0.0") },
             ]);
         _storage
-            .Setup(s => s.DeleteAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(s => s.DeleteAsync(It.IsAny<string>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => storageStep++)
             .Returns(Task.CompletedTask);
         _packages
-            .Setup(p => p.HardDeletePackageAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => databaseStep++)
             .ReturnsAsync(true);
 
         // Act
         var deleted = await _target.DeleteOldVersionsAsync(
+            Guid.Empty, "default",
             new Package { Id = PackageId, Version = new NuGetVersion("4.0.0"), IsPrerelease = false },
-            maxMajor: maxVersions, maxMinor:null, maxPatch:null, maxPrerelease:null, cancellationToken);
+            maxMajor: maxVersions, maxMinor: null, maxPatch: null, maxPrerelease: null, cancellationToken);
 
         // Assert - The database step MUST happen before the storage step.
         Assert.Equal(expectedCount, deleted);
@@ -167,7 +183,7 @@ public class PackageDeletionServiceTests
         var databaseStep = 0;
         var storageStep = 0;
         _packages
-            .Setup(p => p.FindAsync(PackageId, true, cancellationToken))
+            .Setup(p => p.FindAsync(It.IsAny<Guid>(), PackageId, true, cancellationToken))
             .ReturnsAsync([
                 new Package { Id = PackageId, Version = new NuGetVersion("1.0.0-dev") },
                 new Package { Id = PackageId, Version = new NuGetVersion("1.0.0") },
@@ -179,18 +195,19 @@ public class PackageDeletionServiceTests
                 new Package { Id = PackageId, Version = new NuGetVersion("1.3.0") },
             ]);
         _storage
-            .Setup(s => s.DeleteAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(s => s.DeleteAsync(It.IsAny<string>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => storageStep++)
             .Returns(Task.CompletedTask);
         _packages
-            .Setup(p => p.HardDeletePackageAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => databaseStep++)
             .ReturnsAsync(true);
 
         // Act
         var deleted = await _target.DeleteOldVersionsAsync(
+            Guid.Empty, "default",
             new Package { Id = PackageId, Version = new NuGetVersion("4.0.0"), IsPrerelease = false },
-            maxMajor: null, maxMinor:maxVersions, maxPatch:null, maxPrerelease:null, cancellationToken);
+            maxMajor: null, maxMinor: maxVersions, maxPatch: null, maxPrerelease: null, cancellationToken);
 
         // Assert - The database step MUST happen before the storage step.
         Assert.Equal(expectedCount, deleted);
@@ -209,7 +226,7 @@ public class PackageDeletionServiceTests
         var databaseStep = 0;
         var storageStep = 0;
         _packages
-            .Setup(p => p.FindAsync(PackageId, true, cancellationToken))
+            .Setup(p => p.FindAsync(It.IsAny<Guid>(), PackageId, true, cancellationToken))
             .ReturnsAsync([
                 new Package { Id = PackageId, Version = new NuGetVersion("1.1.0-dev") },
                 new Package { Id = PackageId, Version = new NuGetVersion("1.1.0") },
@@ -221,18 +238,19 @@ public class PackageDeletionServiceTests
                 new Package { Id = PackageId, Version = new NuGetVersion("1.3.0") },
             ]);
         _storage
-            .Setup(s => s.DeleteAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(s => s.DeleteAsync(It.IsAny<string>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => storageStep++)
             .Returns(Task.CompletedTask);
         _packages
-            .Setup(p => p.HardDeletePackageAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => databaseStep++)
             .ReturnsAsync(true);
 
         // Act
         var deleted = await _target.DeleteOldVersionsAsync(
+            Guid.Empty, "default",
             new Package { Id = PackageId, Version = new NuGetVersion("4.0.0"), IsPrerelease = false },
-            maxMajor: null, maxMinor:null, maxPatch:maxPrereleaseVersions, maxPrerelease:null, cancellationToken);
+            maxMajor: null, maxMinor: null, maxPatch: maxPrereleaseVersions, maxPrerelease: null, cancellationToken);
 
         // Assert - The database step MUST happen before the storage step.
         Assert.Equal(expectedCount, deleted);
@@ -254,7 +272,7 @@ public class PackageDeletionServiceTests
         var databaseStep = 0;
         var storageStep = 0;
         _packages
-            .Setup(p => p.FindAsync(PackageId, true, cancellationToken))
+            .Setup(p => p.FindAsync(It.IsAny<Guid>(), PackageId, true, cancellationToken))
             .ReturnsAsync([
                 new Package { Id = PackageId, Version = new NuGetVersion("1.0.0") },
                 new Package { Id = PackageId, Version = new NuGetVersion("1.1.0-beta.1") },
@@ -291,18 +309,19 @@ public class PackageDeletionServiceTests
                 new Package { Id = PackageId, Version = new NuGetVersion("1.3.5") },
             ]);
         _storage
-            .Setup(s => s.DeleteAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(s => s.DeleteAsync(It.IsAny<string>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => storageStep++)
             .Returns(Task.CompletedTask);
         _packages
-            .Setup(p => p.HardDeletePackageAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => databaseStep++)
             .ReturnsAsync(true);
 
         // Act
         var deleted = await _target.DeleteOldVersionsAsync(
+            Guid.Empty, "default",
             new Package { Id = PackageId, Version = new NuGetVersion("4.0.0"), IsPrerelease = false },
-            maxMajor: null, maxMinor:null, maxPatch:null, maxPrerelease:maxVersions, cancellationToken);
+            maxMajor: null, maxMinor: null, maxPatch: null, maxPrerelease: maxVersions, cancellationToken);
 
         // Assert - The database step MUST happen before the storage step.
         Assert.Equal(expectedCount, deleted);
@@ -326,7 +345,7 @@ public class PackageDeletionServiceTests
         var databaseStep = 0;
         var storageStep = 0;
         _packages
-            .Setup(p => p.FindAsync(PackageId, true, cancellationToken))
+            .Setup(p => p.FindAsync(It.IsAny<Guid>(), PackageId, true, cancellationToken))
             .ReturnsAsync([
                 new Package { Id = PackageId, Version = new NuGetVersion("1.0.0") },
                 new Package { Id = PackageId, Version = new NuGetVersion("1.1.0-beta.1") },
@@ -373,18 +392,19 @@ public class PackageDeletionServiceTests
                 new Package { Id = PackageId, Version = new NuGetVersion("4.4.4") },
             ]);
         _storage
-            .Setup(s => s.DeleteAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(s => s.DeleteAsync(It.IsAny<string>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => storageStep++)
             .Returns(Task.CompletedTask);
         _packages
-            .Setup(p => p.HardDeletePackageAsync(PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
+            .Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), PackageId, It.IsAny<NuGetVersion>(), cancellationToken))
             .Callback(() => databaseStep++)
             .ReturnsAsync(true);
 
         // Act
         var deleted = await _target.DeleteOldVersionsAsync(
+            Guid.Empty, "default",
             new Package { Id = PackageId, Version = new NuGetVersion("4.4.5"), IsPrerelease = false },
-            maxMajor: maxMajorVersions, maxMinor:maxMinorVersions, maxPatch:maxPatchVersions, maxPrerelease:maxPrereleaseVersions, cancellationToken);
+            maxMajor: maxMajorVersions, maxMinor: maxMinorVersions, maxPatch: maxPatchVersions, maxPrerelease: maxPrereleaseVersions, cancellationToken);
 
         // Assert - The database step MUST happen before the storage step.
         Assert.Equal(expectedCount, deleted);

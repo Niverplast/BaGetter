@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,7 +49,7 @@ public class NullSearchService : ISearchService
         return EmptyAutocompleteResponseTask;
     }
 
-    public Task<DependentsResponse> FindDependentsAsync(string packageId, CancellationToken cancellationToken)
+    public Task<DependentsResponse> FindDependentsAsync(Guid feedId, string packageId, CancellationToken cancellationToken)
     {
         return EmptyDependentsResponseTask;
     }

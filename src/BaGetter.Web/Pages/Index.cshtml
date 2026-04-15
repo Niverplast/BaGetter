@@ -1,12 +1,14 @@
 @page
 @using BaGetter.Core.Configuration
+@using BaGetter.Core.Feeds
 @using BaGetter.Web.Extensions
 @using Microsoft.Extensions.Options
 @model IndexModel
 @inject IOptions<NugetAuthenticationOptions> AuthOptions
+@inject IFeedContext FeedContext
 
 @{
-    ViewData["Title"] = "Packages";
+    ViewData["Title"] = "Packages \u2014 " + FeedContext.CurrentFeed.Name;
     ViewData["SearchQuery"] = Model.Query;
     var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;

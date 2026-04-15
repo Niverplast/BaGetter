@@ -16,6 +16,7 @@ using BaGetter.Gcp;
 using BaGetter.Tencent;
 using BaGetter.Web;
 using BaGetter.Web.Extensions;
+using BaGetter.Web.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -102,6 +103,7 @@ public class Startup
 
         app.UseStaticFiles();
         app.UseAuthentication();
+        app.UseMiddleware<FeedResolutionMiddleware>();
         app.UseRouting();
         app.UseAuthorization();
 

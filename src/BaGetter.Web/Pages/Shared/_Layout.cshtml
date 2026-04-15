@@ -1,4 +1,7 @@
+@using System.Threading
 @using BaGetter.Core.Configuration
+@using BaGetter.Core.Entities
+@using BaGetter.Core.Feeds
 @using BaGetter.Web.Extensions
 @using BaGetter.Web.Helper
 @using Microsoft.Extensions.Options
@@ -6,11 +9,15 @@
 @inject IOptions<StatisticsOptions> StatisticsOptions
 @inject IOptions<NugetAuthenticationOptions> AuthOptions
 @inject ApplicationVersion Version
+@inject IFeedService FeedService
+@inject IFeedContext FeedContext
 
 @{
     var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var showContent = !requiresAuth || isAuthenticated;
+    var allFeeds = await FeedService.GetAllFeedsAsync(CancellationToken.None);
+    var currentSlug = FeedContext.CurrentFeed?.Slug ?? Feed.DefaultSlug;
 }
 
 <!DOCTYPE html>
@@ -44,6 +51,25 @@
                                 @if (StatisticsOptions.Value.EnableStatisticsPage)
                                 {
                                     <li role="presentation"><a asp-area="" asp-page="/Statistics" role="tab" nav-link><span>Statistics</span></a></li>
+                                }
+                                @if (allFeeds.Count > 1)
+                                {
+                                    <li role="presentation" class="dropdown">
+                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                            <span>Feed: @FeedContext.CurrentFeed.Name</span>
+                                            <span class="caret"></span>
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            @foreach (var feed in allFeeds)
+                                            {
+                                                var feedHref = feed.Slug == Feed.DefaultSlug ? "/" : "/feeds/" + feed.Slug;
+                                                var isActive = feed.Slug == currentSlug;
+                                                <li class="@(isActive ? "active" : "")">
+                                                    <a href="@feedHref">@feed.Name</a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </li>
                                 }
                             }
                             <li role="presentation">

@@ -1,8 +1,10 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using BaGetter.Core.Configuration;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Extensions;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Indexing;
 using BaGetter.Core.Search;
 using BaGetter.Core.Storage;
@@ -24,7 +26,6 @@ public class PackageIndexingServiceTests
     private readonly Mock<IPackageDeletionService> _deleter;
     private readonly PackageIndexingService _target;
     private readonly BaGetterOptions _mockOptions;
-    private RetentionOptions _retentionOptions;
 
     public PackageIndexingServiceTests()
     {
@@ -34,11 +35,26 @@ public class PackageIndexingServiceTests
         _time = new Mock<SystemTime>(MockBehavior.Loose);
         _deleter = new Mock<IPackageDeletionService>(MockBehavior.Strict);
         _mockOptions = new();
-        _retentionOptions = new();
         var options = new Mock<IOptionsSnapshot<BaGetterOptions>>(MockBehavior.Strict);
         options.Setup(o => o.Value).Returns(_mockOptions);
-        var retentionOptions = new Mock<IOptionsSnapshot<RetentionOptions>>(MockBehavior.Strict);
-        retentionOptions.Setup(o => o.Value).Returns(_retentionOptions);
+
+        var feedSettings = new Mock<IFeedSettingsResolver>();
+        feedSettings.Setup(r => r.GetAllowPackageOverwrites(It.IsAny<Feed>()))
+            .Returns(() => _mockOptions.AllowPackageOverwrites);
+        feedSettings.Setup(r => r.GetIsReadOnlyMode(It.IsAny<Feed>()))
+            .Returns(() => _mockOptions.IsReadOnlyMode);
+        feedSettings.Setup(r => r.GetMaxPackageSizeGiB(It.IsAny<Feed>()))
+            .Returns(() => _mockOptions.MaxPackageSizeGiB);
+        feedSettings.Setup(r => r.GetRetentionOptions(It.IsAny<Feed>()))
+            .Returns(() => _mockOptions.Retention ?? new RetentionOptions());
+
+        var feedContext = new Mock<IFeedContext>();
+        feedContext.Setup(f => f.CurrentFeed).Returns(new Feed
+        {
+            Id = Guid.Empty,
+            Slug = Feed.DefaultSlug,
+            Name = "Default",
+        });
 
         _target = new PackageIndexingService(
             _packages.Object,
@@ -47,7 +63,8 @@ public class PackageIndexingServiceTests
             _search.Object,
             _time.Object,
             options.Object,
-            retentionOptions.Object,
+            feedSettings.Object,
+            feedContext.Object,
             Mock.Of<ILogger<PackageIndexingService>>());
     }
 
@@ -74,10 +91,10 @@ public class PackageIndexingServiceTests
         });
         var stream = new MemoryStream();
         builder.Save(stream);
-        _packages.Setup(p => p.ExistsAsync(builder.Id, builder.Version, default)).ReturnsAsync(true);
+        _packages.Setup(p => p.ExistsAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
 
         // Act
-        var result = await _target.IndexAsync(stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.PackageAlreadyExists, result);
@@ -104,17 +121,17 @@ public class PackageIndexingServiceTests
         });
         var stream = new MemoryStream();
         builder.Save(stream);
-        _packages.Setup(p => p.ExistsAsync(builder.Id, builder.Version, default)).ReturnsAsync(true);
-        _packages.Setup(p => p.HardDeletePackageAsync(builder.Id, builder.Version, default)).ReturnsAsync(true);
+        _packages.Setup(p => p.ExistsAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
+        _packages.Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
         _packages.Setup(p => p.AddAsync(It.Is<Package>(p1 => p1.Id == builder.Id && p1.Version.ToString() == builder.Version.ToString()), default)).ReturnsAsync(PackageAddResult.Success);
 
-        _storage.Setup(s => s.DeleteAsync(builder.Id, builder.Version, default)).Returns(Task.CompletedTask);
-        _storage.Setup(s => s.SavePackageContentAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), stream, It.IsAny<FileStream>(), default, default, default)).Returns(Task.CompletedTask);
+        _storage.Setup(s => s.DeleteAsync(It.IsAny<string>(), builder.Id, builder.Version, default)).Returns(Task.CompletedTask);
+        _storage.Setup(s => s.SavePackageContentAsync(It.IsAny<string>(), It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), stream, It.IsAny<FileStream>(), default, default, default)).Returns(Task.CompletedTask);
 
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);
@@ -141,17 +158,17 @@ public class PackageIndexingServiceTests
         });
         var stream = new MemoryStream();
         builder.Save(stream);
-        _packages.Setup(p => p.ExistsAsync(builder.Id, builder.Version, default)).ReturnsAsync(true);
-        _packages.Setup(p => p.HardDeletePackageAsync(builder.Id, builder.Version, default)).ReturnsAsync(true);
+        _packages.Setup(p => p.ExistsAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
+        _packages.Setup(p => p.HardDeletePackageAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
         _packages.Setup(p => p.AddAsync(It.Is<Package>(p1 => p1.Id == builder.Id && p1.Version.ToString() == builder.Version.ToString()), default)).ReturnsAsync(PackageAddResult.Success);
 
-        _storage.Setup(s => s.DeleteAsync(builder.Id, builder.Version, default)).Returns(Task.CompletedTask);
-        _storage.Setup(s => s.SavePackageContentAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), stream, It.IsAny<FileStream>(), default, default, default)).Returns(Task.CompletedTask);
+        _storage.Setup(s => s.DeleteAsync(It.IsAny<string>(), builder.Id, builder.Version, default)).Returns(Task.CompletedTask);
+        _storage.Setup(s => s.SavePackageContentAsync(It.IsAny<string>(), It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), stream, It.IsAny<FileStream>(), default, default, default)).Returns(Task.CompletedTask);
 
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);
@@ -178,10 +195,10 @@ public class PackageIndexingServiceTests
         });
         var stream = new MemoryStream();
         builder.Save(stream);
-        _packages.Setup(p => p.ExistsAsync(builder.Id, builder.Version, default)).ReturnsAsync(true);
+        _packages.Setup(p => p.ExistsAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
 
         // Act
-        var result = await _target.IndexAsync(stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.PackageAlreadyExists, result);
@@ -207,15 +224,15 @@ public class PackageIndexingServiceTests
         });
         var stream = new MemoryStream();
         builder.Save(stream);
-        _packages.Setup(p => p.ExistsAsync(builder.Id, builder.Version, default)).ReturnsAsync(false);
+        _packages.Setup(p => p.ExistsAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(false);
         _packages.Setup(p => p.AddAsync(It.Is<Package>(p1 => p1.Id == builder.Id && p1.Version.ToString() == builder.Version.ToString()), default)).ReturnsAsync(PackageAddResult.Success);
 
-        _storage.Setup(s => s.SavePackageContentAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), stream, It.IsAny<FileStream>(), default, default, default)).Returns(Task.CompletedTask);
+        _storage.Setup(s => s.SavePackageContentAsync(It.IsAny<string>(), It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), stream, It.IsAny<FileStream>(), default, default, default)).Returns(Task.CompletedTask);
 
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);

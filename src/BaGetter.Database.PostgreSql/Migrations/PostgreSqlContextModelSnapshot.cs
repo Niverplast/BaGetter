@@ -23,6 +23,91 @@ namespace BaGetter.Database.PostgreSql.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BaGetter.Core.Entities.Feed", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("AllowPackageOverwrites")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<bool?>("IsReadOnlyMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<long?>("MaxPackageSizeGiB")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("MirrorAuthCustomHeaders")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MirrorAuthPassword")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MirrorAuthToken")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("MirrorAuthType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MirrorAuthUsername")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("MirrorDownloadTimeoutSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("MirrorEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("MirrorLegacy")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MirrorPackageSource")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int?>("PackageDeletionBehavior")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RetentionMaxMajorVersions")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RetentionMaxMinorVersions")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RetentionMaxPatchVersions")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RetentionMaxPrereleaseVersions")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Feeds");
+                });
+
             modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -39,10 +124,8 @@ namespace BaGetter.Database.PostgreSql.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<string>("FeedId")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                    b.Property<Guid>("FeedId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PrincipalId")
                         .HasColumnType("uuid");
@@ -114,6 +197,9 @@ namespace BaGetter.Database.PostgreSql.Migrations
 
                     b.Property<long>("Downloads")
                         .HasColumnType("bigint");
+
+                    b.Property<Guid>("FeedId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("HasEmbeddedIcon")
                         .HasColumnType("boolean");
@@ -203,9 +289,9 @@ namespace BaGetter.Database.PostgreSql.Migrations
 
                     b.HasKey("Key");
 
-                    b.HasIndex("Id");
+                    b.HasIndex("FeedId", "Id");
 
-                    b.HasIndex("Id", "NormalizedVersionString")
+                    b.HasIndex("FeedId", "Id", "NormalizedVersionString")
                         .IsUnique();
 
                     b.ToTable("Packages");
@@ -431,6 +517,28 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.ToTable("UserGroups");
                 });
 
+            modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Permissions")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Packages")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
             modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
                 {
                     b.HasOne("BaGetter.Core.Entities.Package", "Package")
@@ -500,6 +608,13 @@ namespace BaGetter.Database.PostgreSql.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Feed", b =>
+                {
+                    b.Navigation("Packages");
+
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>
