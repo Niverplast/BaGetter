@@ -69,6 +69,16 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 BaGetter is a lightweight, open-source NuGet and symbol server (ASP.NET Core, .NET 10). Community fork of BaGet. Implements NuGet v3 protocol with pluggable database, storage, and search backends.
 
+### Repo Layout (top level)
+
+- **`src/`** — application projects (see Project Layout below).
+- **`tests/`** — xUnit test projects mirroring `src/`.
+- **`samples/`** — `BaGetterWebApplication` (embed BaGetter in a host app) and `BaGetter.Protocol.Samples.Tests` (protocol client examples).
+- **`docs/`** — Docusaurus documentation site (Node/Yarn, `yarn.lock`); published separately from the server.
+- **`deployment templates/`** — ready-to-use deployment manifests (e.g., Docker Compose, cloud).
+- **`Directory.Packages.props`**, **`global.json`**, **`nuget.config`** — central package versions, pinned SDK, restore sources.
+- **`Dockerfile`** — multi-stage Alpine build; publishes to `/app` and defaults `/data` for packages/symbols/db.
+
 ## Build & Test Commands
 
 ```bash
@@ -99,9 +109,9 @@ Storage, database, and search services use a configuration-driven provider patte
 
 ### Project Layout
 
-- **`src/BaGetter/`** — ASP.NET Core host. Entry point (`Program.cs`), DI/middleware setup (`Startup.cs`), config.
-- **`src/BaGetter.Core/`** — Business logic, EF Core entities, authentication services, configuration options, storage/search interfaces. Database-agnostic.
-- **`src/BaGetter.Web/`** — HTTP controllers, Razor pages, endpoint routing (`BaGetterEndpointBuilder.cs`), health checks.
+- **`src/BaGetter/`** — ASP.NET Core host. Entry point (`Program.cs`), DI/middleware setup (`Startup.cs`), config, `ValidateBaGetterOptions`, `ConfigureBaGetterServer`, `wwwroot/` static assets.
+- **`src/BaGetter.Core/`** — Business logic, EF Core entities, authentication services, configuration options, storage/search interfaces. Database-agnostic. Notable subfolders: `Indexing/`, `Metadata/`, `Search/`, `Storage/`, `Upstream/` (read-through mirror/cache), `Statistics/`, `ServiceIndex/`, `Content/`, `Validation/`, `Feeds/` (multi-feed WIP).
+- **`src/BaGetter.Web/`** — HTTP controllers (`FeedController`, `PackageContentController`, `PackageMetadataController`, `PackagePublishController`, `SearchController`, `ServiceIndexController`, `SymbolController`), Razor Pages UI (`Pages/`), endpoint routing (`BaGetterEndpointBuilder.cs`), URL generation (`BaGetterUrlGenerator.cs`), `OperationCancelledMiddleware`, `libman.json` for client-side libs.
 - **`src/BaGetter.Protocol/`** — NuGet v3 protocol client and models for upstream feed communication.
 - **`src/BaGetter.Database.{Sqlite,SqlServer,PostgreSql,MySql}/`** — EF Core context + migrations per database provider.
 - **`src/BaGetter.{Aws,Azure,Gcp,Aliyun,Tencent}/`** — Cloud storage provider implementations.
@@ -167,6 +177,20 @@ Routes defined in `BaGetterEndpointBuilder.cs`:
 Options class: `BaGetterOptions` in `src/BaGetter.Core/Configuration/`. Config sources (in order): `appsettings.json`, env vars, user secrets, Docker secrets (`/run/secrets/`), optional `BAGET_CONFIG_ROOT` env var.
 
 `ValidateBaGetterOptions` validates all config at startup — database/storage/search types against whitelists, Entra config completeness when required, and numeric minimums (token expiry, failed attempts, lockout).
+
+Top-level `BaGetterOptions` keys (see `src/BaGetter/appsettings.json`):
+
+- `ApiKey`, `PackageDeletionBehavior` (`Unlist`/`HardDelete`), `AllowPackageOverwrites`, `MaxPackageSizeGiB` (default 8).
+- `Database` — `Type` + `ConnectionString`.
+- `Storage` — `Type` + provider-specific settings (`Path` for FileSystem).
+- `Search` — `Type` (`Database` default; Azure Search alternative).
+- `Mirror` — upstream read-through cache; `Enabled`, `PackageSource`, optional `Legacy` flag for NuGet v2.
+- `Authentication` — see Authentication section. Legacy `Credentials[]` and `ApiKeys[]` arrays are supported for backward-compat alongside the new Local/Entra/Hybrid modes.
+- `HealthCheck.Path` (default `/health`).
+- `Statistics.EnableStatisticsPage`, `Statistics.ListConfiguredServices`.
+- Standard ASP.NET `Kestrel` and `Logging` sections.
+
+Docker defaults (`Dockerfile`): `Storage__Path=/data`, `Search__Type=Database`, `Database__Type=Sqlite`, `Database__ConnectionString=Data Source=/data/db/bagetter.db`. Volume-mount `/data` to persist packages, symbols, and the SQLite DB.
 
 ## Code Style
 
