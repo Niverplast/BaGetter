@@ -991,3 +991,22 @@ code {
   background-color: var(--code-bg-color);
   color: var(--code-text-color);
 }
+
+/* Animated edit panel on the Feed Management admin page. */
+.feed-edit-row,
+.feed-edit-row > .feed-edit-cell {
+    background-color: transparent !important;
+}
+
+.feed-edit-row > .feed-edit-cell {
+    padding: 0 !important;
+    border: 0 !important;
+    line-height: 0;
+}
+
+.feed-edit-panel {
+    padding: 12px;
+    line-height: normal;
+    border-left: 3px solid #ddd;
+    margin: 4px 0 8px 8px;
+}

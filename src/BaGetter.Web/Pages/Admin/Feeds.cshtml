@@ -71,7 +71,7 @@
                             @feed.Slug
                             @if (isDefault)
                             {
-                                <span class="label label-default">default</span>
+                                <span class="label label-default label-primary">default</span>
                             }
                         </td>
                         <td>@feed.Name</td>
@@ -82,7 +82,9 @@
                             <button type="button"
                                     class="btn btn-xs btn-warning"
                                     data-toggle="collapse"
-                                    data-target="#edit-@feed.Id">
+                                    data-target="#edit-@feed.Id"
+                                    aria-expanded="false"
+                                    aria-controls="edit-@feed.Id">
                                 Edit
                             </button>
                             @if (!isDefault)
@@ -96,21 +98,23 @@
                             }
                         </td>
                     </tr>
-                    <tr id="edit-@feed.Id" class="collapse">
-                        <td colspan="5">
-                            <form method="post" asp-page-handler="Edit" style="padding: 8px 0">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="EditSlug" value="@feed.Slug" />
-                                <div class="form-group">
-                                    <label>Display Name</label>
-                                    <input type="text" name="EditName" class="form-control input-sm" value="@feed.Name" style="max-width:400px" required maxlength="256" />
-                                </div>
-                                <div class="form-group">
-                                    <label>Description</label>
-                                    <input type="text" name="EditDescription" class="form-control input-sm" value="@feed.Description" style="max-width:400px" maxlength="4000" />
-                                </div>
-                                <button type="submit" class="btn btn-xs btn-primary">Save</button>
-                            </form>
+                    <tr class="feed-edit-row">
+                        <td colspan="5" class="feed-edit-cell">
+                            <div id="edit-@feed.Id" class="collapse feed-edit-panel">
+                                <form method="post" asp-page-handler="Edit">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="EditSlug" value="@feed.Slug" />
+                                    <div class="form-group">
+                                        <label>Display Name</label>
+                                        <input type="text" name="EditName" class="form-control input-sm" value="@feed.Name" style="max-width:400px" required maxlength="256" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Description</label>
+                                        <input type="text" name="EditDescription" class="form-control input-sm" value="@feed.Description" style="max-width:400px" maxlength="4000" />
+                                    </div>
+                                    <button type="submit" class="btn btn-xs btn-primary">Save</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 }
