@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BaGetter.Database.Sqlite.Migrations
 {
     [DbContext(typeof(SqliteContext))]
-    [Migration("20260415125517_AddMultiFeedSupport")]
-    partial class AddMultiFeedSupport
+    [Migration("20260420120000_AddMultiFeedForeignKeys")]
+    partial class AddMultiFeedForeignKeys
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -506,6 +506,28 @@ namespace BaGetter.Database.Sqlite.Migrations
                     b.ToTable("UserGroups");
                 });
 
+            modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Permissions")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Packages")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
             modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
                 {
                     b.HasOne("BaGetter.Core.Entities.Package", "Package")
@@ -575,6 +597,13 @@ namespace BaGetter.Database.Sqlite.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Feed", b =>
+                {
+                    b.Navigation("Packages");
+
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>

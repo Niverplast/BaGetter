@@ -16,15 +16,14 @@ namespace BaGetter.Tests;
 
 /// <summary>
 /// Verifies that the AddMultiFeedSupport migration correctly upgrades a pre-existing database:
-///   • All existing packages get FeedId = Guid.Empty (the default feed)
-///   • A Feeds row is seeded for the default feed (Id = Guid.Empty, Slug = "default")
-///   • FeedPermissions rows whose FeedId was the string "default" are rewritten to Guid.Empty
+///   • All existing packages get FeedId = the default feed Guid (000...0001)
+///   • A Feeds row is seeded for the default feed (Id = 000...0001, Slug = "default")
+///   • FeedPermissions rows whose FeedId was the string "default" are rewritten to 000...0001
 ///   • FeedPermissions rows with unknown FeedId values are deleted
 /// </summary>
 public class MultiFeedUpgradeTests : IDisposable
 {
-    private static readonly Guid DefaultFeedId = Guid.Empty;
-    private const string DefaultFeedIdString = "00000000-0000-0000-0000-000000000000";
+    private const string DefaultFeedIdString = "00000000-0000-0000-0000-000000000001";
 
     private readonly string _dbPath;
     private readonly string _connectionString;

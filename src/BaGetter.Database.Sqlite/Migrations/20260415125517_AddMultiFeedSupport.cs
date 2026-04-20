@@ -24,7 +24,7 @@ namespace BaGetter.Database.Sqlite.Migrations
                 table: "Packages",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+                defaultValue: new Guid("00000000-0000-0000-0000-000000000001"));
 
             migrationBuilder.CreateTable(
                 name: "Feeds",
@@ -60,16 +60,16 @@ namespace BaGetter.Database.Sqlite.Migrations
                 });
 
             // Seed the default feed row. All existing packages will get this FeedId via the
-            // column default (Guid.Empty / 00000000-0000-0000-0000-000000000000).
+            // column default (00000000-0000-0000-0000-000000000001).
             migrationBuilder.InsertData(
                 table: "Feeds",
                 columns: new[] { "Id", "Slug", "Name", "Description", "MirrorEnabled", "MirrorLegacy", "CreatedAtUtc", "UpdatedAtUtc" },
-                values: new object[] { new Guid("00000000-0000-0000-0000-000000000000"), "default", "Default", null, false, false, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc) });
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000001"), "default", "Default", null, false, false, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc) });
 
             // Data migration: map existing "default" slug references in FeedPermissions
             // to the new default feed Guid, then drop any rows that reference unknown feeds.
             migrationBuilder.Sql(
-                "UPDATE FeedPermissions SET FeedId = '00000000-0000-0000-0000-000000000000' WHERE FeedId = 'default';");
+                "UPDATE FeedPermissions SET FeedId = '00000000-0000-0000-0000-000000000001' WHERE FeedId = 'default';");
             migrationBuilder.Sql(
                 "DELETE FROM FeedPermissions WHERE FeedId NOT IN (SELECT Id FROM Feeds);");
 
@@ -89,35 +89,11 @@ namespace BaGetter.Database.Sqlite.Migrations
                 table: "Feeds",
                 column: "Slug",
                 unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_FeedPermissions_Feeds_FeedId",
-                table: "FeedPermissions",
-                column: "FeedId",
-                principalTable: "Feeds",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Packages_Feeds_FeedId",
-                table: "Packages",
-                column: "FeedId",
-                principalTable: "Feeds",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_FeedPermissions_Feeds_FeedId",
-                table: "FeedPermissions");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_Packages_Feeds_FeedId",
-                table: "Packages");
-
             migrationBuilder.DropTable(
                 name: "Feeds");
 

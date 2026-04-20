@@ -37,7 +37,7 @@
             <div class="form-group">
                 <div class="checkbox">
                     <label>
-                        <input asp-for="UseGlobalReadOnly" />
+                        <input asp-for="UseGlobalReadOnly" data-controls="IsReadOnlyMode" />
                         Use global default for read-only mode
                     </label>
                 </div>
@@ -47,13 +47,14 @@
                         Read-only mode (packages cannot be pushed to this feed)
                     </label>
                 </div>
+                <small class="text-muted">Global default: @(Model.GlobalOptions.IsReadOnlyMode ? "Enabled" : "Disabled")</small>
             </div>
 
             <h3>Package Behavior</h3>
             <div class="form-group">
                 <div class="checkbox">
                     <label>
-                        <input asp-for="UseGlobalOverwrite" />
+                        <input asp-for="UseGlobalOverwrite" data-controls="AllowPackageOverwrites" />
                         Use global default for overwrite policy
                     </label>
                 </div>
@@ -63,11 +64,16 @@
                     <option value="@PackageOverwriteAllowed.PrereleaseOnly">Prerelease only</option>
                     <option value="@PackageOverwriteAllowed.True">Allow all</option>
                 </select>
+                <small class="text-muted">Global default: @(Model.GlobalOptions.AllowPackageOverwrites switch {
+                    PackageOverwriteAllowed.False => "Disallow",
+                    PackageOverwriteAllowed.PrereleaseOnly => "Prerelease only",
+                    _ => "Allow all"
+                })</small>
             </div>
             <div class="form-group">
                 <div class="checkbox">
                     <label>
-                        <input asp-for="UseGlobalDeletion" />
+                        <input asp-for="UseGlobalDeletion" data-controls="PackageDeletionBehavior" />
                         Use global default for deletion behavior
                     </label>
                 </div>
@@ -76,46 +82,52 @@
                     <option value="@PackageDeletionBehavior.Unlist">Unlist (recommended)</option>
                     <option value="@PackageDeletionBehavior.HardDelete">Hard delete</option>
                 </select>
+                <small class="text-muted">Global default: @(Model.GlobalOptions.PackageDeletionBehavior == PackageDeletionBehavior.HardDelete ? "Hard delete" : "Unlist")</small>
             </div>
             <div class="form-group">
                 <div class="checkbox">
                     <label>
-                        <input asp-for="UseGlobalMaxSize" />
+                        <input asp-for="UseGlobalMaxSize" data-controls="MaxPackageSizeGiB" />
                         Use global default for max package size
                     </label>
                 </div>
                 <label asp-for="MaxPackageSizeGiB">Max package size (GiB)</label>
-                <input asp-for="MaxPackageSizeGiB" type="number" min="1" class="form-control" style="max-width:160px" />
+                <input asp-for="MaxPackageSizeGiB" type="number" min="1" class="form-control" style="max-width:160px" placeholder="@Model.GlobalOptions.MaxPackageSizeGiB" />
+                <small class="text-muted">Global default: @Model.GlobalOptions.MaxPackageSizeGiB GiB</small>
             </div>
 
             <h3>Retention</h3>
             <div class="form-group">
                 <div class="checkbox">
-                    <label><input asp-for="UseGlobalRetentionMajor" /> Use global default</label>
+                    <label><input asp-for="UseGlobalRetentionMajor" data-controls="RetentionMaxMajorVersions" /> Use global default</label>
                 </div>
                 <label asp-for="RetentionMaxMajorVersions">Max major versions to keep</label>
-                <input asp-for="RetentionMaxMajorVersions" type="number" min="0" class="form-control" style="max-width:160px" />
+                <input asp-for="RetentionMaxMajorVersions" type="number" min="0" class="form-control" style="max-width:160px" placeholder="@(Model.GlobalOptions.Retention?.MaxMajorVersions?.ToString() ?? "Unlimited")" />
+                <small class="text-muted">Global default: @(Model.GlobalOptions.Retention?.MaxMajorVersions?.ToString() ?? "Unlimited")</small>
             </div>
             <div class="form-group">
                 <div class="checkbox">
-                    <label><input asp-for="UseGlobalRetentionMinor" /> Use global default</label>
+                    <label><input asp-for="UseGlobalRetentionMinor" data-controls="RetentionMaxMinorVersions" /> Use global default</label>
                 </div>
                 <label asp-for="RetentionMaxMinorVersions">Max minor versions per major</label>
-                <input asp-for="RetentionMaxMinorVersions" type="number" min="0" class="form-control" style="max-width:160px" />
+                <input asp-for="RetentionMaxMinorVersions" type="number" min="0" class="form-control" style="max-width:160px" placeholder="@(Model.GlobalOptions.Retention?.MaxMinorVersions?.ToString() ?? "Unlimited")" />
+                <small class="text-muted">Global default: @(Model.GlobalOptions.Retention?.MaxMinorVersions?.ToString() ?? "Unlimited")</small>
             </div>
             <div class="form-group">
                 <div class="checkbox">
-                    <label><input asp-for="UseGlobalRetentionPatch" /> Use global default</label>
+                    <label><input asp-for="UseGlobalRetentionPatch" data-controls="RetentionMaxPatchVersions" /> Use global default</label>
                 </div>
                 <label asp-for="RetentionMaxPatchVersions">Max patch versions per minor</label>
-                <input asp-for="RetentionMaxPatchVersions" type="number" min="0" class="form-control" style="max-width:160px" />
+                <input asp-for="RetentionMaxPatchVersions" type="number" min="0" class="form-control" style="max-width:160px" placeholder="@(Model.GlobalOptions.Retention?.MaxPatchVersions?.ToString() ?? "Unlimited")" />
+                <small class="text-muted">Global default: @(Model.GlobalOptions.Retention?.MaxPatchVersions?.ToString() ?? "Unlimited")</small>
             </div>
             <div class="form-group">
                 <div class="checkbox">
-                    <label><input asp-for="UseGlobalRetentionPrerelease" /> Use global default</label>
+                    <label><input asp-for="UseGlobalRetentionPrerelease" data-controls="RetentionMaxPrereleaseVersions" /> Use global default</label>
                 </div>
                 <label asp-for="RetentionMaxPrereleaseVersions">Max prerelease versions per patch</label>
-                <input asp-for="RetentionMaxPrereleaseVersions" type="number" min="0" class="form-control" style="max-width:160px" />
+                <input asp-for="RetentionMaxPrereleaseVersions" type="number" min="0" class="form-control" style="max-width:160px" placeholder="@(Model.GlobalOptions.Retention?.MaxPrereleaseVersions?.ToString() ?? "Unlimited")" />
+                <small class="text-muted">Global default: @(Model.GlobalOptions.Retention?.MaxPrereleaseVersions?.ToString() ?? "Unlimited")</small>
             </div>
 
             <h3>Mirror</h3>
@@ -184,3 +196,26 @@
         </div>
     </form>
 </div>
+
+<script>
+(function () {
+    function applyGlobalDefault(checkbox) {
+        var targetId = checkbox.dataset.controls;
+        if (!targetId) return;
+        var target = document.getElementById(targetId);
+        if (!target) return;
+        target.disabled = checkbox.checked;
+        if (checkbox.checked) {
+            target.dataset.savedValue = target.value;
+            target.value = '';
+        } else {
+            target.value = target.dataset.savedValue || '';
+        }
+    }
+
+    document.querySelectorAll('input[data-controls]').forEach(function (cb) {
+        applyGlobalDefault(cb);
+        cb.addEventListener('change', function () { applyGlobalDefault(cb); });
+    });
+})();
+</script>

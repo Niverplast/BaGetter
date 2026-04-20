@@ -95,7 +95,7 @@ public class FeedService : IFeedService
 
         _context.Feeds.Add(new Feed
         {
-            Id = Guid.NewGuid(),
+            Id = Feed.DefaultId,
             Slug = Feed.DefaultSlug,
             Name = "Default",
             MirrorEnabled = false,

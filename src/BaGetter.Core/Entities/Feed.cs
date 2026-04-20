@@ -7,6 +7,7 @@ namespace BaGetter.Core.Entities;
 public class Feed
 {
     public const string DefaultSlug = "default";
+    public static readonly Guid DefaultId = new("00000000-0000-0000-0000-000000000001");
 
     public Guid Id { get; set; }
     public string Slug { get; set; }

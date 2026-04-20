@@ -11,6 +11,7 @@ using BaGetter.Core.Feeds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 
 namespace BaGetter.Web.Pages.Admin;
 
@@ -20,11 +21,14 @@ public class FeedSettingsModel : PageModel
     private readonly IFeedService _feedService;
     private readonly IUserService _userService;
 
-    public FeedSettingsModel(IFeedService feedService, IUserService userService)
+    public FeedSettingsModel(IFeedService feedService, IUserService userService, IOptions<BaGetterOptions> options)
     {
         _feedService = feedService ?? throw new ArgumentNullException(nameof(feedService));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        GlobalOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
+
+    public BaGetterOptions GlobalOptions { get; }
 
     public Feed Feed { get; set; }
 

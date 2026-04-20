@@ -24,13 +24,13 @@ namespace BaGetter.Database.SqlServer.Migrations
                 table: "Packages",
                 type: "uniqueidentifier",
                 nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+                defaultValue: new Guid("00000000-0000-0000-0000-000000000001"));
 
             // Data migration: map existing "default" slug references in FeedPermissions
             // to the new default feed Guid string, then remove any rows that cannot be
             // converted (unknown slugs from future multi-feed pre-release builds).
             migrationBuilder.Sql(
-                "UPDATE FeedPermissions SET FeedId = '00000000-0000-0000-0000-000000000000' WHERE FeedId = 'default';");
+                "UPDATE FeedPermissions SET FeedId = '00000000-0000-0000-0000-000000000001' WHERE FeedId = 'default';");
             migrationBuilder.Sql(
                 "DELETE FROM FeedPermissions WHERE FeedId NOT LIKE '________-____-____-____-____________';");
 
@@ -77,11 +77,11 @@ namespace BaGetter.Database.SqlServer.Migrations
                 });
 
             // Seed the default feed row. All existing packages will get this FeedId via the
-            // column default (Guid.Empty / 00000000-0000-0000-0000-000000000000).
+            // column default (00000000-0000-0000-0000-000000000001).
             migrationBuilder.InsertData(
                 table: "Feeds",
                 columns: new[] { "Id", "Slug", "Name", "Description", "MirrorEnabled", "MirrorLegacy", "CreatedAtUtc", "UpdatedAtUtc" },
-                values: new object[] { new Guid("00000000-0000-0000-0000-000000000000"), "default", "Default", null, false, false, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc) });
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000001"), "default", "Default", null, false, false, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Packages_FeedId_Id",

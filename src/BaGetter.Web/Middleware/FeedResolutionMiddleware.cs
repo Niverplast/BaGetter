@@ -44,6 +44,10 @@ public class FeedResolutionMiddleware
                 return;
             }
 
+            // Save the app root PathBase before extending it with the feed prefix, so the
+            // layout can use it for static asset URLs (~ resolves to PathBase, which would
+            // otherwise incorrectly include the feed slug).
+            context.Items["AppPathBase"] = context.Request.PathBase.Value ?? string.Empty;
             context.Request.PathBase = context.Request.PathBase.Add($"/feeds/{slug}");
             context.Request.Path = afterSlug;
             feedContext.Set(feed, isDefaultRoute: false);
