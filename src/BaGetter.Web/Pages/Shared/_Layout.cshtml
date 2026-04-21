@@ -18,11 +18,6 @@
     var showContent = !requiresAuth || isAuthenticated;
     var allFeeds = await FeedService.GetAllFeedsAsync(CancellationToken.None);
     var currentSlug = FeedContext.CurrentFeed?.Slug ?? Feed.DefaultSlug;
-    // Use the app root PathBase for static assets — when inside a /feeds/{slug}/ route the
-    // middleware extends PathBase with the feed prefix, which would break ~ resolution.
-    var assetBase = Context.Items.TryGetValue("AppPathBase", out var appPathBase)
-        ? (string)appPathBase
-        : string.Empty;
 }
 
 <!DOCTYPE html>
@@ -34,11 +29,11 @@
     <meta name="author" content="@Version.Authors">
     @Html.AddReleaseMetaTags()
 
-    <link rel="shortcut icon" href="@(assetBase)/_content/BaGetter.Web/favicon.ico">
+    <link rel="shortcut icon" href="~/_content/BaGetter.Web/favicon.ico">
 
-    <link rel="stylesheet" href="@(assetBase)/_content/BaGetter.Web/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="@(assetBase)/_content/BaGetter.Web/lib/office-ui-fabric-core/dist/css/fabric.min.css" />
-    <link rel="stylesheet" href="@(assetBase)/_content/BaGetter.Web/css/site.css" />
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/office-ui-fabric-core/dist/css/fabric.min.css" />
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/css/site.css" />
 
     <title>@ViewData["Title"] - BaGetter</title>
 </head>
@@ -128,11 +123,11 @@
         @Html.AddReleaseInformationAsComment()
     </footer>
 
-    <script src="@(assetBase)/_content/BaGetter.Web/lib/alpinejs/dist/alpine.js"></script>
+    <script src="~/_content/BaGetter.Web/lib/alpinejs/dist/alpine.js"></script>
 
-    <script src="@(assetBase)/_content/BaGetter.Web/lib/jquery/dist/jquery.min.js"></script>
-    <script src="@(assetBase)/_content/BaGetter.Web/lib/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="@(assetBase)/_content/BaGetter.Web/js/site.js"></script>
+    <script src="~/_content/BaGetter.Web/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/_content/BaGetter.Web/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="~/_content/BaGetter.Web/js/site.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

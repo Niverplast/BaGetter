@@ -101,6 +101,7 @@ public class Startup
         app.UseForwardedHeaders();
         app.UsePathBase(options.PathBase);
 
+        app.UseMiddleware<FeedStaticFilePathMiddleware>();
         app.UseStaticFiles();
         app.UseAuthentication();
         app.UseMiddleware<FeedResolutionMiddleware>();

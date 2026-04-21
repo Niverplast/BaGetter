@@ -68,6 +68,17 @@ public class NamedFeedTests : IDisposable
     }
 
     [Fact]
+    public async Task FeedPrefixedStaticAssetsReturnOk()
+    {
+        await _app.CreateFeedAsync(FeedSlug);
+
+        using var response = await _client.GetAsync(
+            $"feeds/{FeedSlug}/_content/BaGetter.Web/images/default-package-icon-256x256.png");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task SearchReturnsOkForNamedFeed()
     {
         await _app.CreateFeedAsync(FeedSlug);

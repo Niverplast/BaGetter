@@ -51,6 +51,7 @@ public class BaGetterApplication : WebApplicationFactory<Startup>
 
         builder
             .UseStartup<Startup>()
+            .UseStaticWebAssets()
             .UseEnvironment("Production")
             .ConfigureLogging(logging =>
             {
