@@ -388,8 +388,10 @@ public class PackageServiceTests
             Indexer = new Mock<IPackageIndexingService>();
 
             var defaultFeed = new Feed { Id = Guid.Empty, Slug = Feed.DefaultSlug };
-            var feedContext = new Mock<IFeedContext>();
-            feedContext.Setup(f => f.CurrentFeed).Returns(defaultFeed);
+            var feedService = new Mock<IFeedService>();
+            feedService
+                .Setup(s => s.GetFeedByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(defaultFeed);
 
             var upstreamFactory = new Mock<IUpstreamClientFactory>();
             upstreamFactory.Setup(f => f.CreateForFeed(It.IsAny<Feed>())).Returns(Upstream.Object);
@@ -397,7 +399,7 @@ public class PackageServiceTests
             Target = new PackageService(
                 DB.Object,
                 upstreamFactory.Object,
-                feedContext.Object,
+                feedService.Object,
                 Indexer.Object,
                 Mock.Of<ILogger<PackageService>>());
         }

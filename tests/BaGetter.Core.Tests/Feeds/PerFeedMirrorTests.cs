@@ -72,13 +72,15 @@ public class PerFeedMirrorTests
 
     private PackageService BuildService(Feed currentFeed)
     {
-        var feedContext = new Mock<IFeedContext>();
-        feedContext.Setup(f => f.CurrentFeed).Returns(currentFeed);
+        var feedService = new Mock<IFeedService>();
+        feedService
+            .Setup(s => s.GetFeedByIdAsync(currentFeed.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currentFeed);
 
         return new PackageService(
             _db.Object,
             _upstreamFactory.Object,
-            feedContext.Object,
+            feedService.Object,
             _indexer.Object,
             Mock.Of<ILogger<PackageService>>());
     }

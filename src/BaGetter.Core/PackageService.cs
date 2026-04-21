@@ -16,20 +16,20 @@ public class PackageService : IPackageService
 {
     private readonly IPackageDatabase _db;
     private readonly IUpstreamClientFactory _upstreamFactory;
-    private readonly IFeedContext _feedContext;
+    private readonly IFeedService _feedService;
     private readonly IPackageIndexingService _indexer;
     private readonly ILogger<PackageService> _logger;
 
     public PackageService(
         IPackageDatabase db,
         IUpstreamClientFactory upstreamFactory,
-        IFeedContext feedContext,
+        IFeedService feedService,
         IPackageIndexingService indexer,
         ILogger<PackageService> logger)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _upstreamFactory = upstreamFactory ?? throw new ArgumentNullException(nameof(upstreamFactory));
-        _feedContext = feedContext ?? throw new ArgumentNullException(nameof(feedContext));
+        _feedService = feedService ?? throw new ArgumentNullException(nameof(feedService));
         _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -39,7 +39,8 @@ public class PackageService : IPackageService
         string id,
         CancellationToken cancellationToken)
     {
-        var upstream = _upstreamFactory.CreateForFeed(_feedContext.CurrentFeed);
+        var feed = await _feedService.GetFeedByIdAsync(feedId, cancellationToken);
+        var upstream = _upstreamFactory.CreateForFeed(feed);
         var upstreamVersions = await upstream.ListPackageVersionsAsync(id, cancellationToken);
 
         // Merge the local package versions into the upstream package versions.
@@ -54,7 +55,8 @@ public class PackageService : IPackageService
 
     public async Task<IReadOnlyList<Package>> FindPackagesAsync(Guid feedId, string id, CancellationToken cancellationToken)
     {
-        var upstream = _upstreamFactory.CreateForFeed(_feedContext.CurrentFeed);
+        var feed = await _feedService.GetFeedByIdAsync(feedId, cancellationToken);
+        var upstream = _upstreamFactory.CreateForFeed(feed);
         var upstreamPackages = await upstream.ListPackagesAsync(id, cancellationToken);
         var localPackages = await _db.FindAsync(feedId, id, includeUnlisted: true, cancellationToken);
 
@@ -121,7 +123,8 @@ public class PackageService : IPackageService
 
         try
         {
-            var upstream = _upstreamFactory.CreateForFeed(_feedContext.CurrentFeed);
+            var feed = await _feedService.GetFeedByIdAsync(feedId, cancellationToken);
+            var upstream = _upstreamFactory.CreateForFeed(feed);
             using var packageStream = await upstream.DownloadPackageOrNullAsync(id, version, cancellationToken);
             if (packageStream == null)
             {
