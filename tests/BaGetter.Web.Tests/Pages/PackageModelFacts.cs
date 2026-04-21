@@ -26,7 +26,7 @@ public class PackageModelFacts
     private readonly PackageModel _target;
 
     private readonly CancellationToken _cancellation = CancellationToken.None;
-    private static readonly Guid DefaultFeedId = Guid.Empty;
+    private static readonly Guid _defaultFeedId = Guid.Empty;
     private const string DefaultFeedSlug = "default";
 
     public PackageModelFacts()
@@ -37,7 +37,7 @@ public class PackageModelFacts
         _url = new Mock<IUrlGenerator>();
         _feedContext = new Mock<IFeedContext>();
 
-        var defaultFeed = new Feed { Id = DefaultFeedId, Slug = DefaultFeedSlug };
+        var defaultFeed = new Feed { Id = _defaultFeedId, Slug = DefaultFeedSlug };
         _feedContext.Setup(f => f.CurrentFeed).Returns(defaultFeed);
 
         _target = new PackageModel(

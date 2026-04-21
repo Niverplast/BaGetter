@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BaGetter;
 
-internal static class IServiceCollectionExtensions
+internal static class ServiceCollectionExtensions
 {
     internal static BaGetterApplication AddNugetBasicHttpAuthentication(this BaGetterApplication app)
     {
@@ -166,7 +166,7 @@ internal static class IServiceCollectionExtensions
             {
                 var logger = context.HttpContext.RequestServices
                     .GetRequiredService<ILoggerFactory>()
-                    .CreateLogger(nameof(IServiceCollectionExtensions));
+                    .CreateLogger(nameof(ServiceCollectionExtensions));
                 logger.LogWarning(context.Failure, "Entra authentication remote failure.");
 
                 context.Response.Redirect("/Login?error=authentication_failed");

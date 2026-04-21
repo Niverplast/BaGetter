@@ -29,8 +29,8 @@ public class V2UpstreamClient : IUpstreamClient, IDisposable
     private readonly SourceRepository _repository;
     private readonly INuGetLogger _ngLogger;
     private readonly ILogger _logger;
-    private static readonly char[] TagsSeparators = { ';' };
-    private static readonly char[] AuthorsSeparators = new[] { ',', ';', '\t', '\n', '\r' };
+    private static readonly char[] _tagsSeparators = { ';' };
+    private static readonly char[] _authorsSeparators = new[] { ',', ';', '\t', '\n', '\r' };
 
     public V2UpstreamClient(
         IOptionsSnapshot<MirrorOptions> options,
@@ -176,7 +176,7 @@ public class V2UpstreamClient : IUpstreamClient, IDisposable
             PackageTypes = new List<PackageType>(),
             RepositoryUrl = null,
             RepositoryType = null,
-            Tags = package.Tags?.Split(TagsSeparators, StringSplitOptions.RemoveEmptyEntries),
+            Tags = package.Tags?.Split(_tagsSeparators, StringSplitOptions.RemoveEmptyEntries),
 
             Dependencies = ToDependencies(package)
         };
@@ -187,7 +187,7 @@ public class V2UpstreamClient : IUpstreamClient, IDisposable
         if (string.IsNullOrEmpty(authors)) return Array.Empty<string>();
 
         return authors
-            .Split(AuthorsSeparators, StringSplitOptions.RemoveEmptyEntries)
+            .Split(_authorsSeparators, StringSplitOptions.RemoveEmptyEntries)
             .Select(a => a.Trim())
             .ToArray();
     }

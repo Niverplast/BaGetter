@@ -121,7 +121,7 @@ public class BackwardCompatibilityTests : IDisposable
         using var doc = JsonDocument.Parse(json);
         var resources = doc.RootElement.GetProperty("resources");
 
-        bool foundRegistrations = false;
+        var foundRegistrations = false;
         foreach (var resource in resources.EnumerateArray())
         {
             var type = resource.GetProperty("@type").GetString();

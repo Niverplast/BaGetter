@@ -19,7 +19,7 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsNullWhenNotFound()
         {
-            var result = await _target.FindByIdAsync(Guid.NewGuid(), _ct);
+            var result = await Target.FindByIdAsync(Guid.NewGuid(), Ct);
 
             Assert.Null(result);
         }
@@ -27,9 +27,9 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsGroupById()
         {
-            var group = await _target.CreateGroupAsync("TestGroup", null, "desc", _ct);
+            var group = await Target.CreateGroupAsync("TestGroup", null, "desc", Ct);
 
-            var result = await _target.FindByIdAsync(group.Id, _ct);
+            var result = await Target.FindByIdAsync(group.Id, Ct);
 
             Assert.NotNull(result);
             Assert.Equal("TestGroup", result.Name);
@@ -41,7 +41,7 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsNullWhenNotFound()
         {
-            var result = await _target.FindByNameAsync("nonexistent", _ct);
+            var result = await Target.FindByNameAsync("nonexistent", Ct);
 
             Assert.Null(result);
         }
@@ -49,9 +49,9 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsGroupByName()
         {
-            await _target.CreateGroupAsync("MyGroup", null, "desc", _ct);
+            await Target.CreateGroupAsync("MyGroup", null, "desc", Ct);
 
-            var result = await _target.FindByNameAsync("MyGroup", _ct);
+            var result = await Target.FindByNameAsync("MyGroup", Ct);
 
             Assert.NotNull(result);
             Assert.Equal("MyGroup", result.Name);
@@ -63,7 +63,7 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsNullWhenNotFound()
         {
-            var result = await _target.FindByAppRoleValueAsync("no-such-role", _ct);
+            var result = await Target.FindByAppRoleValueAsync("no-such-role", Ct);
 
             Assert.Null(result);
         }
@@ -71,9 +71,9 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsGroupByAppRoleValue()
         {
-            await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", "desc", _ct);
+            await Target.CreateGroupAsync("RoleGroup", "TeamFrontend", "desc", Ct);
 
-            var result = await _target.FindByAppRoleValueAsync("TeamFrontend", _ct);
+            var result = await Target.FindByAppRoleValueAsync("TeamFrontend", Ct);
 
             Assert.NotNull(result);
             Assert.Equal("RoleGroup", result.Name);
@@ -85,7 +85,7 @@ public class GroupServiceTests
         [Fact]
         public async Task CreatesGroupWithCorrectProperties()
         {
-            var result = await _target.CreateGroupAsync("NewGroup", "TeamFrontend", "A description", _ct);
+            var result = await Target.CreateGroupAsync("NewGroup", "TeamFrontend", "A description", Ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("NewGroup", result.Name);
@@ -100,7 +100,7 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsEmptyWhenNoGroups()
         {
-            var result = await _target.GetAllGroupsAsync(_ct);
+            var result = await Target.GetAllGroupsAsync(Ct);
 
             Assert.Empty(result);
         }
@@ -108,10 +108,10 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsAllGroups()
         {
-            await _target.CreateGroupAsync("Group1", null, null, _ct);
-            await _target.CreateGroupAsync("Group2", null, null, _ct);
+            await Target.CreateGroupAsync("Group1", null, null, Ct);
+            await Target.CreateGroupAsync("Group2", null, null, Ct);
 
-            var result = await _target.GetAllGroupsAsync(_ct);
+            var result = await Target.GetAllGroupsAsync(Ct);
 
             Assert.Equal(2, result.Count);
         }
@@ -123,11 +123,11 @@ public class GroupServiceTests
         public async Task AddsUserToGroup()
         {
             var user = await CreateUser("member");
-            var group = await _target.CreateGroupAsync("GroupA", null, null, _ct);
+            var group = await Target.CreateGroupAsync("GroupA", null, null, Ct);
 
-            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
+            await Target.AddUserToGroupAsync(user.Id, group.Id, Ct);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Single(groups);
             Assert.Equal("GroupA", groups[0].Name);
         }
@@ -136,12 +136,12 @@ public class GroupServiceTests
         public async Task DoesNotDuplicateMembership()
         {
             var user = await CreateUser("nodupe");
-            var group = await _target.CreateGroupAsync("GroupB", null, null, _ct);
+            var group = await Target.CreateGroupAsync("GroupB", null, null, Ct);
 
-            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
-            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
+            await Target.AddUserToGroupAsync(user.Id, group.Id, Ct);
+            await Target.AddUserToGroupAsync(user.Id, group.Id, Ct);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Single(groups);
         }
 
@@ -149,21 +149,21 @@ public class GroupServiceTests
         public async Task ThrowsWhenAddingEntraUserToRoleLinkedGroup()
         {
             var user = await CreateUser("entrablock");
-            var group = await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, _ct);
+            var group = await Target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, Ct);
 
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _target.AddUserToGroupAsync(user.Id, group.Id, _ct));
+                () => Target.AddUserToGroupAsync(user.Id, group.Id, Ct));
         }
 
         [Fact]
         public async Task AllowsAddingLocalUserToRoleLinkedGroup()
         {
             var user = await CreateLocalUser("localok");
-            var group = await _target.CreateGroupAsync("RoleGroup", "TeamBackend", null, _ct);
+            var group = await Target.CreateGroupAsync("RoleGroup", "TeamBackend", null, Ct);
 
-            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
+            await Target.AddUserToGroupAsync(user.Id, group.Id, Ct);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Single(groups);
         }
     }
@@ -174,12 +174,12 @@ public class GroupServiceTests
         public async Task RemovesUserFromGroup()
         {
             var user = await CreateUser("removable");
-            var group = await _target.CreateGroupAsync("GroupC", null, null, _ct);
+            var group = await Target.CreateGroupAsync("GroupC", null, null, Ct);
 
-            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
-            await _target.RemoveUserFromGroupAsync(user.Id, group.Id, _ct);
+            await Target.AddUserToGroupAsync(user.Id, group.Id, Ct);
+            await Target.RemoveUserFromGroupAsync(user.Id, group.Id, Ct);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Empty(groups);
         }
 
@@ -187,19 +187,19 @@ public class GroupServiceTests
         public async Task ThrowsWhenRemovingEntraUserFromRoleLinkedGroup()
         {
             var user = await CreateUser("entraremoveblock");
-            var group = await _target.CreateGroupAsync("RoleGroupR", "TeamFrontend", null, _ct);
+            var group = await Target.CreateGroupAsync("RoleGroupR", "TeamFrontend", null, Ct);
 
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _target.RemoveUserFromGroupAsync(user.Id, group.Id, _ct));
+                () => Target.RemoveUserFromGroupAsync(user.Id, group.Id, Ct));
         }
 
         [Fact]
         public async Task DoesNothingWhenNotAMember()
         {
             var user = await CreateUser("notmember");
-            var group = await _target.CreateGroupAsync("GroupD", null, null, _ct);
+            var group = await Target.CreateGroupAsync("GroupD", null, null, Ct);
 
-            await _target.RemoveUserFromGroupAsync(user.Id, group.Id, _ct);
+            await Target.RemoveUserFromGroupAsync(user.Id, group.Id, Ct);
 
             // No exception should be thrown
         }
@@ -212,7 +212,7 @@ public class GroupServiceTests
         {
             var user = await CreateUser("lonely");
 
-            var result = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var result = await Target.GetUserGroupsAsync(user.Id, Ct);
 
             Assert.Empty(result);
         }
@@ -221,13 +221,13 @@ public class GroupServiceTests
         public async Task ReturnsMultipleGroups()
         {
             var user = await CreateUser("multi");
-            var group1 = await _target.CreateGroupAsync("G1", null, null, _ct);
-            var group2 = await _target.CreateGroupAsync("G2", null, null, _ct);
+            var group1 = await Target.CreateGroupAsync("G1", null, null, Ct);
+            var group2 = await Target.CreateGroupAsync("G2", null, null, Ct);
 
-            await _target.AddUserToGroupAsync(user.Id, group1.Id, _ct);
-            await _target.AddUserToGroupAsync(user.Id, group2.Id, _ct);
+            await Target.AddUserToGroupAsync(user.Id, group1.Id, Ct);
+            await Target.AddUserToGroupAsync(user.Id, group2.Id, Ct);
 
-            var result = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var result = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Equal(2, result.Count);
         }
     }
@@ -238,12 +238,12 @@ public class GroupServiceTests
         public async Task AddsNewGroupMemberships()
         {
             var user = await CreateUser("syncuser");
-            var group = await _target.CreateGroupAsync("RoleSync", "TeamFrontend", null, _ct);
+            var group = await Target.CreateGroupAsync("RoleSync", "TeamFrontend", null, Ct);
 
-            await _target.SyncAppRoleMembershipsAsync(
-                user.Id, new List<string> { "TeamFrontend" }, _ct);
+            await Target.SyncAppRoleMembershipsAsync(
+                user.Id, new List<string> { "TeamFrontend" }, Ct);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Single(groups);
             Assert.Equal("RoleSync", groups[0].Name);
         }
@@ -252,17 +252,17 @@ public class GroupServiceTests
         public async Task RemovesOldGroupMemberships()
         {
             var user = await CreateUser("syncremove");
-            var group = await _target.CreateGroupAsync("OldGroup", "TeamBackend", null, _ct);
+            var group = await Target.CreateGroupAsync("OldGroup", "TeamBackend", null, Ct);
 
             // Add membership directly (bypassing service-layer guard, simulating prior sync)
-            _context.UserGroups.Add(new UserGroup { UserId = user.Id, GroupId = group.Id });
-            await _context.SaveChangesAsync(_ct);
+            Context.UserGroups.Add(new UserGroup { UserId = user.Id, GroupId = group.Id });
+            await Context.SaveChangesAsync(Ct);
 
             // Sync with empty list removes the role-linked group membership
-            await _target.SyncAppRoleMembershipsAsync(
-                user.Id, new List<string>(), _ct);
+            await Target.SyncAppRoleMembershipsAsync(
+                user.Id, new List<string>(), Ct);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Empty(groups);
         }
 
@@ -271,13 +271,13 @@ public class GroupServiceTests
         {
             var user = await CreateUser("skipunknown");
 
-            await _target.SyncAppRoleMembershipsAsync(
-                user.Id, new List<string> { "UnknownRole" }, _ct);
+            await Target.SyncAppRoleMembershipsAsync(
+                user.Id, new List<string> { "UnknownRole" }, Ct);
 
-            var createdGroup = await _target.FindByAppRoleValueAsync("UnknownRole", _ct);
+            var createdGroup = await Target.FindByAppRoleValueAsync("UnknownRole", Ct);
             Assert.Null(createdGroup);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Empty(groups);
         }
     }
@@ -287,9 +287,9 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsTrueForRoleLinkedGroup()
         {
-            var group = await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, _ct);
+            var group = await Target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, Ct);
 
-            var result = await _target.IsRoleLinkedGroupAsync(group.Id, _ct);
+            var result = await Target.IsRoleLinkedGroupAsync(group.Id, Ct);
 
             Assert.True(result);
         }
@@ -297,9 +297,9 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsFalseForManualGroup()
         {
-            var group = await _target.CreateGroupAsync("ManualGroup", null, null, _ct);
+            var group = await Target.CreateGroupAsync("ManualGroup", null, null, Ct);
 
-            var result = await _target.IsRoleLinkedGroupAsync(group.Id, _ct);
+            var result = await Target.IsRoleLinkedGroupAsync(group.Id, Ct);
 
             Assert.False(result);
         }
@@ -307,7 +307,7 @@ public class GroupServiceTests
         [Fact]
         public async Task ReturnsFalseForNonExistentGroup()
         {
-            var result = await _target.IsRoleLinkedGroupAsync(Guid.NewGuid(), _ct);
+            var result = await Target.IsRoleLinkedGroupAsync(Guid.NewGuid(), Ct);
 
             Assert.False(result);
         }
@@ -319,9 +319,9 @@ public class GroupServiceTests
         public async Task ReturnsFalseForEntraUserOnRoleLinkedGroup()
         {
             var user = await CreateUser("entrauser");
-            var group = await _target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, _ct);
+            var group = await Target.CreateGroupAsync("RoleGroup", "TeamFrontend", null, Ct);
 
-            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+            var result = await Target.CanManuallyModifyMembershipAsync(group.Id, user.Id, Ct);
 
             Assert.False(result);
         }
@@ -330,9 +330,9 @@ public class GroupServiceTests
         public async Task ReturnsTrueForLocalUserOnRoleLinkedGroup()
         {
             var user = await CreateLocalUser("localuser");
-            var group = await _target.CreateGroupAsync("RoleGroup", "TeamBackend", null, _ct);
+            var group = await Target.CreateGroupAsync("RoleGroup", "TeamBackend", null, Ct);
 
-            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+            var result = await Target.CanManuallyModifyMembershipAsync(group.Id, user.Id, Ct);
 
             Assert.True(result);
         }
@@ -341,9 +341,9 @@ public class GroupServiceTests
         public async Task ReturnsTrueForEntraUserOnManualGroup()
         {
             var user = await CreateUser("entramanual");
-            var group = await _target.CreateGroupAsync("ManualGroup", null, null, _ct);
+            var group = await Target.CreateGroupAsync("ManualGroup", null, null, Ct);
 
-            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+            var result = await Target.CanManuallyModifyMembershipAsync(group.Id, user.Id, Ct);
 
             Assert.True(result);
         }
@@ -352,9 +352,9 @@ public class GroupServiceTests
         public async Task ReturnsTrueForLocalUserOnManualGroup()
         {
             var user = await CreateLocalUser("localmanual");
-            var group = await _target.CreateGroupAsync("ManualGroup", null, null, _ct);
+            var group = await Target.CreateGroupAsync("ManualGroup", null, null, Ct);
 
-            var result = await _target.CanManuallyModifyMembershipAsync(group.Id, user.Id, _ct);
+            var result = await Target.CanManuallyModifyMembershipAsync(group.Id, user.Id, Ct);
 
             Assert.True(result);
         }
@@ -366,31 +366,31 @@ public class GroupServiceTests
         public async Task DoesNothingWhenGroupNotFound()
         {
             // Should complete without throwing
-            await _target.DeleteGroupAsync(Guid.NewGuid(), _ct);
+            await Target.DeleteGroupAsync(Guid.NewGuid(), Ct);
         }
 
         [Fact]
         public async Task RemovesGroupAndMemberships()
         {
             var user = await CreateUser("deletemember");
-            var group = await _target.CreateGroupAsync("ToDelete", null, null, _ct);
-            await _target.AddUserToGroupAsync(user.Id, group.Id, _ct);
+            var group = await Target.CreateGroupAsync("ToDelete", null, null, Ct);
+            await Target.AddUserToGroupAsync(user.Id, group.Id, Ct);
 
-            await _target.DeleteGroupAsync(group.Id, _ct);
+            await Target.DeleteGroupAsync(group.Id, Ct);
 
-            var found = await _target.FindByIdAsync(group.Id, _ct);
+            var found = await Target.FindByIdAsync(group.Id, Ct);
             Assert.Null(found);
 
-            var groups = await _target.GetUserGroupsAsync(user.Id, _ct);
+            var groups = await Target.GetUserGroupsAsync(user.Id, Ct);
             Assert.Empty(groups);
         }
 
         [Fact]
         public async Task RemovesFeedPermissionsForGroup()
         {
-            var group = await _target.CreateGroupAsync("PermGroup", null, null, _ct);
+            var group = await Target.CreateGroupAsync("PermGroup", null, null, Ct);
 
-            _context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
+            Context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
             {
                 Id = Guid.NewGuid(),
                 FeedId = new Guid("00000000-0000-0000-0000-000000000011"),
@@ -398,22 +398,22 @@ public class GroupServiceTests
                 PrincipalId = group.Id,
                 CanPull = true
             });
-            await _context.SaveChangesAsync(_ct);
+            await Context.SaveChangesAsync(Ct);
 
-            await _target.DeleteGroupAsync(group.Id, _ct);
+            await Target.DeleteGroupAsync(group.Id, Ct);
 
-            var permCount = await _context.FeedPermissions
-                .CountAsync(fp => fp.PrincipalId == group.Id, _ct);
+            var permCount = await Context.FeedPermissions
+                .CountAsync(fp => fp.PrincipalId == group.Id, Ct);
             Assert.Equal(0, permCount);
         }
 
         [Fact]
         public async Task DoesNotRemoveOtherGroupsOrPermissions()
         {
-            var group1 = await _target.CreateGroupAsync("Keep", null, null, _ct);
-            var group2 = await _target.CreateGroupAsync("Delete", null, null, _ct);
+            var group1 = await Target.CreateGroupAsync("Keep", null, null, Ct);
+            var group2 = await Target.CreateGroupAsync("Delete", null, null, Ct);
 
-            _context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
+            Context.FeedPermissions.Add(new BaGetter.Core.Entities.FeedPermission
             {
                 Id = Guid.NewGuid(),
                 FeedId = new Guid("00000000-0000-0000-0000-000000000012"),
@@ -421,37 +421,37 @@ public class GroupServiceTests
                 PrincipalId = group1.Id,
                 CanPull = true
             });
-            await _context.SaveChangesAsync(_ct);
+            await Context.SaveChangesAsync(Ct);
 
-            await _target.DeleteGroupAsync(group2.Id, _ct);
+            await Target.DeleteGroupAsync(group2.Id, Ct);
 
-            var kept = await _target.FindByIdAsync(group1.Id, _ct);
+            var kept = await Target.FindByIdAsync(group1.Id, Ct);
             Assert.NotNull(kept);
 
-            var permCount = await _context.FeedPermissions
-                .CountAsync(fp => fp.PrincipalId == group1.Id, _ct);
+            var permCount = await Context.FeedPermissions
+                .CountAsync(fp => fp.PrincipalId == group1.Id, Ct);
             Assert.Equal(1, permCount);
         }
     }
 
     public class FactsBase : IDisposable
     {
-        protected readonly TestDbContext _context;
-        protected readonly GroupService _target;
-        protected readonly CancellationToken _ct = CancellationToken.None;
+        protected readonly TestDbContext Context;
+        protected readonly GroupService Target;
+        protected readonly CancellationToken Ct = CancellationToken.None;
 
         protected FactsBase()
         {
-            _context = TestDbContext.Create();
+            Context = TestDbContext.Create();
 
             // Seed feeds referenced in DeleteGroupAsync tests to satisfy FK constraints.
-            _context.Feeds.AddRange(
+            Context.Feeds.AddRange(
                 new Feed { Id = new Guid("00000000-0000-0000-0000-000000000011"), Slug = "feed-11", Name = "Feed 11", MirrorEnabled = false, MirrorLegacy = false, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow },
                 new Feed { Id = new Guid("00000000-0000-0000-0000-000000000012"), Slug = "feed-12", Name = "Feed 12", MirrorEnabled = false, MirrorLegacy = false, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow });
-            _context.SaveChanges();
+            Context.SaveChanges();
 
-            _target = new GroupService(
-                _context,
+            Target = new GroupService(
+                Context,
                 Mock.Of<ILogger<GroupService>>());
         }
 
@@ -470,8 +470,8 @@ public class GroupServiceTests
                 UpdatedAtUtc = DateTime.UtcNow
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync(_ct);
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync(Ct);
             return user;
         }
 
@@ -489,14 +489,14 @@ public class GroupServiceTests
                 UpdatedAtUtc = DateTime.UtcNow
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync(_ct);
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync(Ct);
             return user;
         }
 
         public void Dispose()
         {
-            _context?.Dispose();
+            Context?.Dispose();
         }
     }
 }

@@ -19,9 +19,9 @@ namespace BaGetter.Core.Tests.Feeds;
 /// </summary>
 public class PerFeedMirrorTests
 {
-    private static readonly string PackageId = "SomePackage";
-    private static readonly NuGetVersion PackageVersion = new NuGetVersion("1.0.0");
-    private static readonly CancellationToken Cancellation = CancellationToken.None;
+    private static readonly string _packageId = "SomePackage";
+    private static readonly NuGetVersion _packageVersion = new NuGetVersion("1.0.0");
+    private static readonly CancellationToken _cancellation = CancellationToken.None;
 
     private readonly Mock<IPackageDatabase> _db;
     private readonly Mock<IUpstreamClient> _upstreamClient;
@@ -89,22 +89,22 @@ public class PerFeedMirrorTests
         var service = BuildService(_feedWithMirror);
 
         _db
-            .Setup(d => d.ExistsAsync(_feedWithMirror.Id, PackageId, PackageVersion, Cancellation))
+            .Setup(d => d.ExistsAsync(_feedWithMirror.Id, _packageId, _packageVersion, _cancellation))
             .ReturnsAsync(false);
 
         using var stream = new MemoryStream();
         _upstreamClient
-            .Setup(u => u.DownloadPackageOrNullAsync(PackageId, PackageVersion, Cancellation))
+            .Setup(u => u.DownloadPackageOrNullAsync(_packageId, _packageVersion, _cancellation))
             .ReturnsAsync(stream);
 
         _indexer
-            .Setup(i => i.IndexAsync(_feedWithMirror.Id, _feedWithMirror.Slug, stream, Cancellation))
+            .Setup(i => i.IndexAsync(_feedWithMirror.Id, _feedWithMirror.Slug, stream, _cancellation))
             .ReturnsAsync(PackageIndexingResult.Success);
 
-        await service.ExistsAsync(_feedWithMirror.Id, _feedWithMirror.Slug, PackageId, PackageVersion, Cancellation);
+        await service.ExistsAsync(_feedWithMirror.Id, _feedWithMirror.Slug, _packageId, _packageVersion, _cancellation);
 
         _upstreamClient.Verify(
-            u => u.DownloadPackageOrNullAsync(PackageId, PackageVersion, Cancellation),
+            u => u.DownloadPackageOrNullAsync(_packageId, _packageVersion, _cancellation),
             Times.Once);
     }
 
@@ -114,10 +114,10 @@ public class PerFeedMirrorTests
         var service = BuildService(_feedWithoutMirror);
 
         _db
-            .Setup(d => d.ExistsAsync(_feedWithoutMirror.Id, PackageId, PackageVersion, Cancellation))
+            .Setup(d => d.ExistsAsync(_feedWithoutMirror.Id, _packageId, _packageVersion, _cancellation))
             .ReturnsAsync(false);
 
-        await service.ExistsAsync(_feedWithoutMirror.Id, _feedWithoutMirror.Slug, PackageId, PackageVersion, Cancellation);
+        await service.ExistsAsync(_feedWithoutMirror.Id, _feedWithoutMirror.Slug, _packageId, _packageVersion, _cancellation);
 
         // The real upstream client (for the mirror-enabled feed) should never be called.
         _upstreamClient.Verify(
@@ -131,10 +131,10 @@ public class PerFeedMirrorTests
         var service = BuildService(_feedWithMirror);
 
         _db
-            .Setup(d => d.ExistsAsync(_feedWithMirror.Id, PackageId, PackageVersion, Cancellation))
+            .Setup(d => d.ExistsAsync(_feedWithMirror.Id, _packageId, _packageVersion, _cancellation))
             .ReturnsAsync(true);
 
-        await service.ExistsAsync(_feedWithMirror.Id, _feedWithMirror.Slug, PackageId, PackageVersion, Cancellation);
+        await service.ExistsAsync(_feedWithMirror.Id, _feedWithMirror.Slug, _packageId, _packageVersion, _cancellation);
 
         _upstreamClient.Verify(
             u => u.DownloadPackageOrNullAsync(It.IsAny<string>(), It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),

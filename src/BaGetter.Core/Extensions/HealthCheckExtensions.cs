@@ -12,7 +12,7 @@ namespace BaGetter.Core.Extensions;
 
 public static class HealthCheckExtensions
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
+    private static readonly JsonSerializerOptions _serializerOptions = new()
     {
         WriteIndented = true,
         Converters = { new JsonStringEnumConverter() }
@@ -42,7 +42,7 @@ public static class HealthCheckExtensions
         await JsonSerializer.SerializeAsync(
             stream,
             entries.ToDictionary(entry => entry.Key, entry => entry.Value),
-            SerializerOptions,
+            _serializerOptions,
             cancellationToken);
     }
 

@@ -98,8 +98,8 @@ public class PackageDeletionService : IPackageDeletionService
         return found;
     }
 
-    private static IList<NuGetVersion> GetValidVersions<S, T>(IEnumerable<NuGetVersion> versions, Func<NuGetVersion, S> getParent, Func<NuGetVersion, T> getSelector, int versionsToKeep)
-            where S : IComparable<S>, IEquatable<S>
+    private static IList<NuGetVersion> GetValidVersions<TS, T>(IEnumerable<NuGetVersion> versions, Func<NuGetVersion, TS> getParent, Func<NuGetVersion, T> getSelector, int versionsToKeep)
+            where TS : IComparable<TS>, IEquatable<TS>
             where T : IComparable<T>, IEquatable<T>
     {
         var validVersions = versions

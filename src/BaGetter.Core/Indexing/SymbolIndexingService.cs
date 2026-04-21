@@ -16,7 +16,7 @@ namespace BaGetter.Core.Indexing;
 // Based off: https://github.com/NuGet/NuGet.Jobs/blob/master/src/Validation.Symbols/SymbolsValidatorService.cs#L44
 public class SymbolIndexingService : ISymbolIndexingService
 {
-    private static readonly HashSet<string> ValidSymbolPackageContentExtensions = new HashSet<string>
+    private static readonly HashSet<string> _validSymbolPackageContentExtensions = new HashSet<string>
     {
         ".pdb",
         ".nuspec",
@@ -123,7 +123,7 @@ public class SymbolIndexingService : ISymbolIndexingService
         {
             if (string.IsNullOrEmpty(file.Name)) return false;
             if (string.IsNullOrEmpty(file.Extension)) return false;
-            if (!ValidSymbolPackageContentExtensions.Contains(file.Extension)) return false;
+            if (!_validSymbolPackageContentExtensions.Contains(file.Extension)) return false;
 
             return true;
         }

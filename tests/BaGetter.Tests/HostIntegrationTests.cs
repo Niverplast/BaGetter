@@ -10,15 +10,15 @@ namespace BaGetter.Tests;
 
 public class HostIntegrationTests
 {
-    private readonly string DatabaseTypeKey = "Database:Type";
-    private readonly string ConnectionStringKey = "Database:ConnectionString";
+    private readonly string _databaseTypeKey = "Database:Type";
+    private readonly string _connectionStringKey = "Database:ConnectionString";
 
     [Fact]
     public void ThrowsIfDatabaseTypeInvalid()
     {
         var provider = BuildServiceProvider(new Dictionary<string, string>
         {
-            { DatabaseTypeKey, "InvalidType" }
+            { _databaseTypeKey, "InvalidType" }
         });
 
         using var scope = provider.CreateScope();
@@ -31,8 +31,8 @@ public class HostIntegrationTests
     {
         var provider = BuildServiceProvider(new Dictionary<string, string>
         {
-            { DatabaseTypeKey, "Sqlite" },
-            { ConnectionStringKey, "..." }
+            { _databaseTypeKey, "Sqlite" },
+            { _connectionStringKey, "..." }
         });
 
         using var scope = provider.CreateScope();
@@ -44,8 +44,8 @@ public class HostIntegrationTests
     {
         var provider = BuildServiceProvider(new Dictionary<string, string>
         {
-            { DatabaseTypeKey, "Sqlite" },
-            { ConnectionStringKey, "..." }
+            { _databaseTypeKey, "Sqlite" },
+            { _connectionStringKey, "..." }
         });
 
         using var scope = provider.CreateScope();

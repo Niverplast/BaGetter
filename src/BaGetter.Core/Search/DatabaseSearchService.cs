@@ -32,7 +32,7 @@ public class DatabaseSearchService : ISearchService
     {
         var frameworks = GetCompatibleFrameworksOrNull(request.Framework);
 
-        IQueryable<Package> search = _context.Packages.Where(p => p.FeedId == request.FeedId);
+        var search = _context.Packages.Where(p => p.FeedId == request.FeedId);
         search = ApplySearchQuery(search, request.Query);
         search = ApplySearchFilters(
             search,
@@ -83,7 +83,7 @@ public class DatabaseSearchService : ISearchService
 
     public async Task<AutocompleteResponse> AutocompleteAsync(AutocompleteRequest request, CancellationToken cancellationToken)
     {
-        IQueryable<Package> search = _context.Packages.Where(p => p.FeedId == request.FeedId);
+        var search = _context.Packages.Where(p => p.FeedId == request.FeedId);
 
         search = ApplySearchQuery(search, request.Query);
         search = ApplySearchFilters(

@@ -22,13 +22,13 @@ public class PackageStoragePathTests
     private const string PackageVersion = "1.0.0";
 
     // Scoped paths (multi-feed layout)
-    private static readonly string NamedFeedPackagePath =
+    private static readonly string _namedFeedPackagePath =
         Path.Combine("packages", "internal", "test.package", "1.0.0", "test.package.1.0.0.nupkg");
-    private static readonly string DefaultFeedPackagePath =
+    private static readonly string _defaultFeedPackagePath =
         Path.Combine("packages", "default", "test.package", "1.0.0", "test.package.1.0.0.nupkg");
 
     // Legacy (unscoped) path — written by pre-multi-feed BaGetter for the default feed
-    private static readonly string LegacyPackagePath =
+    private static readonly string _legacyPackagePath =
         Path.Combine("packages", "test.package", "1.0.0", "test.package.1.0.0.nupkg");
 
     private readonly Package _package = new Package
@@ -65,9 +65,9 @@ public class PackageStoragePathTests
             "internal", _package, pkg, nuspec, null, null);
 
         _storage.Verify(
-            s => s.PutAsync(NamedFeedPackagePath, It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.PutAsync(_namedFeedPackagePath, It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once,
-            $"Expected package at '{NamedFeedPackagePath}'");
+            $"Expected package at '{_namedFeedPackagePath}'");
     }
 
     [Fact]
@@ -87,9 +87,9 @@ public class PackageStoragePathTests
             "default", _package, pkg, nuspec, null, null);
 
         _storage.Verify(
-            s => s.PutAsync(DefaultFeedPackagePath, It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.PutAsync(_defaultFeedPackagePath, It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once,
-            $"Expected package at '{DefaultFeedPackagePath}'");
+            $"Expected package at '{_defaultFeedPackagePath}'");
     }
 
     [Fact]
@@ -97,12 +97,12 @@ public class PackageStoragePathTests
     {
         // Scoped path not found — simulate pre-upgrade layout
         _storage
-            .Setup(s => s.GetAsync(DefaultFeedPackagePath, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAsync(_defaultFeedPackagePath, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DirectoryNotFoundException());
 
         using var legacyStream = new MemoryStream(Encoding.UTF8.GetBytes("legacy-nupkg"));
         _storage
-            .Setup(s => s.GetAsync(LegacyPackagePath, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAsync(_legacyPackagePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(legacyStream);
 
         var result = await _target.GetPackageStreamAsync(
@@ -110,7 +110,7 @@ public class PackageStoragePathTests
 
         Assert.NotNull(result);
         // Verify the legacy path was consulted
-        _storage.Verify(s => s.GetAsync(LegacyPackagePath, It.IsAny<CancellationToken>()), Times.Once);
+        _storage.Verify(s => s.GetAsync(_legacyPackagePath, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -118,12 +118,12 @@ public class PackageStoragePathTests
     {
         // Scoped path not found for a named feed
         _storage
-            .Setup(s => s.GetAsync(NamedFeedPackagePath, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAsync(_namedFeedPackagePath, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DirectoryNotFoundException());
 
         // The legacy (unscoped) path must never be consulted for named feeds
         _storage
-            .Setup(s => s.GetAsync(LegacyPackagePath, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAsync(_legacyPackagePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Stream.Null);  // would succeed if called
 
         await Assert.ThrowsAsync<DirectoryNotFoundException>(() =>
@@ -131,7 +131,7 @@ public class PackageStoragePathTests
                 "internal", PackageId, new NuGetVersion(PackageVersion), CancellationToken.None));
 
         _storage.Verify(
-            s => s.GetAsync(LegacyPackagePath, It.IsAny<CancellationToken>()),
+            s => s.GetAsync(_legacyPackagePath, It.IsAny<CancellationToken>()),
             Times.Never,
             "Named feeds must not fall back to legacy unscoped paths");
     }

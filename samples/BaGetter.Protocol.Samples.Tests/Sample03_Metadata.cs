@@ -6,7 +6,7 @@ using Xunit;
 
 namespace BaGetter.Protocol.Samples.Tests;
 
-public class Sample03_Metadata
+public class Sample03Metadata
 {
     [Fact]
     public async Task GetAllPackageMetadata()

@@ -10,7 +10,7 @@ namespace BaGetter.Core.Feeds;
 
 public class FeedService : IFeedService
 {
-    private static readonly Regex SlugRegex = new(
+    private static readonly Regex _slugRegex = new(
         @"^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$",
         RegexOptions.Compiled);
 
@@ -46,7 +46,7 @@ public class FeedService : IFeedService
 
     public async Task<Feed> CreateFeedAsync(Feed feed, CancellationToken cancellationToken)
     {
-        if (!SlugRegex.IsMatch(feed.Slug))
+        if (!_slugRegex.IsMatch(feed.Slug))
         {
             throw new ArgumentException(
                 $"Feed slug '{feed.Slug}' is invalid. Must match ^[a-z0-9](?:[a-z0-9-]{{0,126}}[a-z0-9])?$",

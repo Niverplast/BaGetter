@@ -19,7 +19,7 @@ public class UserServiceTests
         [Fact]
         public async Task ReturnsNullWhenUserDoesNotExist()
         {
-            var result = await _target.FindByUsernameAsync("nonexistent", _ct);
+            var result = await Target.FindByUsernameAsync("nonexistent", Ct);
 
             Assert.Null(result);
         }
@@ -29,7 +29,7 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("testuser");
 
-            var result = await _target.FindByUsernameAsync("testuser", _ct);
+            var result = await Target.FindByUsernameAsync("testuser", Ct);
 
             Assert.NotNull(result);
             Assert.Equal(user.Id, result.Id);
@@ -42,7 +42,7 @@ public class UserServiceTests
         [Fact]
         public async Task ReturnsNullWhenNotFound()
         {
-            var result = await _target.FindByIdAsync(Guid.NewGuid(), _ct);
+            var result = await Target.FindByIdAsync(Guid.NewGuid(), Ct);
 
             Assert.Null(result);
         }
@@ -52,7 +52,7 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("findme");
 
-            var result = await _target.FindByIdAsync(user.Id, _ct);
+            var result = await Target.FindByIdAsync(user.Id, Ct);
 
             Assert.NotNull(result);
             Assert.Equal("findme", result.Username);
@@ -64,7 +64,7 @@ public class UserServiceTests
         [Fact]
         public async Task ReturnsNullWhenNotFound()
         {
-            var result = await _target.FindByEntraObjectIdAsync("not-an-oid", _ct);
+            var result = await Target.FindByEntraObjectIdAsync("not-an-oid", Ct);
 
             Assert.Null(result);
         }
@@ -72,10 +72,10 @@ public class UserServiceTests
         [Fact]
         public async Task ReturnsEntraUser()
         {
-            var user = await _target.CreateEntraUserAsync(
-                "oid-123", "entrauser", "Entra User", _ct);
+            var user = await Target.CreateEntraUserAsync(
+                "oid-123", "entrauser", "Entra User", Ct);
 
-            var result = await _target.FindByEntraObjectIdAsync("oid-123", _ct);
+            var result = await Target.FindByEntraObjectIdAsync("oid-123", Ct);
 
             Assert.NotNull(result);
             Assert.Equal(user.Id, result.Id);
@@ -88,8 +88,8 @@ public class UserServiceTests
         [Fact]
         public async Task CreatesEntraUserWithCorrectProperties()
         {
-            var result = await _target.CreateEntraUserAsync(
-                "oid-abc", "entrauser", "Entra Display", _ct);
+            var result = await Target.CreateEntraUserAsync(
+                "oid-abc", "entrauser", "Entra Display", Ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("entrauser", result.Username);
@@ -107,8 +107,8 @@ public class UserServiceTests
         [Fact]
         public async Task CreatesLocalUserWithHashedPassword()
         {
-            var result = await _target.CreateLocalUserAsync(
-                "localuser", "Local User", "MyPassword123!", true, _adminUserId, _ct);
+            var result = await Target.CreateLocalUserAsync(
+                "localuser", "Local User", "MyPassword123!", true, AdminUserId, Ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("localuser", result.Username);
@@ -117,7 +117,7 @@ public class UserServiceTests
             Assert.True(result.CanLoginToUI);
             Assert.NotNull(result.PasswordHash);
             Assert.NotEqual("MyPassword123!", result.PasswordHash);
-            Assert.Equal(_adminUserId, result.CreatedByUserId);
+            Assert.Equal(AdminUserId, result.CreatedByUserId);
         }
     }
 
@@ -128,7 +128,7 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("pwduser", "CorrectPassword");
 
-            var result = await _target.VerifyPasswordAsync(user, "CorrectPassword");
+            var result = await Target.VerifyPasswordAsync(user, "CorrectPassword");
 
             Assert.True(result);
         }
@@ -138,7 +138,7 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("pwduser", "CorrectPassword");
 
-            var result = await _target.VerifyPasswordAsync(user, "WrongPassword");
+            var result = await Target.VerifyPasswordAsync(user, "WrongPassword");
 
             Assert.False(result);
         }
@@ -146,10 +146,10 @@ public class UserServiceTests
         [Fact]
         public async Task ReturnsFalseWhenNoPasswordHashSet()
         {
-            var user = await _target.CreateEntraUserAsync(
-                "oid-1", "entrauser", "Entra", _ct);
+            var user = await Target.CreateEntraUserAsync(
+                "oid-1", "entrauser", "Entra", Ct);
 
-            var result = await _target.VerifyPasswordAsync(user, "anything");
+            var result = await Target.VerifyPasswordAsync(user, "anything");
 
             Assert.False(result);
         }
@@ -162,9 +162,9 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("failuser");
 
-            await _target.RecordFailedLoginAsync(user.Id, _ct);
+            await Target.RecordFailedLoginAsync(user.Id, Ct);
 
-            var updated = await _target.FindByIdAsync(user.Id, _ct);
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
             Assert.Equal(1, updated.FailedLoginCount);
         }
 
@@ -175,10 +175,10 @@ public class UserServiceTests
 
             for (var i = 0; i < 5; i++)
             {
-                await _target.RecordFailedLoginAsync(user.Id, _ct);
+                await Target.RecordFailedLoginAsync(user.Id, Ct);
             }
 
-            var updated = await _target.FindByIdAsync(user.Id, _ct);
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
             Assert.Equal(5, updated.FailedLoginCount);
             Assert.NotNull(updated.LockedUntilUtc);
             Assert.True(updated.LockedUntilUtc > DateTime.UtcNow);
@@ -192,7 +192,7 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("notlocked");
 
-            var result = await _target.IsLockedOutAsync(user);
+            var result = await Target.IsLockedOutAsync(user);
 
             Assert.False(result);
         }
@@ -203,7 +203,7 @@ public class UserServiceTests
             var user = await CreateLocalUser("locked");
             user.LockedUntilUtc = DateTime.UtcNow.AddMinutes(10);
 
-            var result = await _target.IsLockedOutAsync(user);
+            var result = await Target.IsLockedOutAsync(user);
 
             Assert.True(result);
         }
@@ -214,7 +214,7 @@ public class UserServiceTests
             var user = await CreateLocalUser("expired");
             user.LockedUntilUtc = DateTime.UtcNow.AddMinutes(-1);
 
-            var result = await _target.IsLockedOutAsync(user);
+            var result = await Target.IsLockedOutAsync(user);
 
             Assert.False(result);
         }
@@ -230,12 +230,12 @@ public class UserServiceTests
             // Simulate some failures and lockout
             for (var i = 0; i < 5; i++)
             {
-                await _target.RecordFailedLoginAsync(user.Id, _ct);
+                await Target.RecordFailedLoginAsync(user.Id, Ct);
             }
 
-            await _target.ResetFailedLoginCountAsync(user.Id, _ct);
+            await Target.ResetFailedLoginCountAsync(user.Id, Ct);
 
-            var updated = await _target.FindByIdAsync(user.Id, _ct);
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
             Assert.Equal(0, updated.FailedLoginCount);
             Assert.Null(updated.LockedUntilUtc);
         }
@@ -248,18 +248,18 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("setpwd", "OldPassword");
 
-            await _target.SetPasswordAsync(user.Id, "NewPassword", _ct);
+            await Target.SetPasswordAsync(user.Id, "NewPassword", Ct);
 
-            var updated = await _target.FindByIdAsync(user.Id, _ct);
-            Assert.True(await _target.VerifyPasswordAsync(updated, "NewPassword"));
-            Assert.False(await _target.VerifyPasswordAsync(updated, "OldPassword"));
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
+            Assert.True(await Target.VerifyPasswordAsync(updated, "NewPassword"));
+            Assert.False(await Target.VerifyPasswordAsync(updated, "OldPassword"));
         }
 
         [Fact]
         public async Task ThrowsWhenUserNotFound()
         {
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _target.SetPasswordAsync(Guid.NewGuid(), "pwd", _ct));
+                () => Target.SetPasswordAsync(Guid.NewGuid(), "pwd", Ct));
         }
     }
 
@@ -271,9 +271,9 @@ public class UserServiceTests
             var user = await CreateLocalUser("disableme");
             Assert.True(user.IsEnabled);
 
-            await _target.SetEnabledAsync(user.Id, false, _ct);
+            await Target.SetEnabledAsync(user.Id, false, Ct);
 
-            var updated = await _target.FindByIdAsync(user.Id, _ct);
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
             Assert.False(updated.IsEnabled);
         }
 
@@ -281,7 +281,7 @@ public class UserServiceTests
         public async Task ThrowsWhenUserNotFound()
         {
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _target.SetEnabledAsync(Guid.NewGuid(), false, _ct));
+                () => Target.SetEnabledAsync(Guid.NewGuid(), false, Ct));
         }
     }
 
@@ -293,9 +293,9 @@ public class UserServiceTests
             var user = await CreateLocalUser("revokeui");
             Assert.True(user.CanLoginToUI);
 
-            await _target.SetCanLoginToUIAsync(user.Id, false, _ct);
+            await Target.SetCanLoginToUIAsync(user.Id, false, Ct);
 
-            var updated = await _target.FindByIdAsync(user.Id, _ct);
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
             Assert.False(updated.CanLoginToUI);
         }
 
@@ -304,13 +304,13 @@ public class UserServiceTests
         {
             var user = await CreateLocalUser("grantui");
             // Revoke first, then grant
-            await _target.SetCanLoginToUIAsync(user.Id, false, _ct);
-            var revoked = await _target.FindByIdAsync(user.Id, _ct);
+            await Target.SetCanLoginToUIAsync(user.Id, false, Ct);
+            var revoked = await Target.FindByIdAsync(user.Id, Ct);
             Assert.False(revoked.CanLoginToUI);
 
-            await _target.SetCanLoginToUIAsync(user.Id, true, _ct);
+            await Target.SetCanLoginToUIAsync(user.Id, true, Ct);
 
-            var updated = await _target.FindByIdAsync(user.Id, _ct);
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
             Assert.True(updated.CanLoginToUI);
         }
 
@@ -318,7 +318,7 @@ public class UserServiceTests
         public async Task ThrowsWhenUserNotFound()
         {
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _target.SetCanLoginToUIAsync(Guid.NewGuid(), false, _ct));
+                () => Target.SetCanLoginToUIAsync(Guid.NewGuid(), false, Ct));
         }
     }
 
@@ -327,7 +327,7 @@ public class UserServiceTests
         [Fact]
         public async Task ReturnsPreSeededAdminUser()
         {
-            var result = await _target.GetAllUsersAsync(_ct);
+            var result = await Target.GetAllUsersAsync(Ct);
 
             Assert.Single(result);
         }
@@ -338,7 +338,7 @@ public class UserServiceTests
             await CreateLocalUser("user1");
             await CreateLocalUser("user2");
 
-            var result = await _target.GetAllUsersAsync(_ct);
+            var result = await Target.GetAllUsersAsync(Ct);
 
             // 2 local users + 1 pre-seeded admin
             Assert.Equal(3, result.Count);
@@ -347,20 +347,20 @@ public class UserServiceTests
 
     public class FactsBase : IDisposable
     {
-        protected readonly TestDbContext _context;
-        protected readonly UserService _target;
-        protected readonly CancellationToken _ct = CancellationToken.None;
-        protected readonly Guid _adminUserId;
+        protected readonly TestDbContext Context;
+        protected readonly UserService Target;
+        protected readonly CancellationToken Ct = CancellationToken.None;
+        protected readonly Guid AdminUserId;
 
         protected FactsBase()
         {
-            _context = TestDbContext.Create();
+            Context = TestDbContext.Create();
 
             // Create an admin user to serve as CreatedByUser for local accounts
-            _adminUserId = Guid.NewGuid();
-            _context.Users.Add(new User
+            AdminUserId = Guid.NewGuid();
+            Context.Users.Add(new User
             {
-                Id = _adminUserId,
+                Id = AdminUserId,
                 Username = "admin",
                 DisplayName = "Admin",
                 AuthProvider = AuthProvider.Entra,
@@ -370,7 +370,7 @@ public class UserServiceTests
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             });
-            _context.SaveChanges();
+            Context.SaveChanges();
 
             var authOptions = new NugetAuthenticationOptions
             {
@@ -381,22 +381,22 @@ public class UserServiceTests
             var optionsSnapshot = new Mock<IOptionsSnapshot<NugetAuthenticationOptions>>();
             optionsSnapshot.Setup(o => o.Value).Returns(authOptions);
 
-            _target = new UserService(
-                _context,
+            Target = new UserService(
+                Context,
                 optionsSnapshot.Object,
                 Mock.Of<ILogger<UserService>>());
         }
 
         protected async Task<User> CreateLocalUser(string username, string password = "TestPassword123!")
         {
-            return await _target.CreateLocalUserAsync(
+            return await Target.CreateLocalUserAsync(
                 username, $"{username} Display",
-                password, true, _adminUserId, _ct);
+                password, true, AdminUserId, Ct);
         }
 
         public void Dispose()
         {
-            _context?.Dispose();
+            Context?.Dispose();
         }
     }
 }

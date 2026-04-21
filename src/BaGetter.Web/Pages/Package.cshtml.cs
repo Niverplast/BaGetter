@@ -19,7 +19,7 @@ namespace BaGetter.Web.Pages;
 
 public class PackageModel : PageModel
 {
-    private static readonly MarkdownPipeline MarkdownPipeline;
+    private static readonly MarkdownPipeline _markdownPipeline;
 
     private readonly IPackageService _packages;
     private readonly IPackageContentService _content;
@@ -29,7 +29,7 @@ public class PackageModel : PageModel
 
     static PackageModel()
     {
-        MarkdownPipeline = new MarkdownPipelineBuilder()
+        _markdownPipeline = new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .Build();
     }
@@ -215,7 +215,7 @@ public class PackageModel : PageModel
         using var reader = new StreamReader(readmeStream);
         var readme = await reader.ReadToEndAsync(cancellationToken);
 
-        var readmeHtml = Markdown.ToHtml(readme, MarkdownPipeline);
+        var readmeHtml = Markdown.ToHtml(readme, _markdownPipeline);
         return new HtmlString(readmeHtml);
     }
 
@@ -226,7 +226,7 @@ public class PackageModel : PageModel
             return HtmlString.Empty;
         }
 
-        var releseNotesHtml = Markdown.ToHtml(Package.ReleaseNotes, MarkdownPipeline);
+        var releseNotesHtml = Markdown.ToHtml(Package.ReleaseNotes, _markdownPipeline);
         return new HtmlString(releseNotesHtml);
     }
 

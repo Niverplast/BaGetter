@@ -17,7 +17,7 @@ namespace BaGetter.Web.Pages.Admin;
 [Authorize(AuthenticationSchemes = Core.Authentication.AuthenticationConstants.CookieScheme)]
 public class FeedsModel : PageModel
 {
-    private static readonly Regex SlugRegex = new(@"^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$", RegexOptions.Compiled);
+    private static readonly Regex _slugRegex = new(@"^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$", RegexOptions.Compiled);
 
     private readonly IFeedService _feedService;
     private readonly IUserService _userService;
@@ -94,7 +94,7 @@ public class FeedsModel : PageModel
         }
 
         var slug = NewSlug.Trim().ToLowerInvariant();
-        if (!SlugRegex.IsMatch(slug))
+        if (!_slugRegex.IsMatch(slug))
         {
             ErrorMessage = "Slug must be lowercase alphanumeric with optional hyphens (not at start/end), max 128 characters.";
             Feeds = await _feedService.GetAllFeedsAsync(cancellationToken);

@@ -23,9 +23,9 @@ public class EntraRoleSyncServiceTests
         {
             var principal = CreatePrincipal(oid: null);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _userService.Verify(
+            UserService.Verify(
                 s => s.FindByEntraObjectIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
@@ -34,13 +34,13 @@ public class EntraRoleSyncServiceTests
         public async Task ProvisionsNewUser()
         {
             var principal = CreatePrincipal(oid: "oid-1", email: "alice@test.com", name: "Alice Test");
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-1", _ct)).ReturnsAsync((User)null);
-            _userService.Setup(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", _ct))
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-1", Ct)).ReturnsAsync((User)null);
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", Ct))
                 .ReturnsAsync(CreateUserEntity("oid-1", "alice@test.com"));
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _userService.Verify(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", _ct));
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", Ct));
         }
 
         [Fact]
@@ -48,12 +48,12 @@ public class EntraRoleSyncServiceTests
         {
             var user = CreateUserEntity("oid-2", "bob@test.com", displayName: "Old Name");
             var principal = CreatePrincipal(oid: "oid-2", email: "bob@test.com", name: "New Name");
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-2", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-2", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
             Assert.Equal("New Name", user.DisplayName);
-            _userService.Verify(s => s.UpdateUserAsync(user, _ct));
+            UserService.Verify(s => s.UpdateUserAsync(user, Ct));
         }
 
         [Fact]
@@ -62,12 +62,12 @@ public class EntraRoleSyncServiceTests
             var user = CreateUserEntity("oid-3", "disabled@test.com");
             user.IsEnabled = false;
             var principal = CreatePrincipal(oid: "oid-3", roles: new[] { "Admin" });
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-3", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-3", Ct)).ReturnsAsync(user);
 
             await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _target.OnTokenValidatedAsync(principal, _ct));
+                () => Target.OnTokenValidatedAsync(principal, Ct));
 
-            _groupService.Verify(
+            GroupService.Verify(
                 s => s.SyncAppRoleMembershipsAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
@@ -79,12 +79,12 @@ public class EntraRoleSyncServiceTests
             user.IsEnabled = true;
             user.CanLoginToUI = false;
             var principal = CreatePrincipal(oid: "oid-nologin", roles: new[] { "Admin" });
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-nologin", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-nologin", Ct)).ReturnsAsync(user);
 
             await Assert.ThrowsAsync<UnauthorizedAccessException>(
-                () => _target.OnTokenValidatedAsync(principal, _ct));
+                () => Target.OnTokenValidatedAsync(principal, Ct));
 
-            _groupService.Verify(
+            GroupService.Verify(
                 s => s.SyncAppRoleMembershipsAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
@@ -95,11 +95,11 @@ public class EntraRoleSyncServiceTests
             var user = CreateUserEntity("oid-4", "admin@test.com");
             user.IsAdmin = false;
             var principal = CreatePrincipal(oid: "oid-4", roles: new[] { "Admin" });
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-4", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-4", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _userService.Verify(s => s.SetAdminAsync(user.Id, true, _ct));
+            UserService.Verify(s => s.SetAdminAsync(user.Id, true, Ct));
         }
 
         [Fact]
@@ -108,11 +108,11 @@ public class EntraRoleSyncServiceTests
             var user = CreateUserEntity("oid-5", "wasadmin@test.com");
             user.IsAdmin = true;
             var principal = CreatePrincipal(oid: "oid-5", roles: new[] { "TeamFrontend" });
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-5", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-5", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _userService.Verify(s => s.SetAdminAsync(user.Id, false, _ct));
+            UserService.Verify(s => s.SetAdminAsync(user.Id, false, Ct));
         }
 
         [Fact]
@@ -121,11 +121,11 @@ public class EntraRoleSyncServiceTests
             var user = CreateUserEntity("oid-6", "alreadyadmin@test.com");
             user.IsAdmin = true;
             var principal = CreatePrincipal(oid: "oid-6", roles: new[] { "Admin" });
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-6", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-6", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _userService.Verify(s => s.SetAdminAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            UserService.Verify(s => s.SetAdminAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -133,14 +133,14 @@ public class EntraRoleSyncServiceTests
         {
             var user = CreateUserEntity("oid-7", "roleuser@test.com");
             var principal = CreatePrincipal(oid: "oid-7", roles: new[] { "TeamFrontend", "TeamBackend" });
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-7", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-7", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _groupService.Verify(s => s.SyncAppRoleMembershipsAsync(
+            GroupService.Verify(s => s.SyncAppRoleMembershipsAsync(
                 user.Id,
                 It.Is<IReadOnlyList<string>>(r => r.Count == 2),
-                _ct));
+                Ct));
         }
 
         [Fact]
@@ -148,14 +148,14 @@ public class EntraRoleSyncServiceTests
         {
             var user = CreateUserEntity("oid-8", "noroles@test.com");
             var principal = CreatePrincipal(oid: "oid-8", roles: Array.Empty<string>());
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-8", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-8", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _groupService.Verify(s => s.SyncAppRoleMembershipsAsync(
+            GroupService.Verify(s => s.SyncAppRoleMembershipsAsync(
                 user.Id,
                 It.Is<IReadOnlyList<string>>(r => r.Count == 0),
-                _ct));
+                Ct));
         }
 
         [Fact]
@@ -163,15 +163,15 @@ public class EntraRoleSyncServiceTests
         {
             var user = CreateUserEntity("oid-9", "manual@test.com");
             var principal = CreatePrincipal(oid: "oid-9", roles: new[] { "TeamQA" });
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-9", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-9", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
             // SyncAppRoleMembershipsAsync is called which internally only touches role-linked groups
-            _groupService.Verify(s => s.SyncAppRoleMembershipsAsync(
+            GroupService.Verify(s => s.SyncAppRoleMembershipsAsync(
                 user.Id,
                 It.Is<IReadOnlyList<string>>(r => r.Count == 1 && r[0] == "TeamQA"),
-                _ct));
+                Ct));
         }
 
         [Fact]
@@ -179,9 +179,9 @@ public class EntraRoleSyncServiceTests
         {
             var user = CreateUserEntity("oid-10", "claims@test.com");
             var principal = CreatePrincipal(oid: "oid-10");
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-10", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-10", Ct)).ReturnsAsync(user);
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
             var identity = principal.Identity as ClaimsIdentity;
             var nameIdClaim = identity?.FindFirst(ClaimTypes.NameIdentifier);
@@ -196,30 +196,30 @@ public class EntraRoleSyncServiceTests
         [Fact]
         public async Task UsesCustomRoleClaim()
         {
-            _options.Value.Authentication.Entra.RoleClaim = "custom_roles";
+            Options.Value.Authentication.Entra.RoleClaim = "custom_roles";
             var user = CreateUserEntity("oid-11", "custom@test.com");
             var principal = CreatePrincipal(oid: "oid-11", roles: new[] { "Admin" }, roleClaim: "custom_roles");
-            _userService.Setup(s => s.FindByEntraObjectIdAsync("oid-11", _ct)).ReturnsAsync(user);
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-11", Ct)).ReturnsAsync(user);
             user.IsAdmin = false;
 
-            await _target.OnTokenValidatedAsync(principal, _ct);
+            await Target.OnTokenValidatedAsync(principal, Ct);
 
-            _userService.Verify(s => s.SetAdminAsync(user.Id, true, _ct));
+            UserService.Verify(s => s.SetAdminAsync(user.Id, true, Ct));
         }
     }
 
     public class FactsBase
     {
-        protected readonly Mock<IUserService> _userService;
-        protected readonly Mock<IGroupService> _groupService;
-        protected readonly IOptions<BaGetterOptions> _options;
-        protected readonly EntraRoleSyncService _target;
-        protected readonly CancellationToken _ct = CancellationToken.None;
+        protected readonly Mock<IUserService> UserService;
+        protected readonly Mock<IGroupService> GroupService;
+        protected readonly IOptions<BaGetterOptions> Options;
+        protected readonly EntraRoleSyncService Target;
+        protected readonly CancellationToken Ct = CancellationToken.None;
 
         protected FactsBase()
         {
-            _userService = new Mock<IUserService>();
-            _groupService = new Mock<IGroupService>();
+            UserService = new Mock<IUserService>();
+            GroupService = new Mock<IGroupService>();
 
             var opts = new BaGetterOptions
             {
@@ -231,12 +231,12 @@ public class EntraRoleSyncServiceTests
                     }
                 }
             };
-            _options = Options.Create(opts);
+            Options = Microsoft.Extensions.Options.Options.Create(opts);
 
-            _target = new EntraRoleSyncService(
-                _userService.Object,
-                _groupService.Object,
-                _options,
+            Target = new EntraRoleSyncService(
+                UserService.Object,
+                GroupService.Object,
+                Options,
                 Mock.Of<ILogger<EntraRoleSyncService>>());
         }
 

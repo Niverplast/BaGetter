@@ -192,13 +192,13 @@ public class PackageDatabaseTests
 
     public class FactsBase
     {
-        protected readonly Mock<IContext> _context;
-        protected readonly PackageDatabase _target;
+        protected readonly Mock<IContext> Context;
+        protected readonly PackageDatabase Target;
 
         public FactsBase()
         {
-            _context = new Mock<IContext>();
-            _target = new PackageDatabase(_context.Object);
+            Context = new Mock<IContext>();
+            Target = new PackageDatabase(Context.Object);
         }
     }
 }
