@@ -48,13 +48,15 @@ public class PackageIndexingServiceTests
         feedSettings.Setup(r => r.GetRetentionOptions(It.IsAny<Feed>()))
             .Returns(() => _mockOptions.Retention ?? new RetentionOptions());
 
-        var feedContext = new Mock<IFeedContext>();
-        feedContext.Setup(f => f.CurrentFeed).Returns(new Feed
+        var defaultFeed = new Feed
         {
             Id = Guid.Empty,
             Slug = Feed.DefaultSlug,
             Name = "Default",
-        });
+        };
+        var feedService = new Mock<IFeedService>();
+        feedService.Setup(s => s.GetFeedByIdAsync(It.IsAny<Guid>(), It.IsAny<System.Threading.CancellationToken>()))
+            .ReturnsAsync(defaultFeed);
 
         _target = new PackageIndexingService(
             _packages.Object,
@@ -64,7 +66,7 @@ public class PackageIndexingServiceTests
             _time.Object,
             options.Object,
             feedSettings.Object,
-            feedContext.Object,
+            feedService.Object,
             Mock.Of<ILogger<PackageIndexingService>>());
     }
 

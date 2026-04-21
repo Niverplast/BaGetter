@@ -47,6 +47,10 @@ public class PackageIndexingServiceInMemoryTests
         var feedContext = new Mock<IFeedContext>();
         feedContext.Setup(f => f.CurrentFeed).Returns(defaultFeed);
 
+        var feedService = new Mock<IFeedService>();
+        feedService.Setup(s => s.GetFeedByIdAsync(It.IsAny<Guid>(), It.IsAny<System.Threading.CancellationToken>()))
+            .ReturnsAsync(defaultFeed);
+
         var feedSettings = new Mock<IFeedSettingsResolver>();
         feedSettings.Setup(r => r.GetPackageDeletionBehavior(It.IsAny<Feed>()))
             .Returns(() => _options.PackageDeletionBehavior);
@@ -78,7 +82,7 @@ public class PackageIndexingServiceInMemoryTests
             _time.Object,
             options.Object,
             feedSettings.Object,
-            feedContext.Object,
+            feedService.Object,
             Mock.Of<ILogger<PackageIndexingService>>());
     }
 

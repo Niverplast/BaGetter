@@ -22,7 +22,7 @@ public class PackageIndexingService : IPackageIndexingService
     private readonly SystemTime _time;
     private readonly IOptionsSnapshot<BaGetterOptions> _options;
     private readonly IFeedSettingsResolver _feedSettings;
-    private readonly IFeedContext _feedContext;
+    private readonly IFeedService _feedService;
     private readonly ILogger<PackageIndexingService> _logger;
     private readonly IPackageDeletionService _packageDeletionService;
 
@@ -34,7 +34,7 @@ public class PackageIndexingService : IPackageIndexingService
         SystemTime time,
         IOptionsSnapshot<BaGetterOptions> options,
         IFeedSettingsResolver feedSettings,
-        IFeedContext feedContext,
+        IFeedService feedService,
         ILogger<PackageIndexingService> logger)
     {
         _packages = packages ?? throw new ArgumentNullException(nameof(packages));
@@ -43,7 +43,7 @@ public class PackageIndexingService : IPackageIndexingService
         _time = time ?? throw new ArgumentNullException(nameof(time));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _feedSettings = feedSettings ?? throw new ArgumentNullException(nameof(feedSettings));
-        _feedContext = feedContext ?? throw new ArgumentNullException(nameof(feedContext));
+        _feedService = feedService ?? throw new ArgumentNullException(nameof(feedService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _packageDeletionService = packageDeletionService ?? throw new ArgumentNullException(nameof(packageDeletionService));
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -100,7 +100,7 @@ public class PackageIndexingService : IPackageIndexingService
         }
 
         // The package is well-formed. Ensure this is a new package.
-        var feed = _feedContext.CurrentFeed;
+        var feed = await _feedService.GetFeedByIdAsync(feedId, cancellationToken);
         if (await _packages.ExistsAsync(feedId, package.Id, package.Version, cancellationToken))
         {
             var allowOverwrites = _feedSettings.GetAllowPackageOverwrites(feed);
