@@ -1,4 +1,3 @@
-@using System.Threading
 @using BaGetter.Core.Configuration
 @using BaGetter.Core.Entities
 @using BaGetter.Core.Feeds
@@ -16,8 +15,6 @@
     var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var showContent = !requiresAuth || isAuthenticated;
-    var allFeeds = await FeedService.GetAllFeedsAsync(CancellationToken.None);
-    var currentSlug = FeedContext.CurrentFeed?.Slug ?? Feed.DefaultSlug;
 }
 
 <!DOCTYPE html>
@@ -46,6 +43,9 @@
                         <ul class="nav navbar-nav" role="tablist">
                             @if (showContent)
                             {
+                                var allFeeds = await FeedService.GetAllFeedsAsync(Context.RequestAborted);
+                                var currentSlug = FeedContext.CurrentFeed?.Slug ?? Feed.DefaultSlug;
+
                                 <li role="presentation"><a asp-area="" asp-page="/Index" role="tab" nav-link><span>Packages</span></a></li>
                                 <li role="presentation"><a asp-area="" asp-page="/Upload" role="tab" nav-link><span>Upload</span></a></li>
                                 @if (StatisticsOptions.Value.EnableStatisticsPage)
