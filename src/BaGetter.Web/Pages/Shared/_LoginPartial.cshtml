@@ -17,6 +17,12 @@
 
     var isAdmin = isAuthenticated &&
         string.Equals(User.FindFirst(AuthenticationConstants.IsAdminClaim)?.Value, "true", StringComparison.Ordinal);
+
+    // Admin links must never be scoped to a feed — strip any /feeds/{slug} segment that
+    // FeedResolutionMiddleware appended to PathBase so the dropdown always points at root.
+    var pathBase = Context.Request.PathBase.Value ?? string.Empty;
+    var feedsIdx = pathBase.IndexOf("/feeds/", StringComparison.OrdinalIgnoreCase);
+    var adminBase = feedsIdx >= 0 ? pathBase[..feedsIdx] : pathBase;
 }
 
 @if (authMode != AuthenticationMode.Config)
@@ -38,9 +44,9 @@
                     @if (isAdmin)
                     {
                         <li role="separator" class="divider"></li>
-                        <li><a asp-page="/Admin/Accounts"><span class="ms-Icon ms-Icon--People" aria-hidden="true"></span> Accounts</a></li>
-                        <li><a asp-page="/Admin/Groups"><span class="ms-Icon ms-Icon--Group" aria-hidden="true"></span> Groups</a></li>
-                        <li><a asp-page="/Admin/Feeds"><span class="ms-Icon ms-Icon--Database" aria-hidden="true"></span> Feeds</a></li>
+                        <li><a href="@adminBase/Admin/Accounts"><span class="ms-Icon ms-Icon--People" aria-hidden="true"></span> Accounts</a></li>
+                        <li><a href="@adminBase/Admin/Groups"><span class="ms-Icon ms-Icon--Group" aria-hidden="true"></span> Groups</a></li>
+                        <li><a href="@adminBase/Admin/Feeds"><span class="ms-Icon ms-Icon--Database" aria-hidden="true"></span> Feeds</a></li>
                     }
                     <li role="separator" class="divider"></li>
                     <li>

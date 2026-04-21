@@ -1010,3 +1010,15 @@ code {
     border-left: 3px solid #ddd;
     margin: 4px 0 8px 8px;
 }
+
+/* Auto-fade confirmation checkmarks after a brief delay. */
+.saved-indicator {
+    animation: saved-indicator-fade 0.4s ease-in 3s forwards;
+}
+
+@keyframes saved-indicator-fade {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
