@@ -23,7 +23,7 @@ public class PackageDeletionServiceTests
 
     private readonly BaGetterOptions _options;
     private readonly Mock<IFeedSettingsResolver> _feedSettings;
-    private readonly Mock<IFeedContext> _feedContext;
+    private readonly Mock<IFeedService> _feedService;
     private readonly PackageDeletionService _target;
 
     public PackageDeletionServiceTests()
@@ -33,13 +33,16 @@ public class PackageDeletionServiceTests
         _options = new BaGetterOptions();
 
         _feedSettings = new Mock<IFeedSettingsResolver>();
-        _feedContext = new Mock<IFeedContext>();
-        _feedContext.Setup(f => f.CurrentFeed).Returns(new Feed
+        var defaultFeed = new Feed
         {
             Id = Guid.Empty,
             Slug = Feed.DefaultSlug,
             Name = "Default",
-        });
+        };
+        _feedService = new Mock<IFeedService>();
+        _feedService
+            .Setup(s => s.GetFeedByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(defaultFeed);
 
         // Default: delegate deletion behavior from _options (mirrors old behavior)
         _feedSettings
@@ -50,7 +53,7 @@ public class PackageDeletionServiceTests
             _packages.Object,
             _storage.Object,
             _feedSettings.Object,
-            _feedContext.Object,
+            _feedService.Object,
             Mock.Of<ILogger<PackageDeletionService>>());
     }
 

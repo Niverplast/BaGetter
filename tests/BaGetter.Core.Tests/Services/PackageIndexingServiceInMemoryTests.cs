@@ -44,9 +44,6 @@ public class PackageIndexingServiceInMemoryTests
         _options = new();
 
         var defaultFeed = new Feed { Id = Guid.Empty, Slug = Feed.DefaultSlug, Name = "Default" };
-        var feedContext = new Mock<IFeedContext>();
-        feedContext.Setup(f => f.CurrentFeed).Returns(defaultFeed);
-
         var feedService = new Mock<IFeedService>();
         feedService.Setup(s => s.GetFeedByIdAsync(It.IsAny<Guid>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync(defaultFeed);
@@ -67,7 +64,7 @@ public class PackageIndexingServiceInMemoryTests
             _packages,
             _storage,
             feedSettings.Object,
-            feedContext.Object,
+            feedService.Object,
             Mock.Of<ILogger<PackageDeletionService>>());
 
         _time = new Mock<SystemTime>(MockBehavior.Loose);

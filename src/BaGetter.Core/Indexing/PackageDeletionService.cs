@@ -17,26 +17,27 @@ public class PackageDeletionService : IPackageDeletionService
     private readonly IPackageDatabase _packages;
     private readonly IPackageStorageService _storage;
     private readonly IFeedSettingsResolver _feedSettings;
-    private readonly IFeedContext _feedContext;
+    private readonly IFeedService _feedService;
     private readonly ILogger<PackageDeletionService> _logger;
 
     public PackageDeletionService(
         IPackageDatabase packages,
         IPackageStorageService storage,
         IFeedSettingsResolver feedSettings,
-        IFeedContext feedContext,
+        IFeedService feedService,
         ILogger<PackageDeletionService> logger)
     {
         _packages = packages ?? throw new ArgumentNullException(nameof(packages));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
         _feedSettings = feedSettings ?? throw new ArgumentNullException(nameof(feedSettings));
-        _feedContext = feedContext ?? throw new ArgumentNullException(nameof(feedContext));
+        _feedService = feedService ?? throw new ArgumentNullException(nameof(feedService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<bool> TryDeletePackageAsync(Guid feedId, string feedSlug, string id, NuGetVersion version, CancellationToken cancellationToken)
     {
-        var behavior = _feedSettings.GetPackageDeletionBehavior(_feedContext.CurrentFeed);
+        var feed = await _feedService.GetFeedByIdAsync(feedId, cancellationToken);
+        var behavior = _feedSettings.GetPackageDeletionBehavior(feed);
         switch (behavior)
         {
             case PackageDeletionBehavior.Unlist:
