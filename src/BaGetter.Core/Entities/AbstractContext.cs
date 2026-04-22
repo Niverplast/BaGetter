@@ -37,6 +37,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         : base(efOptions)
     { }
 
+    public DbSet<Feed> Feeds { get; set; }
     public DbSet<Package> Packages { get; set; }
     public DbSet<PackageDependency> PackageDependencies { get; set; }
     public DbSet<PackageType> PackageTypes { get; set; }
@@ -58,6 +59,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.Entity<Feed>(BuildFeedEntity);
         builder.Entity<Package>(BuildPackageEntity);
         builder.Entity<PackageDependency>(BuildPackageDependencyEntity);
         builder.Entity<PackageType>(BuildPackageTypeEntity);
@@ -69,11 +71,36 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         builder.Entity<FeedPermission>(BuildFeedPermissionEntity);
     }
 
+    private void BuildFeedEntity(EntityTypeBuilder<Feed> feed)
+    {
+        feed.HasKey(f => f.Id);
+        feed.HasIndex(f => f.Slug).IsUnique();
+
+        feed.Property(f => f.Slug)
+            .HasMaxLength(MaxFeedIdLength)
+            .IsRequired();
+
+        feed.Property(f => f.Name)
+            .HasMaxLength(MaxPackageTitleLength)
+            .IsRequired();
+
+        feed.Property(f => f.Description)
+            .HasMaxLength(DefaultMaxStringLength);
+
+        feed.Property(f => f.CreatedAtUtc).IsRequired();
+        feed.Property(f => f.UpdatedAtUtc).IsRequired();
+
+        feed.HasMany(f => f.Packages)
+            .WithOne(p => p.Feed)
+            .HasForeignKey(p => p.FeedId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
     private void BuildPackageEntity(EntityTypeBuilder<Package> package)
     {
         package.HasKey(p => p.Key);
-        package.HasIndex(p => p.Id);
-        package.HasIndex(p => new { p.Id, p.NormalizedVersionString })
+        package.HasIndex(p => new { p.FeedId, p.Id });
+        package.HasIndex(p => new { p.FeedId, p.Id, p.NormalizedVersionString })
             .IsUnique();
 
         package.Property(p => p.Id)
@@ -295,14 +322,16 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         permission.HasKey(p => p.Id);
         permission.HasIndex(p => new { p.FeedId, p.PrincipalType, p.PrincipalId }).IsUnique();
 
-        permission.Property(p => p.FeedId)
-            .HasMaxLength(MaxFeedIdLength)
-            .IsRequired();
-
+        permission.Property(p => p.FeedId).IsRequired();
         permission.Property(p => p.PrincipalType).IsRequired();
         permission.Property(p => p.PrincipalId).IsRequired();
         permission.Property(p => p.CanPush).IsRequired().HasDefaultValue(false);
         permission.Property(p => p.CanPull).IsRequired().HasDefaultValue(false);
         permission.Property(p => p.Source).IsRequired().HasDefaultValue(PermissionSource.Manual);
+
+        permission.HasOne(p => p.Feed)
+            .WithMany(f => f.Permissions)
+            .HasForeignKey(p => p.FeedId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -18,23 +19,30 @@ public class GroupsModel : PageModel
     private readonly IGroupService _groupService;
     private readonly IUserService _userService;
     private readonly IPermissionService _permissionService;
+    private readonly IFeedService _feedService;
 
     public GroupsModel(
         IGroupService groupService,
         IUserService userService,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IFeedService feedService)
     {
         _groupService = groupService ?? throw new ArgumentNullException(nameof(groupService));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
+        _feedService = feedService ?? throw new ArgumentNullException(nameof(feedService));
     }
 
     public List<Group> Groups { get; set; } = new();
     public List<User> AllUsers { get; set; } = new();
-    public Dictionary<Guid, FeedPermission> GroupPermissions { get; set; } = new();
+    public List<Feed> AllFeeds { get; set; } = new();
+    public Dictionary<Guid, Dictionary<Guid, FeedPermission>> GroupPermissions { get; set; } = new();
 
     [FromQuery]
     public Guid? SavedGroupId { get; set; }
+
+    [FromQuery]
+    public Guid? SavedFeedId { get; set; }
 
     [BindProperty]
     [Required(ErrorMessage = "Group name is required.")]
@@ -67,13 +75,22 @@ public class GroupsModel : PageModel
 
     private async Task LoadGroupPermissionsAsync(CancellationToken cancellationToken)
     {
+        AllFeeds = await _feedService.GetAllFeedsAsync(cancellationToken);
+
+        var groupPermissions = await _permissionService.GetPermissionsByPrincipalTypeAsync(
+            PrincipalType.Group, cancellationToken);
+
+        GroupPermissions = new Dictionary<Guid, Dictionary<Guid, FeedPermission>>(Groups.Count);
         foreach (var group in Groups)
         {
-            var permission = await _permissionService.GetPermissionAsync(
-                group.Id, PrincipalType.Group, "default", cancellationToken);
-            if (permission != null)
+            GroupPermissions[group.Id] = new Dictionary<Guid, FeedPermission>();
+        }
+
+        foreach (var permission in groupPermissions)
+        {
+            if (GroupPermissions.TryGetValue(permission.PrincipalId, out var perFeed))
             {
-                GroupPermissions[group.Id] = permission;
+                perFeed[permission.FeedId] = permission;
             }
         }
     }
@@ -168,7 +185,7 @@ public class GroupsModel : PageModel
     public async Task<IActionResult> OnPostGrantPermissionAsync(
         Guid principalId,
         PrincipalType principalType,
-        string feedId,
+        Guid feedId,
         bool canPush,
         bool canPull,
         CancellationToken cancellationToken)
@@ -176,11 +193,34 @@ public class GroupsModel : PageModel
         if (!await IsCurrentUserAdminAsync(cancellationToken))
             return RedirectToPage("/Index");
 
-        await _permissionService.GrantPermissionAsync(
-            principalId, principalType, feedId ?? "default",
-            canPush, canPull, cancellationToken);
+        if (feedId == Guid.Empty)
+        {
+            ErrorMessage = "Cannot grant permission: no feed was specified.";
+            Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
+            AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
+            await LoadGroupPermissionsAsync(cancellationToken);
+            return Page();
+        }
 
-        return RedirectToPage(new { savedGroupId = principalId });
+        // Unchecking both Pull and Push revokes the permission so we don't persist
+        // a (false, false) row that has no effect.
+        if (!canPush && !canPull)
+        {
+            var existing = await _permissionService.GetPermissionAsync(
+                principalId, principalType, feedId, cancellationToken);
+            if (existing != null)
+            {
+                await _permissionService.RevokePermissionAsync(existing.Id, cancellationToken);
+            }
+        }
+        else
+        {
+            await _permissionService.GrantPermissionAsync(
+                principalId, principalType, feedId,
+                canPush, canPull, cancellationToken);
+        }
+
+        return RedirectToPage(new { savedGroupId = principalId, savedFeedId = feedId });
     }
 
     public async Task<IActionResult> OnPostRevokePermissionAsync(

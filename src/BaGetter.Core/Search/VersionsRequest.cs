@@ -1,3 +1,5 @@
+using System;
+
 namespace BaGetter.Core.Search;
 
 /// <summary>
@@ -6,6 +8,8 @@ namespace BaGetter.Core.Search;
 /// </summary>
 public class VersionsRequest
 {
+    public Guid FeedId { get; set; }
+
     /// <summary>
     /// Whether to include pre-release packages.
     /// </summary>

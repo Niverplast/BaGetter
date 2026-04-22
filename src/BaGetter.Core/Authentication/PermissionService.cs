@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,12 +22,12 @@ public class PermissionService : IPermissionService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<bool> CanPushAsync(Guid userId, string feedId, CancellationToken cancellationToken)
+    public async Task<bool> CanPushAsync(Guid userId, Guid feedId, CancellationToken cancellationToken)
     {
         return await HasPermissionAsync(userId, feedId, p => p.CanPush, cancellationToken);
     }
 
-    public async Task<bool> CanPullAsync(Guid userId, string feedId, CancellationToken cancellationToken)
+    public async Task<bool> CanPullAsync(Guid userId, Guid feedId, CancellationToken cancellationToken)
     {
         return await HasPermissionAsync(userId, feedId, p => p.CanPull, cancellationToken);
     }
@@ -34,7 +35,7 @@ public class PermissionService : IPermissionService
     public async Task<FeedPermission> GetPermissionAsync(
         Guid principalId,
         PrincipalType principalType,
-        string feedId,
+        Guid feedId,
         CancellationToken cancellationToken)
     {
         return await _context.FeedPermissions.FirstOrDefaultAsync(
@@ -42,10 +43,19 @@ public class PermissionService : IPermissionService
             cancellationToken);
     }
 
+    public async Task<IReadOnlyList<FeedPermission>> GetPermissionsByPrincipalTypeAsync(
+        PrincipalType principalType,
+        CancellationToken cancellationToken)
+    {
+        return await _context.FeedPermissions
+            .Where(p => p.PrincipalType == principalType)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task GrantPermissionAsync(
         Guid principalId,
         PrincipalType principalType,
-        string feedId,
+        Guid feedId,
         bool canPush,
         bool canPull,
         CancellationToken cancellationToken,
@@ -84,7 +94,7 @@ public class PermissionService : IPermissionService
     public async Task RevokePermissionsBySourceAsync(
         Guid principalId,
         PrincipalType principalType,
-        string feedId,
+        Guid feedId,
         PermissionSource source,
         CancellationToken cancellationToken)
     {
@@ -121,7 +131,7 @@ public class PermissionService : IPermissionService
 
     private async Task<bool> HasPermissionAsync(
         Guid userId,
-        string feedId,
+        Guid feedId,
         System.Linq.Expressions.Expression<Func<FeedPermission, bool>> permissionSelector,
         CancellationToken cancellationToken)
     {

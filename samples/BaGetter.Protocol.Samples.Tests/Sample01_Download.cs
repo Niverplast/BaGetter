@@ -5,7 +5,7 @@ using Xunit;
 
 namespace BaGetter.Protocol.Samples.Tests;
 
-public class Sample01_Download
+public class Sample01Download
 {
     [Fact]
     public async Task DownloadPackage()

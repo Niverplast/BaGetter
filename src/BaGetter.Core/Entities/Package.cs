@@ -11,6 +11,9 @@ public class Package
 {
     public int Key { get; set; }
 
+    public Guid FeedId { get; set; }
+    public Feed Feed { get; set; }
+
     public string Id { get; set; }
 
     public NuGetVersion Version

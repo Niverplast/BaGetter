@@ -9,6 +9,7 @@ public interface IContext
 {
     DatabaseFacade Database { get; }
 
+    DbSet<Feed> Feeds { get; set; }
     DbSet<Package> Packages { get; set; }
     DbSet<User> Users { get; set; }
     DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; }

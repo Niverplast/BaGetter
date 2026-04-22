@@ -5,7 +5,7 @@ using Xunit;
 
 namespace BaGetter.Protocol.Samples.Tests;
 
-public class Sample02_Search
+public class Sample02Search
 {
     [Fact]
     public async Task Exists()

@@ -154,23 +154,87 @@
                         </form>
                     }
 
-                    <h5 style="margin-top:16px">Feed Permissions</h5>
                     @{
-                        Model.GroupPermissions.TryGetValue(group.Id, out var groupPerm);
+                        Model.GroupPermissions.TryGetValue(group.Id, out var perFeedPerms);
+                        perFeedPerms ??= new Dictionary<Guid, BaGetter.Core.Entities.FeedPermission>();
+                        var permissionsCollapseId = $"perms-{group.Id}";
+                        var isExpanded = Model.SavedGroupId == group.Id;
                     }
-                    <form method="post" asp-page-handler="GrantPermission" class="form-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="principalId" value="@group.Id" />
-                        <input type="hidden" name="principalType" value="@BaGetter.Core.Entities.PrincipalType.Group" />
-                        <input type="hidden" name="feedId" value="default" />
-                        <label class="checkbox-inline"><input type="checkbox" name="canPull" value="true" @(groupPerm?.CanPull == true ? "checked" : "") /> Pull</label>
-                        <label class="checkbox-inline"><input type="checkbox" name="canPush" value="true" @(groupPerm?.CanPush == true ? "checked" : "") /> Push</label>
-                        <button type="submit" class="btn btn-xs btn-primary">Set Permissions</button>
+                    <h5 style="margin-top:16px; display:flex; align-items:center; gap:8px;">
+                        <a role="button"
+                           data-toggle="collapse"
+                           href="#@permissionsCollapseId"
+                           aria-expanded="@(isExpanded ? "true" : "false")"
+                           aria-controls="@permissionsCollapseId"
+                           style="text-decoration:none">
+                            Feed Permissions
+                            <span class="caret"></span>
+                        </a>
+                        <small class="text-muted">(@perFeedPerms.Count of @Model.AllFeeds.Count feeds)</small>
                         @if (Model.SavedGroupId == group.Id)
                         {
-                            <span class="text-success" style="margin-left:6px" title="Permissions saved">&#10003;</span>
+                            <span class="text-success saved-indicator" title="Permissions saved">&#10003;</span>
                         }
-                    </form>
+                    </h5>
+                    <div id="@permissionsCollapseId" class="collapse @(isExpanded ? "in" : "")">
+                        @if (Model.AllFeeds.Count == 0)
+                        {
+                            <p class="text-muted">No feeds available.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-condensed table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Feed</th>
+                                        <th style="width:1%; white-space:nowrap">Pull</th>
+                                        <th style="width:1%; white-space:nowrap">Push</th>
+                                        <th style="width:1%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var feed in Model.AllFeeds)
+                                    {
+                                        perFeedPerms.TryGetValue(feed.Id, out var feedPerm);
+                                        <tr>
+                                            <td>
+                                                <form method="post" asp-page-handler="GrantPermission" id="perm-@group.Id-@feed.Id">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="principalId" value="@group.Id" />
+                                                    <input type="hidden" name="principalType" value="@BaGetter.Core.Entities.PrincipalType.Group" />
+                                                    <input type="hidden" name="feedId" value="@feed.Id" />
+                                                </form>
+                                                <strong>@feed.Name</strong>
+                                                <small class="text-muted">(@feed.Slug)</small>
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" name="canPull" value="true"
+                                                       form="perm-@group.Id-@feed.Id"
+                                                       @(feedPerm?.CanPull == true ? "checked" : "") />
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" name="canPush" value="true"
+                                                       form="perm-@group.Id-@feed.Id"
+                                                       @(feedPerm?.CanPush == true ? "checked" : "") />
+                                            </td>
+                                            <td style="white-space:nowrap">
+                                                <button type="submit"
+                                                        form="perm-@group.Id-@feed.Id"
+                                                        class="btn btn-xs btn-primary">
+                                                    Save
+                                                </button>
+                                                @if (Model.SavedGroupId == group.Id && Model.SavedFeedId == feed.Id)
+                                                {
+                                                    <span class="text-success saved-indicator" style="margin-left:6px" title="Permissions saved">&#10003;</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <small class="text-muted">Unchecking both Pull and Push revokes the group's permission for that feed.</small>
+                        }
+                    </div>
                 </div>
             </div>
         }

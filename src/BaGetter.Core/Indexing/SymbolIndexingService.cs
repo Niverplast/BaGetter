@@ -16,7 +16,7 @@ namespace BaGetter.Core.Indexing;
 // Based off: https://github.com/NuGet/NuGet.Jobs/blob/master/src/Validation.Symbols/SymbolsValidatorService.cs#L44
 public class SymbolIndexingService : ISymbolIndexingService
 {
-    private static readonly HashSet<string> ValidSymbolPackageContentExtensions = new HashSet<string>
+    private static readonly HashSet<string> _validSymbolPackageContentExtensions = new HashSet<string>
     {
         ".pdb",
         ".nuspec",
@@ -40,7 +40,7 @@ public class SymbolIndexingService : ISymbolIndexingService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<SymbolIndexingResult> IndexAsync(Stream stream, CancellationToken cancellationToken)
+    public async Task<SymbolIndexingResult> IndexAsync(Guid feedId, string feedSlug, Stream stream, CancellationToken cancellationToken)
     {
         try
         {
@@ -55,7 +55,7 @@ public class SymbolIndexingService : ISymbolIndexingService
             var packageId = symbolPackage.NuspecReader.GetId();
             var packageVersion = symbolPackage.NuspecReader.GetVersion();
 
-            var package = await _packages.FindOrNullAsync(packageId, packageVersion, includeUnlisted: true, cancellationToken);
+            var package = await _packages.FindOrNullAsync(feedId, packageId, packageVersion, includeUnlisted: true, cancellationToken);
             if (package == null)
             {
                 return SymbolIndexingResult.PackageNotFound;
@@ -78,7 +78,7 @@ public class SymbolIndexingService : ISymbolIndexingService
             // Persist the portable PDBs to storage.
             foreach (var pdb in pdbs)
             {
-                await _storage.SavePortablePdbContentAsync(pdb.Filename, pdb.Key, pdb.Content, cancellationToken);
+                await _storage.SavePortablePdbContentAsync(feedSlug, pdb.Filename, pdb.Key, pdb.Content, cancellationToken);
             }
 
             return SymbolIndexingResult.Success;
@@ -123,7 +123,7 @@ public class SymbolIndexingService : ISymbolIndexingService
         {
             if (string.IsNullOrEmpty(file.Name)) return false;
             if (string.IsNullOrEmpty(file.Extension)) return false;
-            if (!ValidSymbolPackageContentExtensions.Contains(file.Extension)) return false;
+            if (!_validSymbolPackageContentExtensions.Contains(file.Extension)) return false;
 
             return true;
         }

@@ -1,12 +1,14 @@
 ﻿@page
 @using BaGetter.Core
 @using BaGetter.Core.Configuration
+@using BaGetter.Core.Feeds
 @using Microsoft.Extensions.Options
 @inject IUrlGenerator URL
 @inject IOptionsSnapshot<NugetAuthenticationOptions> AuthOptions
+@inject IFeedContext FeedContext
 
 @{
-    ViewData["Title"] = "Upload package";
+    ViewData["Title"] = "Upload \u2014 " + FeedContext.CurrentFeed.Name;
 
     var baseUrl = Url.PageLink("/Index");
     var publishUrl = URL.GetPackagePublishResourceUrl();

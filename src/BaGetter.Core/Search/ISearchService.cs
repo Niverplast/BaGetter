@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Protocol.Models;
@@ -43,5 +44,5 @@ public interface ISearchService
     /// <param name="packageId">The package whose dependents should be found.</param>
     /// <param name="cancellationToken">A token to cancel the task.</param>
     /// <returns>The dependents response.</returns>
-    Task<DependentsResponse> FindDependentsAsync(string packageId, CancellationToken cancellationToken);
+    Task<DependentsResponse> FindDependentsAsync(Guid feedId, string packageId, CancellationToken cancellationToken);
 }

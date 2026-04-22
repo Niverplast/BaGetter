@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace BaGetter.Web.Extensions;
 
-public static class IHostExtensions
+public static class HostExtensions
 {
     public static IHostBuilder UseBaGetter(this IHostBuilder host, Action<BaGetterApplication> configure)
     {

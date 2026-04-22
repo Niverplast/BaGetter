@@ -5,12 +5,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Configuration;
 using BaGetter.Core.Content;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
+using BaGetter.Web.Authentication;
 using Markdig;
 using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 using NuGet.Frameworks;
 using NuGet.Versioning;
 
@@ -18,16 +24,19 @@ namespace BaGetter.Web.Pages;
 
 public class PackageModel : PageModel
 {
-    private static readonly MarkdownPipeline MarkdownPipeline;
+    private static readonly MarkdownPipeline _markdownPipeline;
 
     private readonly IPackageService _packages;
     private readonly IPackageContentService _content;
     private readonly ISearchService _search;
     private readonly IUrlGenerator _url;
+    private readonly IFeedContext _feedContext;
+    private readonly IPermissionService _permissions;
+    private readonly IOptionsSnapshot<NugetAuthenticationOptions> _authOptions;
 
     static PackageModel()
     {
-        MarkdownPipeline = new MarkdownPipelineBuilder()
+        _markdownPipeline = new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .Build();
     }
@@ -36,12 +45,18 @@ public class PackageModel : PageModel
         IPackageService packages,
         IPackageContentService content,
         ISearchService search,
-        IUrlGenerator url)
+        IUrlGenerator url,
+        IFeedContext feedContext,
+        IPermissionService permissions,
+        IOptionsSnapshot<NugetAuthenticationOptions> authOptions)
     {
         _packages = packages ?? throw new ArgumentNullException(nameof(packages));
         _content = content ?? throw new ArgumentNullException(nameof(content));
         _search = search ?? throw new ArgumentNullException(nameof(search));
         _url = url ?? throw new ArgumentNullException(nameof(url));
+        _feedContext = feedContext ?? throw new ArgumentNullException(nameof(feedContext));
+        _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+        _authOptions = authOptions ?? throw new ArgumentNullException(nameof(authOptions));
     }
 
     public bool Found { get; private set; }
@@ -65,9 +80,13 @@ public class PackageModel : PageModel
     public string LicenseUrl { get; private set; }
     public string PackageDownloadUrl { get; private set; }
 
-    public async Task OnGetAsync(string id, string version, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetAsync(string id, string version, CancellationToken cancellationToken)
     {
-        var packages = await _packages.FindPackagesAsync(id, cancellationToken);
+        var denied = await FeedAccessGuard.CheckReadAccessAsync(
+            HttpContext, _feedContext, _permissions, _authOptions.Value.Mode, cancellationToken);
+        if (denied != null) return denied;
+
+        var packages = await _packages.FindPackagesAsync(_feedContext.CurrentFeed.Id, id, cancellationToken);
         var listedPackages = packages.Where(p => p.Listed).ToList();
 
         // Try to find the requested version.
@@ -86,7 +105,7 @@ public class PackageModel : PageModel
         {
             Package = new Package { Id = id };
             Found = false;
-            return;
+            return Page();
         }
 
         var packageVersion = Package.Version;
@@ -97,7 +116,7 @@ public class PackageModel : PageModel
         LastUpdated = packages.Max(p => p.Published);
         TotalDownloads = packages.Sum(p => p.Downloads);
 
-        var dependents = await _search.FindDependentsAsync(Package.Id, cancellationToken);
+        var dependents = await _search.FindDependentsAsync(_feedContext.CurrentFeed.Id, Package.Id, cancellationToken);
 
         UsedBy = dependents.Data;
         DependencyGroups = ToDependencyGroups(Package);
@@ -115,6 +134,8 @@ public class PackageModel : PageModel
             : Package.IconUrlString;
         LicenseUrl = Package.LicenseUrlString;
         PackageDownloadUrl = _url.GetPackageDownloadUrl(Package.Id, packageVersion);
+
+        return Page();
     }
 
     private static List<DependencyGroupModel> ToDependencyGroups(Package package)
@@ -205,13 +226,13 @@ public class PackageModel : PageModel
         NuGetVersion packageVersion,
         CancellationToken cancellationToken)
     {
-        await using var readmeStream = await _content.GetPackageReadmeStreamOrNullAsync(packageId, packageVersion, cancellationToken);
+        await using var readmeStream = await _content.GetPackageReadmeStreamOrNullAsync(_feedContext.CurrentFeed.Id, _feedContext.CurrentFeed.Slug, packageId, packageVersion, cancellationToken);
         if (readmeStream == null) return null;
 
         using var reader = new StreamReader(readmeStream);
         var readme = await reader.ReadToEndAsync(cancellationToken);
 
-        var readmeHtml = Markdown.ToHtml(readme, MarkdownPipeline);
+        var readmeHtml = Markdown.ToHtml(readme, _markdownPipeline);
         return new HtmlString(readmeHtml);
     }
 
@@ -222,7 +243,7 @@ public class PackageModel : PageModel
             return HtmlString.Empty;
         }
 
-        var releseNotesHtml = Markdown.ToHtml(Package.ReleaseNotes, MarkdownPipeline);
+        var releseNotesHtml = Markdown.ToHtml(Package.ReleaseNotes, _markdownPipeline);
         return new HtmlString(releseNotesHtml);
     }
 

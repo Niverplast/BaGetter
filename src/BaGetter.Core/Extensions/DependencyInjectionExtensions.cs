@@ -8,6 +8,7 @@ using BaGetter.Core.Authentication;
 using BaGetter.Core.Configuration;
 using BaGetter.Core.Content;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Indexing;
 using BaGetter.Core.Metadata;
 using BaGetter.Core.Search;
@@ -105,6 +106,12 @@ public static partial class DependencyInjectionExtensions
 
         services.TryAddScoped<DownloadsImporter>();
 
+        services.TryAddScoped<IFeedService, FeedService>();
+        services.TryAddScoped<FeedContext>();
+        services.TryAddScoped<IFeedContext>(provider => provider.GetRequiredService<FeedContext>());
+        services.TryAddScoped<IFeedSettingsResolver, FeedSettingsResolver>();
+        services.TryAddScoped<IUpstreamClientFactory, UpstreamClientFactory>();
+
         services.TryAddTransient<IAuthenticationService, ApiKeyAuthenticationService>();
         services.TryAddTransient<IUserService, UserService>();
         services.TryAddTransient<IGroupService, GroupService>();
@@ -130,8 +137,6 @@ public static partial class DependencyInjectionExtensions
         services.TryAddTransient<DisabledUpstreamClient>();
         services.TryAddSingleton<NullStorageService>();
         services.TryAddTransient<PackageDatabase>();
-
-        services.TryAddTransient(UpstreamClientFactory);
     }
 
     private static void AddDefaultProviders(this IServiceCollection services)
@@ -239,17 +244,5 @@ public static partial class DependencyInjectionExtensions
         return new NuGetClientFactory(
             httpClient,
             options.PackageSource.ToString());
-    }
-
-    private static IUpstreamClient UpstreamClientFactory(IServiceProvider provider)
-    {
-        var options = provider.GetRequiredService<IOptionsSnapshot<MirrorOptions>>();
-
-        return options.Value.Enabled switch
-        {
-            false => provider.GetRequiredService<DisabledUpstreamClient>(),
-            true when options.Value.Legacy => provider.GetRequiredService<V2UpstreamClient>(),
-            _ => provider.GetRequiredService<V3UpstreamClient>()
-        };
     }
 }

@@ -75,7 +75,7 @@ namespace BaGetter.Azure.Table
             return Task.FromResult(response);
         }
 
-        public Task<DependentsResponse> FindDependentsAsync(string packageId, CancellationToken cancellationToken)
+        public Task<DependentsResponse> FindDependentsAsync(Guid feedId, string packageId, CancellationToken cancellationToken)
         {
             var response = _responseBuilder.BuildDependents(new List<PackageDependent>());
 

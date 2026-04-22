@@ -13,6 +13,11 @@ namespace BaGetter.Core.Tests.Authentication;
 
 public class PermissionServiceTests
 {
+    // Stable Guid constants used as feed IDs across tests
+    private static readonly Guid _defaultFeedId = new("00000000-0000-0000-0000-000000000001");
+    private static readonly Guid _feedAId = new("00000000-0000-0000-0000-000000000002");
+    private static readonly Guid _feedBId = new("00000000-0000-0000-0000-000000000003");
+
     public class CanPushAsync : FactsBase
     {
         [Fact]
@@ -21,7 +26,7 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "noperm");
 
-            var result = await _target.CanPushAsync(userId, "default", _ct);
+            var result = await Target.CanPushAsync(userId, _defaultFeedId, Ct);
 
             Assert.False(result);
         }
@@ -32,11 +37,11 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "pushuser");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: false, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: false, Ct);
 
-            var result = await _target.CanPushAsync(userId, "default", _ct);
+            var result = await Target.CanPushAsync(userId, _defaultFeedId, Ct);
 
             Assert.True(result);
         }
@@ -48,11 +53,11 @@ public class PermissionServiceTests
             await CreateUser(userId, "grouppush");
             var groupId = await CreateGroupWithUser(userId, "PushGroup");
 
-            await _target.GrantPermissionAsync(
-                groupId, PrincipalType.Group, "default",
-                canPush: true, canPull: false, _ct);
+            await Target.GrantPermissionAsync(
+                groupId, PrincipalType.Group, _defaultFeedId,
+                canPush: true, canPull: false, Ct);
 
-            var result = await _target.CanPushAsync(userId, "default", _ct);
+            var result = await Target.CanPushAsync(userId, _defaultFeedId, Ct);
 
             Assert.True(result);
         }
@@ -63,11 +68,11 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "feedscope");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "feed-a",
-                canPush: true, canPull: false, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _feedAId,
+                canPush: true, canPull: false, Ct);
 
-            var result = await _target.CanPushAsync(userId, "feed-b", _ct);
+            var result = await Target.CanPushAsync(userId, _feedBId, Ct);
 
             Assert.False(result);
         }
@@ -81,7 +86,7 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "nopull");
 
-            var result = await _target.CanPullAsync(userId, "default", _ct);
+            var result = await Target.CanPullAsync(userId, _defaultFeedId, Ct);
 
             Assert.False(result);
         }
@@ -92,11 +97,11 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "pulluser");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: false, canPull: true, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: false, canPull: true, Ct);
 
-            var result = await _target.CanPullAsync(userId, "default", _ct);
+            var result = await Target.CanPullAsync(userId, _defaultFeedId, Ct);
 
             Assert.True(result);
         }
@@ -110,12 +115,12 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "grantee");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: true, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: true, Ct);
 
-            Assert.True(await _target.CanPushAsync(userId, "default", _ct));
-            Assert.True(await _target.CanPullAsync(userId, "default", _ct));
+            Assert.True(await Target.CanPushAsync(userId, _defaultFeedId, Ct));
+            Assert.True(await Target.CanPullAsync(userId, _defaultFeedId, Ct));
         }
 
         [Fact]
@@ -124,16 +129,16 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "updategrant");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: false, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: false, Ct);
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: false, canPull: true, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: false, canPull: true, Ct);
 
-            Assert.False(await _target.CanPushAsync(userId, "default", _ct));
-            Assert.True(await _target.CanPullAsync(userId, "default", _ct));
+            Assert.False(await Target.CanPushAsync(userId, _defaultFeedId, Ct));
+            Assert.True(await Target.CanPullAsync(userId, _defaultFeedId, Ct));
         }
     }
 
@@ -144,9 +149,9 @@ public class PermissionServiceTests
         {
             var userId = Guid.NewGuid();
             await CreateUser(userId, "adminuser");
-            _userService.Setup(s => s.IsAdminAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            UserService.Setup(s => s.IsAdminAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-            var result = await _target.CanPushAsync(userId, "default", _ct);
+            var result = await Target.CanPushAsync(userId, _defaultFeedId, Ct);
 
             Assert.True(result);
         }
@@ -156,9 +161,9 @@ public class PermissionServiceTests
         {
             var userId = Guid.NewGuid();
             await CreateUser(userId, "adminpull");
-            _userService.Setup(s => s.IsAdminAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            UserService.Setup(s => s.IsAdminAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-            var result = await _target.CanPullAsync(userId, "default", _ct);
+            var result = await Target.CanPullAsync(userId, _defaultFeedId, Ct);
 
             Assert.True(result);
         }
@@ -172,24 +177,24 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "revokee");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: true, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: true, Ct);
 
-            var permission = await _context.FeedPermissions
-                .FirstOrDefaultAsync(p => p.PrincipalId == userId, _ct);
+            var permission = await Context.FeedPermissions
+                .FirstOrDefaultAsync(p => p.PrincipalId == userId, Ct);
             Assert.NotNull(permission);
 
-            await _target.RevokePermissionAsync(permission.Id, _ct);
+            await Target.RevokePermissionAsync(permission.Id, Ct);
 
-            Assert.False(await _target.CanPushAsync(userId, "default", _ct));
-            Assert.False(await _target.CanPullAsync(userId, "default", _ct));
+            Assert.False(await Target.CanPushAsync(userId, _defaultFeedId, Ct));
+            Assert.False(await Target.CanPullAsync(userId, _defaultFeedId, Ct));
         }
 
         [Fact]
         public async Task DoesNothingWhenPermissionNotFound()
         {
-            await _target.RevokePermissionAsync(Guid.NewGuid(), _ct);
+            await Target.RevokePermissionAsync(Guid.NewGuid(), Ct);
 
             // No exception should be thrown
         }
@@ -203,12 +208,12 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "defaultsource");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: true, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: true, Ct);
 
-            var perm = await _context.FeedPermissions
-                .FirstOrDefaultAsync(p => p.PrincipalId == userId, _ct);
+            var perm = await Context.FeedPermissions
+                .FirstOrDefaultAsync(p => p.PrincipalId == userId, Ct);
             Assert.NotNull(perm);
             Assert.Equal(PermissionSource.Manual, perm.Source);
         }
@@ -219,13 +224,13 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "entrasource");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: true, _ct,
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: true, Ct,
                 source: PermissionSource.EntraRole);
 
-            var perm = await _context.FeedPermissions
-                .FirstOrDefaultAsync(p => p.PrincipalId == userId, _ct);
+            var perm = await Context.FeedPermissions
+                .FirstOrDefaultAsync(p => p.PrincipalId == userId, Ct);
             Assert.NotNull(perm);
             Assert.Equal(PermissionSource.EntraRole, perm.Source);
         }
@@ -236,17 +241,17 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "updatesource");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: false, _ct);
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: false, Ct);
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: true, _ct,
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: true, Ct,
                 source: PermissionSource.EntraRole);
 
-            var perm = await _context.FeedPermissions
-                .FirstOrDefaultAsync(p => p.PrincipalId == userId, _ct);
+            var perm = await Context.FeedPermissions
+                .FirstOrDefaultAsync(p => p.PrincipalId == userId, Ct);
             Assert.Equal(PermissionSource.EntraRole, perm.Source);
         }
     }
@@ -259,26 +264,26 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "sourcerevoke");
 
-            // Create manual permission
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "feed-a",
-                canPush: true, canPull: true, _ct,
+            // Create manual permission on feed-a
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _feedAId,
+                canPush: true, canPull: true, Ct,
                 source: PermissionSource.Manual);
 
-            // Create EntraRole permission
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "feed-b",
-                canPush: true, canPull: true, _ct,
+            // Create EntraRole permission on feed-b
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _feedBId,
+                canPush: true, canPull: true, Ct,
                 source: PermissionSource.EntraRole);
 
             // Revoke only EntraRole permissions on feed-b
-            await _target.RevokePermissionsBySourceAsync(
-                userId, PrincipalType.User, "feed-b", PermissionSource.EntraRole, _ct);
+            await Target.RevokePermissionsBySourceAsync(
+                userId, PrincipalType.User, _feedBId, PermissionSource.EntraRole, Ct);
 
             // Manual permission on feed-a should still exist
-            Assert.True(await _target.CanPushAsync(userId, "feed-a", _ct));
+            Assert.True(await Target.CanPushAsync(userId, _feedAId, Ct));
             // EntraRole permission on feed-b should be revoked
-            Assert.False(await _target.CanPushAsync(userId, "feed-b", _ct));
+            Assert.False(await Target.CanPushAsync(userId, _feedBId, Ct));
         }
 
         [Fact]
@@ -287,8 +292,8 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "nomatch");
 
-            await _target.RevokePermissionsBySourceAsync(
-                userId, PrincipalType.User, "default", PermissionSource.EntraRole, _ct);
+            await Target.RevokePermissionsBySourceAsync(
+                userId, PrincipalType.User, _defaultFeedId, PermissionSource.EntraRole, Ct);
 
             // No exception
         }
@@ -302,36 +307,44 @@ public class PermissionServiceTests
             var userId = Guid.NewGuid();
             await CreateUser(userId, "entraaccesstest");
 
-            await _target.GrantPermissionAsync(
-                userId, PrincipalType.User, "default",
-                canPush: true, canPull: true, _ct,
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: true, Ct,
                 source: PermissionSource.EntraRole);
 
-            Assert.True(await _target.CanPushAsync(userId, "default", _ct));
-            Assert.True(await _target.CanPullAsync(userId, "default", _ct));
+            Assert.True(await Target.CanPushAsync(userId, _defaultFeedId, Ct));
+            Assert.True(await Target.CanPullAsync(userId, _defaultFeedId, Ct));
         }
     }
 
     public class FactsBase : IDisposable
     {
-        protected readonly TestDbContext _context;
-        protected readonly Mock<IUserService> _userService;
-        protected readonly PermissionService _target;
-        protected readonly CancellationToken _ct = CancellationToken.None;
+        protected readonly TestDbContext Context;
+        protected readonly Mock<IUserService> UserService;
+        protected readonly PermissionService Target;
+        protected readonly CancellationToken Ct = CancellationToken.None;
 
         protected FactsBase()
         {
-            _context = TestDbContext.Create();
-            _userService = new Mock<IUserService>();
-            _target = new PermissionService(
-                _context,
-                _userService.Object,
+            Context = TestDbContext.Create();
+
+            // Seed the feeds referenced by tests so FK constraints are satisfied.
+            Context.Feeds.AddRange(
+                new Feed { Id = _defaultFeedId, Slug = "default", Name = "Default", MirrorEnabled = false, MirrorLegacy = false, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow },
+                new Feed { Id = _feedAId, Slug = "feed-a", Name = "Feed A", MirrorEnabled = false, MirrorLegacy = false, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow },
+                new Feed { Id = _feedBId, Slug = "feed-b", Name = "Feed B", MirrorEnabled = false, MirrorLegacy = false, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow });
+            Context.SaveChanges();
+
+            UserService = new Mock<IUserService>();
+            Target = new PermissionService(
+                Context,
+                UserService.Object,
                 Mock.Of<ILogger<PermissionService>>());
         }
 
         protected async Task CreateUser(Guid userId, string username)
         {
-            _context.Users.Add(new User
+            Context.Users.Add(new User
             {
                 Id = userId,
                 Username = username,
@@ -341,7 +354,7 @@ public class PermissionServiceTests
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             });
-            await _context.SaveChangesAsync(_ct);
+            await Context.SaveChangesAsync(Ct);
         }
 
         protected async Task<Guid> CreateGroupWithUser(Guid userId, string groupName)
@@ -352,21 +365,21 @@ public class PermissionServiceTests
                 Name = groupName,
                 CreatedAtUtc = DateTime.UtcNow
             };
-            _context.Groups.Add(group);
+            Context.Groups.Add(group);
 
-            _context.UserGroups.Add(new UserGroup
+            Context.UserGroups.Add(new UserGroup
             {
                 UserId = userId,
                 GroupId = group.Id
             });
 
-            await _context.SaveChangesAsync(_ct);
+            await Context.SaveChangesAsync(Ct);
             return group.Id;
         }
 
         public void Dispose()
         {
-            _context?.Dispose();
+            Context?.Dispose();
         }
     }
 }

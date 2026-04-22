@@ -1,12 +1,14 @@
 @page
 @using BaGetter.Core.Configuration
+@using BaGetter.Core.Feeds
 @using BaGetter.Web.Extensions
 @using Microsoft.Extensions.Options
 @model IndexModel
 @inject IOptions<NugetAuthenticationOptions> AuthOptions
+@inject IFeedContext FeedContext
 
 @{
-    ViewData["Title"] = "Packages";
+    ViewData["Title"] = "Packages \u2014 " + FeedContext.CurrentFeed.Name;
     ViewData["SearchQuery"] = Model.Query;
     var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
@@ -18,6 +20,15 @@
         <h2>Sign in required</h2>
         <p>You need to sign in to browse packages.</p>
         <a asp-page="/Login" class="btn btn-primary">Sign in</a>
+    </div>
+    return;
+}
+
+@if (Model.HasNoAccessibleFeeds)
+{
+    <div class="text-center" style="margin-top: 60px;">
+        <h2>No feeds available</h2>
+        <p>You don't currently have access to any feeds. Please contact an administrator to be granted permissions.</p>
     </div>
     return;
 }

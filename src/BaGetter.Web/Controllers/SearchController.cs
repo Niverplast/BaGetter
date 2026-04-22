@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
+using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -13,26 +14,29 @@ namespace BaGetter.Web.Controllers;
 public class SearchController : Controller
 {
     private readonly ISearchService _searchService;
+    private readonly IFeedContext _feedContext;
 
-    public SearchController(ISearchService searchService)
+    public SearchController(ISearchService searchService, IFeedContext feedContext)
     {
         _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
+        _feedContext = feedContext ?? throw new ArgumentNullException(nameof(feedContext));
     }
 
     public async Task<ActionResult<SearchResponse>> SearchAsync(
         [FromQuery(Name = "q")] string query = null,
-        [FromQuery]int skip = 0,
-        [FromQuery]int take = 20,
-        [FromQuery]bool prerelease = false,
-        [FromQuery]string semVerLevel = null,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20,
+        [FromQuery] bool prerelease = false,
+        [FromQuery] string semVerLevel = null,
 
         // These are unofficial parameters
-        [FromQuery]string packageType = null,
-        [FromQuery]string framework = null,
+        [FromQuery] string packageType = null,
+        [FromQuery] string framework = null,
         CancellationToken cancellationToken = default)
     {
         var request = new SearchRequest
         {
+            FeedId = _feedContext.CurrentFeed.Id,
             Skip = skip,
             Take = take,
             IncludePrerelease = prerelease,
@@ -48,13 +52,13 @@ public class SearchController : Controller
     public async Task<ActionResult<AutocompleteResponse>> AutocompleteAsync(
         [FromQuery(Name = "q")] string autocompleteQuery = null,
         [FromQuery(Name = "id")] string versionsQuery = null,
-        [FromQuery]bool prerelease = false,
-        [FromQuery]string semVerLevel = null,
-        [FromQuery]int skip = 0,
-        [FromQuery]int take = 20,
+        [FromQuery] bool prerelease = false,
+        [FromQuery] string semVerLevel = null,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20,
 
         // These are unofficial parameters
-        [FromQuery]string packageType = null,
+        [FromQuery] string packageType = null,
         CancellationToken cancellationToken = default)
     {
         // If only "id" is provided, find package versions. Otherwise, find package IDs.
@@ -62,6 +66,7 @@ public class SearchController : Controller
         {
             var request = new VersionsRequest
             {
+                FeedId = _feedContext.CurrentFeed.Id,
                 IncludePrerelease = prerelease,
                 IncludeSemVer2 = semVerLevel == "2.0.0",
                 PackageId = versionsQuery,
@@ -73,6 +78,7 @@ public class SearchController : Controller
         {
             var request = new AutocompleteRequest
             {
+                FeedId = _feedContext.CurrentFeed.Id,
                 IncludePrerelease = prerelease,
                 IncludeSemVer2 = semVerLevel == "2.0.0",
                 PackageType = packageType,
@@ -94,6 +100,6 @@ public class SearchController : Controller
             return BadRequest();
         }
 
-        return await _searchService.FindDependentsAsync(packageId, cancellationToken);
+        return await _searchService.FindDependentsAsync(_feedContext.CurrentFeed.Id, packageId, cancellationToken);
     }
 }

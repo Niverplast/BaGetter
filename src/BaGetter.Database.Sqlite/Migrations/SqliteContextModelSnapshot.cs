@@ -17,6 +17,91 @@ namespace BaGetter.Database.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
 
+            modelBuilder.Entity("BaGetter.Core.Entities.Feed", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("AllowPackageOverwrites")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("IsReadOnlyMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<uint?>("MaxPackageSizeGiB")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("MirrorAuthCustomHeaders")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MirrorAuthPassword")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MirrorAuthToken")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("MirrorAuthType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("MirrorAuthUsername")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("MirrorDownloadTimeoutSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("MirrorEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("MirrorLegacy")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("MirrorPackageSource")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("PackageDeletionBehavior")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RetentionMaxMajorVersions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RetentionMaxMinorVersions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RetentionMaxPatchVersions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RetentionMaxPrereleaseVersions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Feeds");
+                });
+
             modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -33,9 +118,7 @@ namespace BaGetter.Database.Sqlite.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
 
-                    b.Property<string>("FeedId")
-                        .IsRequired()
-                        .HasMaxLength(128)
+                    b.Property<Guid>("FeedId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("PrincipalId")
@@ -106,6 +189,9 @@ namespace BaGetter.Database.Sqlite.Migrations
 
                     b.Property<long>("Downloads")
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("FeedId")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("HasEmbeddedIcon")
                         .HasColumnType("INTEGER");
@@ -195,9 +281,9 @@ namespace BaGetter.Database.Sqlite.Migrations
 
                     b.HasKey("Key");
 
-                    b.HasIndex("Id");
+                    b.HasIndex("FeedId", "Id");
 
-                    b.HasIndex("Id", "NormalizedVersionString")
+                    b.HasIndex("FeedId", "Id", "NormalizedVersionString")
                         .IsUnique();
 
                     b.ToTable("Packages");
@@ -417,6 +503,28 @@ namespace BaGetter.Database.Sqlite.Migrations
                     b.ToTable("UserGroups");
                 });
 
+            modelBuilder.Entity("BaGetter.Core.Entities.FeedPermission", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Permissions")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Package", b =>
+                {
+                    b.HasOne("BaGetter.Core.Entities.Feed", "Feed")
+                        .WithMany("Packages")
+                        .HasForeignKey("FeedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Feed");
+                });
+
             modelBuilder.Entity("BaGetter.Core.Entities.PackageDependency", b =>
                 {
                     b.HasOne("BaGetter.Core.Entities.Package", "Package")
@@ -486,6 +594,13 @@ namespace BaGetter.Database.Sqlite.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BaGetter.Core.Entities.Feed", b =>
+                {
+                    b.Navigation("Packages");
+
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("BaGetter.Core.Entities.Group", b =>

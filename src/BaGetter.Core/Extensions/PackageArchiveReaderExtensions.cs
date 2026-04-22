@@ -110,7 +110,7 @@ public static class PackageArchiveReaderExtensions
         return new Uri(uriString);
     }
 
-    private static readonly char[] Separator = { ',', ';', '\t', '\n', '\r' };
+    private static readonly char[] _separator = { ',', ';', '\t', '\n', '\r' };
 
     /// <summary>
     /// Parses the authors into a list of authors.
@@ -128,7 +128,7 @@ public static class PackageArchiveReaderExtensions
             return Array.Empty<string>();
         }
 
-        return authors.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
+        return authors.Split(_separator, StringSplitOptions.RemoveEmptyEntries);
     }
 
     /// <summary>

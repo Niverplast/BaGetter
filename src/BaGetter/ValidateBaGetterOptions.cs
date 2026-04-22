@@ -12,7 +12,7 @@ namespace BaGetter;
 public class ValidateBaGetterOptions
     : IValidateOptions<BaGetterOptions>
 {
-    private static readonly HashSet<string> ValidDatabaseTypes
+    private static readonly HashSet<string> _validDatabaseTypes
         = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "AzureTable",
@@ -22,7 +22,7 @@ public class ValidateBaGetterOptions
             "SqlServer",
         };
 
-    private static readonly HashSet<string> ValidStorageTypes
+    private static readonly HashSet<string> _validStorageTypes
         = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "AliyunOss",
@@ -34,7 +34,7 @@ public class ValidateBaGetterOptions
             "Null"
         };
 
-    private static readonly HashSet<string> ValidSearchTypes
+    private static readonly HashSet<string> _validSearchTypes
         = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "AzureSearch",
@@ -51,25 +51,25 @@ public class ValidateBaGetterOptions
         if (options.Search == null) failures.Add($"The '{nameof(BaGetterOptions.Search)}' config is required");
         if (options.Storage == null) failures.Add($"The '{nameof(BaGetterOptions.Storage)}' config is required");
 
-        if (!ValidDatabaseTypes.Contains(options.Database?.Type))
+        if (!_validDatabaseTypes.Contains(options.Database?.Type))
         {
             failures.Add(
                 $"The '{nameof(BaGetterOptions.Database)}:{nameof(DatabaseOptions.Type)}' config is invalid. " +
-                $"Allowed values: {string.Join(", ", ValidDatabaseTypes)}");
+                $"Allowed values: {string.Join(", ", _validDatabaseTypes)}");
         }
 
-        if (!ValidStorageTypes.Contains(options.Storage?.Type))
+        if (!_validStorageTypes.Contains(options.Storage?.Type))
         {
             failures.Add(
                 $"The '{nameof(BaGetterOptions.Storage)}:{nameof(StorageOptions.Type)}' config is invalid. " +
-                $"Allowed values: {string.Join(", ", ValidStorageTypes)}");
+                $"Allowed values: {string.Join(", ", _validStorageTypes)}");
         }
 
-        if (!ValidSearchTypes.Contains(options.Search?.Type))
+        if (!_validSearchTypes.Contains(options.Search?.Type))
         {
             failures.Add(
                 $"The '{nameof(BaGetterOptions.Search)}:{nameof(SearchOptions.Type)}' config is invalid. " +
-                $"Allowed values: {string.Join(", ", ValidSearchTypes)}");
+                $"Allowed values: {string.Join(", ", _validSearchTypes)}");
         }
 
         ValidateAuthentication(options, failures);

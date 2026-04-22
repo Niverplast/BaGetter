@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Feeds;
 using BaGetter.Tests.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +24,6 @@ public class FeedAuthenticationIntegrationTests : IDisposable
 
     private const string LocalUsername = "testlocal";
     private const string LocalPassword = "TestPassword123!";
-    private const string DefaultFeedId = "default";
 
     public FeedAuthenticationIntegrationTests(ITestOutputHelper output)
     {
@@ -339,6 +339,7 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         using var scope = _app.Services.CreateScope();
         var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
         var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+        var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
         var user = await userService.CreateLocalUserAsync(
             LocalUsername, "Test User",
@@ -346,8 +347,9 @@ public class FeedAuthenticationIntegrationTests : IDisposable
             createdByUserId: null,
             CancellationToken.None);
 
+        var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
         await permissionService.GrantPermissionAsync(
-            user.Id, PrincipalType.User, DefaultFeedId,
+            user.Id, PrincipalType.User, defaultFeed.Id,
             canPush: canPush, canPull: canPull,
             CancellationToken.None);
 
@@ -369,8 +371,6 @@ public class HybridFeedAuthenticationIntegrationTests : IDisposable
 {
     private readonly BaGetterApplication _app;
     private readonly HttpClient _client;
-    private const string DefaultFeedId = "default";
-
     public HybridFeedAuthenticationIntegrationTests(ITestOutputHelper output)
     {
         _app = new BaGetterApplication(output, null, dict =>
@@ -470,6 +470,7 @@ public class HybridFeedAuthenticationIntegrationTests : IDisposable
         var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
         var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
         var tokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+        var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
         var user = await userService.CreateLocalUserAsync(
             "hybriduser", "Hybrid User",
@@ -477,8 +478,9 @@ public class HybridFeedAuthenticationIntegrationTests : IDisposable
             createdByUserId: null,
             CancellationToken.None);
 
+        var defaultFeed = await feedService.GetDefaultFeedAsync(CancellationToken.None);
         await permissionService.GrantPermissionAsync(
-            user.Id, PrincipalType.User, DefaultFeedId,
+            user.Id, PrincipalType.User, defaultFeed.Id,
             canPush: canPush, canPull: canPull,
             CancellationToken.None);
 

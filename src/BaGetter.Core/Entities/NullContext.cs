@@ -10,6 +10,7 @@ public class NullContext : IContext
 {
     public DatabaseFacade Database => throw new NotImplementedException();
 
+    public DbSet<Feed> Feeds { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public DbSet<Package> Packages { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public DbSet<User> Users { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public DbSet<PersonalAccessToken> PersonalAccessTokens { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
