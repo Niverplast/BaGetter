@@ -69,8 +69,10 @@ public class Program
 
     /// <summary>
     /// One-time upgrade helper: if the global Mirror config has Enabled=true and the default
-    /// feed has not yet had mirror settings populated, copy them. Idempotent — subsequent
-    /// startups are no-ops because MirrorEnabled will already be true on the default feed.
+    /// feed has not yet had mirror settings populated, copy them. The guard checks for a
+    /// populated mirror source on the feed rather than <c>MirrorEnabled</c>, so an admin who
+    /// later toggles mirroring off on the default feed won't have it silently re-enabled on
+    /// the next startup.
     /// </summary>
     private static async Task MigrateGlobalMirrorConfigToDefaultFeedAsync(
         IServiceProvider provider,
@@ -91,8 +93,11 @@ public class Program
             return;
         }
 
-        // Guard: already migrated.
-        if (defaultFeed.MirrorEnabled)
+        // Guard: already migrated. Detect based on whether any mirror fields have been
+        // populated on the default feed, not on MirrorEnabled alone — otherwise an admin
+        // who intentionally disabled mirroring would see it re-enabled on every startup
+        // as long as the obsolete global Mirror config still exists in appsettings.
+        if (!string.IsNullOrWhiteSpace(defaultFeed.MirrorPackageSource))
         {
             logger.LogDebug(
                 "Default feed already has mirror settings; skipping migration.");

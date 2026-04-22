@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,6 +41,15 @@ public class PermissionService : IPermissionService
         return await _context.FeedPermissions.FirstOrDefaultAsync(
             p => p.FeedId == feedId && p.PrincipalType == principalType && p.PrincipalId == principalId,
             cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<FeedPermission>> GetPermissionsByPrincipalTypeAsync(
+        PrincipalType principalType,
+        CancellationToken cancellationToken)
+    {
+        return await _context.FeedPermissions
+            .Where(p => p.PrincipalType == principalType)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task GrantPermissionAsync(

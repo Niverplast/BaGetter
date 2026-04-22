@@ -77,19 +77,21 @@ public class GroupsModel : PageModel
     {
         AllFeeds = await _feedService.GetAllFeedsAsync(cancellationToken);
 
+        var groupPermissions = await _permissionService.GetPermissionsByPrincipalTypeAsync(
+            PrincipalType.Group, cancellationToken);
+
+        GroupPermissions = new Dictionary<Guid, Dictionary<Guid, FeedPermission>>(Groups.Count);
         foreach (var group in Groups)
         {
-            var perFeed = new Dictionary<Guid, FeedPermission>();
-            foreach (var feed in AllFeeds)
+            GroupPermissions[group.Id] = new Dictionary<Guid, FeedPermission>();
+        }
+
+        foreach (var permission in groupPermissions)
+        {
+            if (GroupPermissions.TryGetValue(permission.PrincipalId, out var perFeed))
             {
-                var permission = await _permissionService.GetPermissionAsync(
-                    group.Id, PrincipalType.Group, feed.Id, cancellationToken);
-                if (permission != null)
-                {
-                    perFeed[feed.Id] = permission;
-                }
+                perFeed[permission.FeedId] = permission;
             }
-            GroupPermissions[group.Id] = perFeed;
         }
     }
 

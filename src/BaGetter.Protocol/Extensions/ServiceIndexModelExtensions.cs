@@ -34,17 +34,17 @@ public static class ServiceIndexModelExtensions
 
     public static string GetPackageContentResourceUrl(this ServiceIndexResponse serviceIndex)
     {
-        return serviceIndex.GetRequiredResourceUrl(_packageBaseAddress, nameof(_packageBaseAddress));
+        return serviceIndex.GetRequiredResourceUrl(_packageBaseAddress, "PackageBaseAddress");
     }
 
     public static string GetPackageMetadataResourceUrl(this ServiceIndexResponse serviceIndex)
     {
-        return serviceIndex.GetRequiredResourceUrl(_registrationsBaseUrl, nameof(_registrationsBaseUrl));
+        return serviceIndex.GetRequiredResourceUrl(_registrationsBaseUrl, "RegistrationsBaseUrl");
     }
 
     public static string GetSearchQueryResourceUrl(this ServiceIndexResponse serviceIndex)
     {
-        return serviceIndex.GetRequiredResourceUrl(_searchQueryService, nameof(_searchQueryService));
+        return serviceIndex.GetRequiredResourceUrl(_searchQueryService, "SearchQueryService");
     }
 
     public static string GetCatalogResourceUrl(this ServiceIndexResponse serviceIndex)
