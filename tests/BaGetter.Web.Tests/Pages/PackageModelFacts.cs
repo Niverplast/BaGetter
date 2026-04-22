@@ -5,11 +5,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Configuration;
 using BaGetter.Core.Content;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
 using BaGetter.Web.Pages;
+using Microsoft.Extensions.Options;
 using Moq;
 using NuGet.Versioning;
 using Xunit;
@@ -40,12 +43,19 @@ public class PackageModelFacts
         var defaultFeed = new Feed { Id = _defaultFeedId, Slug = DefaultFeedSlug };
         _feedContext.Setup(f => f.CurrentFeed).Returns(defaultFeed);
 
+        var permissions = new Mock<IPermissionService>();
+
+        var authOptions = new Mock<IOptionsSnapshot<NugetAuthenticationOptions>>();
+        authOptions.Setup(o => o.Value).Returns(new NugetAuthenticationOptions());
+
         _target = new PackageModel(
             _packages.Object,
             _content.Object,
             _search.Object,
             _url.Object,
-            _feedContext.Object);
+            _feedContext.Object,
+            permissions.Object,
+            authOptions.Object);
 
         _search
             .Setup(s => s.FindDependentsAsync(It.IsAny<Guid>(), "testpackage", _cancellation))

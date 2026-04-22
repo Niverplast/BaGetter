@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Core.Authentication;
+using BaGetter.Core.Configuration;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
 using BaGetter.Web.Pages;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -15,7 +18,7 @@ public class IndexModelFacts
 {
     private readonly IndexModel _target;
 
-    private SearchRequest _capturedRequest = null;
+    private SearchRequest _capturedRequest;
     private readonly SearchResponse _response = new SearchResponse();
     private readonly CancellationToken _cancellation = CancellationToken.None;
 
@@ -24,7 +27,7 @@ public class IndexModelFacts
         var search = new Mock<ISearchService>();
         search
             .Setup(s => s.SearchAsync(It.IsAny<SearchRequest>(), _cancellation))
-            .Callback((SearchRequest r, CancellationToken c) => _capturedRequest = r)
+            .Callback((SearchRequest r, CancellationToken _) => _capturedRequest = r)
             .ReturnsAsync(_response);
 
         var feedContext = new Mock<IFeedContext>();
@@ -35,7 +38,18 @@ public class IndexModelFacts
             Name = "Default",
         });
 
-        _target = new IndexModel(search.Object, feedContext.Object);
+        var feedService = new Mock<IFeedService>();
+        var permissions = new Mock<IPermissionService>();
+
+        var authOptions = new Mock<IOptionsSnapshot<NugetAuthenticationOptions>>();
+        authOptions.Setup(o => o.Value).Returns(new NugetAuthenticationOptions());
+
+        _target = new IndexModel(
+            search.Object,
+            feedContext.Object,
+            feedService.Object,
+            permissions.Object,
+            authOptions.Object);
     }
 
     [Fact]
