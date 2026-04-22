@@ -116,15 +116,18 @@ public class PackageService : IPackageService
             return true;
         }
 
+        var feed = await _feedService.GetFeedByIdAsync(feedId, cancellationToken);
+        var upstream = _upstreamFactory.CreateForFeed(feed);
+        var cacheFeedUrl = upstream.GetServiceIndexUrl();
+
         _logger.LogInformation(
-            "Package {PackageId} {PackageVersion} does not exist locally. Checking upstream feed...",
+            "Package {PackageId} {PackageVersion} does not exist locally. Checking upstream feed ({cacheFeedUrl})...",
             id,
-            version);
+            version,
+            cacheFeedUrl);
 
         try
         {
-            var feed = await _feedService.GetFeedByIdAsync(feedId, cancellationToken);
-            var upstream = _upstreamFactory.CreateForFeed(feed);
             using var packageStream = await upstream.DownloadPackageOrNullAsync(id, version, cancellationToken);
             if (packageStream == null)
             {
@@ -140,7 +143,7 @@ public class PackageService : IPackageService
                 id,
                 version);
 
-            var result = await _indexer.IndexAsync(feedId, feedSlug, packageStream, cancellationToken);
+            var result = await _indexer.IndexAsync(feedId, feedSlug, packageStream, cacheFeedUrl, cancellationToken);
 
             _logger.LogInformation(
                 "Finished indexing package {PackageId} {PackageVersion} from upstream feed with result {Result}",

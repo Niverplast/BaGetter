@@ -24,6 +24,8 @@ public partial class NuGetClientFactory
     private readonly SemaphoreSlim _mutex;
     private NuGetClients _clients;
 
+    public string ServiceIndexUrl => _serviceIndexUrl;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="NuGetClientFactory"/> class
     /// for mocking.

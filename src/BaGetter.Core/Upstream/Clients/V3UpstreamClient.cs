@@ -32,6 +32,7 @@ public class V3UpstreamClient : IUpstreamClient
         _client = client;
         _logger = logger;
     }
+    public string GetServiceIndexUrl() => _client.ServiceIndexUrl;
 
     public async Task<Stream> DownloadPackageOrNullAsync(
         string id,

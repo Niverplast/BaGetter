@@ -109,7 +109,7 @@ public class PackageIndexingServiceInMemoryTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         var stream2 = new MemoryStream();
         builder.Save(stream);
@@ -117,7 +117,7 @@ public class PackageIndexingServiceInMemoryTests
         Assert.Equal(PackageIndexingResult.Success, result);
 
         // Act
-        var result2 = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result2 = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.PackageAlreadyExists, result2);
@@ -149,7 +149,7 @@ public class PackageIndexingServiceInMemoryTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);
@@ -180,7 +180,7 @@ public class PackageIndexingServiceInMemoryTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);
@@ -211,7 +211,7 @@ public class PackageIndexingServiceInMemoryTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         var stream2 = new MemoryStream();
         builder.Save(stream);
@@ -219,7 +219,7 @@ public class PackageIndexingServiceInMemoryTests
         Assert.Equal(PackageIndexingResult.Success, result);
 
         // Act
-        var result2 = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result2 = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.PackageAlreadyExists, result2);
@@ -249,7 +249,7 @@ public class PackageIndexingServiceInMemoryTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);
@@ -333,7 +333,7 @@ public class PackageIndexingServiceInMemoryTests
             _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
             // Act
-            var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+            var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
             // Assert
             Assert.Equal(PackageIndexingResult.Success, result);

@@ -96,7 +96,7 @@ public class PackageIndexingServiceTests
         _packages.Setup(p => p.ExistsAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.PackageAlreadyExists, result);
@@ -133,7 +133,7 @@ public class PackageIndexingServiceTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);
@@ -170,7 +170,7 @@ public class PackageIndexingServiceTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);
@@ -200,7 +200,7 @@ public class PackageIndexingServiceTests
         _packages.Setup(p => p.ExistsAsync(It.IsAny<Guid>(), builder.Id, builder.Version, default)).ReturnsAsync(true);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.PackageAlreadyExists, result);
@@ -234,7 +234,7 @@ public class PackageIndexingServiceTests
         _search.Setup(s => s.IndexAsync(It.Is<Package>(p => p.Id == builder.Id && p.Version.ToString() == builder.Version.ToString()), default)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _target.IndexAsync(Guid.Empty, "default", stream, default);
+        var result = await _target.IndexAsync(Guid.Empty, "default", stream, cacheFeedUrl: null, default);
 
         // Assert
         Assert.Equal(PackageIndexingResult.Success, result);

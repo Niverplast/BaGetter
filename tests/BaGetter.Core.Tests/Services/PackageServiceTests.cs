@@ -296,7 +296,7 @@ public class PackageServiceTests
             await TargetAsync();
 
             Indexer.Verify(
-                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), CancellationToken),
+                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), CancellationToken),
                 Times.Never);
         }
 
@@ -314,7 +314,7 @@ public class PackageServiceTests
             await TargetAsync();
 
             Indexer.Verify(
-                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), CancellationToken),
+                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), CancellationToken),
                 Times.Never);
         }
 
@@ -332,7 +332,7 @@ public class PackageServiceTests
             await TargetAsync();
 
             Indexer.Verify(
-                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), CancellationToken),
+                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), CancellationToken),
                 Times.Never);
         }
 
@@ -351,7 +351,7 @@ public class PackageServiceTests
             await TargetAsync();
 
             Indexer.Verify(
-                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), CancellationToken),
+                i => i.IndexAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), CancellationToken),
                 Times.Once);
         }
     }
