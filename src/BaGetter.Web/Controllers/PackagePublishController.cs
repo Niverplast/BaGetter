@@ -76,7 +76,7 @@ public class PackagePublishController : Controller
                 return;
             }
 
-            var result = await _indexer.IndexAsync(_feedContext.CurrentFeed.Id, _feedContext.CurrentFeed.Slug, uploadStream, cancellationToken);
+            var result = await _indexer.IndexAsync(_feedContext.CurrentFeed.Id, _feedContext.CurrentFeed.Slug, uploadStream, cacheFeedUrl: null, cancellationToken);
 
             switch (result)
             {

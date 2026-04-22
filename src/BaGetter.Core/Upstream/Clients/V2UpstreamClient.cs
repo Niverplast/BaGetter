@@ -70,6 +70,8 @@ public class V2UpstreamClient : IUpstreamClient, IDisposable
 
     }
 
+    public string GetServiceIndexUrl() => _repository.PackageSource.Source;
+
     public async Task<IReadOnlyList<NuGetVersion>> ListPackageVersionsAsync(string id, CancellationToken cancellationToken)
     {
         try
