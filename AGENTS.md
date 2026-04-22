@@ -204,6 +204,7 @@ Additional enforced rules (warning severity):
 - Predefined types (`int`, `string`) over framework types (`Int32`, `String`)
 - No primary constructors (`csharp_style_prefer_primary_constructors = false`)
 - No expression-bodied methods or constructors (properties/accessors OK)
+- One top-level type per file — with a narrow exception. Never bundle unrelated types together just to save tool calls. Co-locating a small helper type with its primary owner is OK when the helper is only meaningful in that owner's context: a result enum for an interface (e.g. `enum PackageAddResult` beside `interface IPackageDatabase`), a response item beside its response wrapper (e.g. `PackageDependent` beside `DependentsResponse`), or tightly-coupled serialization models. Rule of thumb: if a reader would look for the helper anywhere other than next to the primary type, split it out.
 
 Suppress CS1591 for non-public XML doc comments.
 

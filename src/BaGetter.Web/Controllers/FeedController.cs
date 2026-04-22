@@ -5,9 +5,9 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
-using BaGetter.Core.Configuration;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Feeds;
+using BaGetter.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,17 +28,17 @@ public class FeedController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<FeedDto>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<FeedResponse>>> GetAll(CancellationToken cancellationToken)
     {
         if (!await IsAdminAsync(cancellationToken))
             return Forbid();
 
         var feeds = await _feedService.GetAllFeedsAsync(cancellationToken);
-        return feeds.Select(ToDto).ToList();
+        return feeds.Select(FeedResponse.FromFeed).ToList();
     }
 
     [HttpGet("{slug}")]
-    public async Task<ActionResult<FeedDto>> GetBySlug(string slug, CancellationToken cancellationToken)
+    public async Task<ActionResult<FeedResponse>> GetBySlug(string slug, CancellationToken cancellationToken)
     {
         if (!await IsAdminAsync(cancellationToken))
             return Forbid();
@@ -47,11 +47,11 @@ public class FeedController : ControllerBase
         if (feed == null)
             return NotFound();
 
-        return ToDto(feed);
+        return FeedResponse.FromFeed(feed);
     }
 
     [HttpPost]
-    public async Task<ActionResult<FeedDto>> Create([FromBody] CreateFeedRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<FeedResponse>> Create([FromBody] CreateFeedRequest request, CancellationToken cancellationToken)
     {
         if (!await IsAdminAsync(cancellationToken))
             return Forbid();
@@ -71,7 +71,7 @@ public class FeedController : ControllerBase
         try
         {
             var created = await _feedService.CreateFeedAsync(feed, cancellationToken);
-            return CreatedAtAction(nameof(GetBySlug), new { slug = created.Slug }, ToDto(created));
+            return CreatedAtAction(nameof(GetBySlug), new { slug = created.Slug }, FeedResponse.FromFeed(created));
         }
         catch (ArgumentException ex)
         {
@@ -80,7 +80,7 @@ public class FeedController : ControllerBase
     }
 
     [HttpPut("{slug}")]
-    public async Task<ActionResult<FeedDto>> Update(string slug, [FromBody] UpdateFeedRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<FeedResponse>> Update(string slug, [FromBody] UpdateFeedRequest request, CancellationToken cancellationToken)
     {
         if (!await IsAdminAsync(cancellationToken))
             return Forbid();
@@ -96,7 +96,7 @@ public class FeedController : ControllerBase
         feed.Description = request.Description;
 
         var updated = await _feedService.UpdateFeedAsync(feed, cancellationToken);
-        return ToDto(updated);
+        return FeedResponse.FromFeed(updated);
     }
 
     [HttpDelete("{slug}")]
@@ -131,87 +131,4 @@ public class FeedController : ControllerBase
 
         return await _userService.IsAdminAsync(userId, cancellationToken);
     }
-
-    private static FeedDto ToDto(Feed feed) => new FeedDto
-    {
-        Id = feed.Id,
-        Slug = feed.Slug,
-        Name = feed.Name,
-        Description = feed.Description,
-        AllowPackageOverwrites = feed.AllowPackageOverwrites,
-        PackageDeletionBehavior = feed.PackageDeletionBehavior,
-        IsReadOnlyMode = feed.IsReadOnlyMode,
-        MaxPackageSizeGiB = feed.MaxPackageSizeGiB,
-        RetentionMaxMajorVersions = feed.RetentionMaxMajorVersions,
-        RetentionMaxMinorVersions = feed.RetentionMaxMinorVersions,
-        RetentionMaxPatchVersions = feed.RetentionMaxPatchVersions,
-        RetentionMaxPrereleaseVersions = feed.RetentionMaxPrereleaseVersions,
-        MirrorEnabled = feed.MirrorEnabled,
-        MirrorPackageSource = feed.MirrorPackageSource,
-        MirrorLegacy = feed.MirrorLegacy,
-        MirrorDownloadTimeoutSeconds = feed.MirrorDownloadTimeoutSeconds,
-        MirrorAuthType = feed.MirrorAuthType,
-        MirrorAuthUsername = feed.MirrorAuthUsername,
-        HasMirrorAuthPassword = !string.IsNullOrEmpty(feed.MirrorAuthPassword),
-        HasMirrorAuthToken = !string.IsNullOrEmpty(feed.MirrorAuthToken),
-        CreatedAtUtc = feed.CreatedAtUtc,
-        UpdatedAtUtc = feed.UpdatedAtUtc,
-    };
-}
-
-public class CreateFeedRequest
-{
-    [Microsoft.AspNetCore.Mvc.ModelBinding.BindRequired]
-    public string Slug { get; set; }
-
-    [Microsoft.AspNetCore.Mvc.ModelBinding.BindRequired]
-    public string Name { get; set; }
-
-    public string Description { get; set; }
-}
-
-public class UpdateFeedRequest
-{
-    [Microsoft.AspNetCore.Mvc.ModelBinding.BindRequired]
-    public string Name { get; set; }
-
-    public string Description { get; set; }
-}
-
-/// <summary>
-/// Safe projection of a <see cref="Feed"/> for API responses.
-/// Omits secret fields (password, token, custom headers) and replaces
-/// them with boolean presence indicators.
-/// </summary>
-public class FeedDto
-{
-    public Guid Id { get; set; }
-    public string Slug { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
-
-    public PackageOverwriteAllowed? AllowPackageOverwrites { get; set; }
-    public PackageDeletionBehavior? PackageDeletionBehavior { get; set; }
-    public bool? IsReadOnlyMode { get; set; }
-    public uint? MaxPackageSizeGiB { get; set; }
-    public int? RetentionMaxMajorVersions { get; set; }
-    public int? RetentionMaxMinorVersions { get; set; }
-    public int? RetentionMaxPatchVersions { get; set; }
-    public int? RetentionMaxPrereleaseVersions { get; set; }
-
-    public bool MirrorEnabled { get; set; }
-    public string MirrorPackageSource { get; set; }
-    public bool MirrorLegacy { get; set; }
-    public int? MirrorDownloadTimeoutSeconds { get; set; }
-    public MirrorAuthenticationType? MirrorAuthType { get; set; }
-    public string MirrorAuthUsername { get; set; }
-
-    /// <summary>True if a mirror password is configured; the value is never returned.</summary>
-    public bool HasMirrorAuthPassword { get; set; }
-
-    /// <summary>True if a mirror bearer token is configured; the value is never returned.</summary>
-    public bool HasMirrorAuthToken { get; set; }
-
-    public DateTime CreatedAtUtc { get; set; }
-    public DateTime UpdatedAtUtc { get; set; }
 }
