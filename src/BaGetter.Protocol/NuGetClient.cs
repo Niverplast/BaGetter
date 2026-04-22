@@ -71,6 +71,7 @@ public class NuGetClient
         _metadataClient = clientFactory.CreatePackageMetadataClient();
         _searchClient = clientFactory.CreateSearchClient();
         _autocompleteClient = clientFactory.CreateAutocompleteClient();
+        ServiceIndexUrl = clientFactory.ServiceIndexUrl;
     }
 
     /// <summary>
