@@ -24,6 +24,15 @@
     return;
 }
 
+@if (Model.HasNoAccessibleFeeds)
+{
+    <div class="text-center" style="margin-top: 60px;">
+        <h2>No feeds available</h2>
+        <p>You don't currently have access to any feeds. Please contact an administrator to be granted permissions.</p>
+    </div>
+    return;
+}
+
 @section SearchForm
 {
     @* The search query is in a form in the header. The search filters are bindings on this Razor page.

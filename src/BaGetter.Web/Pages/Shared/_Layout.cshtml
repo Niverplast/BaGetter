@@ -1,6 +1,8 @@
+@using BaGetter.Core.Authentication
 @using BaGetter.Core.Configuration
 @using BaGetter.Core.Entities
 @using BaGetter.Core.Feeds
+@using BaGetter.Web.Authentication
 @using BaGetter.Web.Extensions
 @using BaGetter.Web.Helper
 @using Microsoft.Extensions.Options
@@ -10,6 +12,7 @@
 @inject ApplicationVersion Version
 @inject IFeedService FeedService
 @inject IFeedContext FeedContext
+@inject IPermissionService PermissionService
 
 @{
     var requiresAuth = AuthOptions.Value.Mode != AuthenticationMode.Config;
@@ -44,6 +47,8 @@
                             @if (showContent)
                             {
                                 var allFeeds = await FeedService.GetAllFeedsAsync(Context.RequestAborted);
+                                var accessibleFeeds = await FeedAccessGuard.FilterAccessibleFeedsAsync(
+                                    Context, allFeeds, PermissionService, AuthOptions.Value.Mode, Context.RequestAborted);
                                 var currentSlug = FeedContext.CurrentFeed?.Slug ?? Feed.DefaultSlug;
 
                                 <li role="presentation"><a asp-area="" asp-page="/Index" role="tab" nav-link><span>Packages</span></a></li>
@@ -52,15 +57,15 @@
                                 {
                                     <li role="presentation"><a asp-area="" asp-page="/Statistics" role="tab" nav-link><span>Statistics</span></a></li>
                                 }
-                                @if (allFeeds.Count > 1)
+                                @if (accessibleFeeds.Count > 1)
                                 {
                                     <li role="presentation" class="dropdown">
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                                            <span>Feed: @FeedContext.CurrentFeed.Name</span>
+                                            <span>Feed: @(FeedContext.CurrentFeed?.Name ?? "—")</span>
                                             <span class="caret"></span>
                                         </a>
                                         <ul class="dropdown-menu">
-                                            @foreach (var feed in allFeeds)
+                                            @foreach (var feed in accessibleFeeds)
                                             {
                                                 var feedHref = feed.Slug == Feed.DefaultSlug ? "/" : "/feeds/" + feed.Slug;
                                                 var isActive = feed.Slug == currentSlug;
