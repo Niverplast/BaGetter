@@ -194,6 +194,10 @@ namespace BaGetter.Database.MySql.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("varchar(4000)");
 
+                    b.Property<string>("CachedFrom")
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
                     b.Property<string>("Description")
                         .HasMaxLength(4000)
                         .HasColumnType("varchar(4000)");
