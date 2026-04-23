@@ -186,6 +186,10 @@ namespace BaGetter.Database.Sqlite.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CachedFrom")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .HasMaxLength(4000)
                         .HasColumnType("TEXT");
