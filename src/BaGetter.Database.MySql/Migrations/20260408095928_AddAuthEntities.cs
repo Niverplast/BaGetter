@@ -117,7 +117,7 @@ namespace BaGetter.Database.MySql.Migrations
                         column: x => x.CreatedByUserId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.NoAction);
                 })
                 .Annotation("MySql:CharSet", "latin1");
 

@@ -482,7 +482,7 @@ namespace BaGetter.Database.SqlServer.Migrations
                     b.HasOne("BaGetter.Core.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.ClientSetNull);
 
                     b.Navigation("CreatedByUser");
                 });

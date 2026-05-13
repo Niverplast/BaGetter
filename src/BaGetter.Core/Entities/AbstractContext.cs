@@ -251,7 +251,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         user.HasOne(u => u.CreatedByUser)
             .WithMany()
             .HasForeignKey(u => u.CreatedByUserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.ClientSetNull);
 
         user.HasMany(u => u.PersonalAccessTokens)
             .WithOne(t => t.User)
