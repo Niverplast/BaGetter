@@ -10,8 +10,17 @@ namespace BaGetter.Azure.Configuration
     public class AzureBlobStorageOptions : IValidatableObject
     {
         /// <summary>
-        /// The Azure Blob Storage connection string.
-        /// If provided, ignores <see cref="AccountName"/> and <see cref="AccessKey"/>.
+        /// When true, <see cref="ConnectionString"/> is treated as a blob service URI and
+        /// DefaultAzureCredential is used for authentication. <see cref="AccountName"/> and
+        /// <see cref="AccessKey"/> are ignored.
+        /// </summary>
+        public bool UseAzureDefaultCredential { get; set; }
+
+        /// <summary>
+        /// The Azure Blob Storage connection string, or the blob service URI when
+        /// <see cref="UseAzureDefaultCredential"/> is true.
+        /// If provided (and <see cref="UseAzureDefaultCredential"/> is false), ignores
+        /// <see cref="AccountName"/> and <see cref="AccessKey"/>.
         /// </summary>
         public string ConnectionString { get; set; }
 
@@ -34,7 +43,7 @@ namespace BaGetter.Azure.Configuration
         {
             const string helpUrl = "https://loic-sharma.github.io/BaGet/quickstart/azure/#azure-blob-storage";
 
-            if (string.IsNullOrEmpty(ConnectionString))
+            if (!UseAzureDefaultCredential && string.IsNullOrEmpty(ConnectionString))
             {
                 if (string.IsNullOrEmpty(AccountName))
                 {
