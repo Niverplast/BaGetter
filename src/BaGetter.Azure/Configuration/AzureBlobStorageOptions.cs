@@ -43,7 +43,16 @@ namespace BaGetter.Azure.Configuration
         {
             const string helpUrl = "https://loic-sharma.github.io/BaGet/quickstart/azure/#azure-blob-storage";
 
-            if (!UseAzureDefaultCredential && string.IsNullOrEmpty(ConnectionString))
+            if (UseAzureDefaultCredential)
+            {
+                if (string.IsNullOrEmpty(ConnectionString))
+                {
+                    yield return new ValidationResult(
+                        $"The {nameof(ConnectionString)} configuration (blob service URI) is required when {nameof(UseAzureDefaultCredential)} is true. See {helpUrl}",
+                        new[] { nameof(ConnectionString) });
+                }
+            }
+            else if (string.IsNullOrEmpty(ConnectionString))
             {
                 if (string.IsNullOrEmpty(AccountName))
                 {
