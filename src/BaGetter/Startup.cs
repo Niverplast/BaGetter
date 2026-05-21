@@ -101,6 +101,9 @@ public class Startup
         app.UseForwardedHeaders();
         app.UsePathBase(options.PathBase);
 
+        // Liveness probe — registered before FeedResolutionMiddleware so it never resolves the DbContext.
+        app.UseHealthChecks("/ping", new HealthCheckOptions { Predicate = _ => false });
+
         app.UseMiddleware<FeedStaticFilePathMiddleware>();
         app.UseStaticFiles();
         app.UseAuthentication();
