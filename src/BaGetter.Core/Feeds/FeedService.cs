@@ -5,7 +5,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Entities;
+using BaGetter.Core.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BaGetter.Core.Feeds;
 
@@ -16,10 +18,17 @@ public class FeedService : IFeedService
         RegexOptions.Compiled);
 
     private readonly IContext _context;
+    private readonly IPackageStorageService _packageStorage;
+    private readonly ILogger<FeedService> _logger;
 
-    public FeedService(IContext context)
+    public FeedService(
+        IContext context,
+        IPackageStorageService packageStorage,
+        ILogger<FeedService> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _packageStorage = packageStorage ?? throw new ArgumentNullException(nameof(packageStorage));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<Feed> GetDefaultFeedAsync(CancellationToken cancellationToken)
@@ -86,8 +95,34 @@ public class FeedService : IFeedService
         if (feed.Slug == Feed.DefaultSlug)
             throw new InvalidOperationException("The default feed cannot be deleted.");
 
+        // Feed -> Package is configured with DeleteBehavior.Restrict, so the feed row cannot be
+        // removed while it still has packages. Remove the packages first, then the feed, in a
+        // single SaveChanges so the whole delete is one atomic transaction.
+        var packages = await _context.Packages
+            .Where(p => p.FeedId == feedId)
+            .ToListAsync(cancellationToken);
+
+        _context.Packages.RemoveRange(packages);
         _context.Feeds.Remove(feed);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Best-effort cleanup of each package's stored content (nupkg/nuspec/readme/icon). The DB
+        // rows are already gone, so a storage failure here must not fail the overall delete.
+        foreach (var package in packages)
+        {
+            try
+            {
+                await _packageStorage.DeleteAsync(feed.Slug, package.Id, package.Version, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Failed to delete stored content for package {PackageId} {PackageVersion} while deleting feed {FeedSlug}",
+                    package.Id, package.Version, feed.Slug);
+            }
+        }
+
         return true;
     }
 

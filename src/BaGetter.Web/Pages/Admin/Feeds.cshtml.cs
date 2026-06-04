@@ -11,6 +11,8 @@ using BaGetter.Core.Feeds;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BaGetter.Web.Pages.Admin;
 
@@ -21,11 +23,13 @@ public class FeedsModel : PageModel
 
     private readonly IFeedService _feedService;
     private readonly IUserService _userService;
+    private readonly ILogger<FeedsModel> _logger;
 
-    public FeedsModel(IFeedService feedService, IUserService userService)
+    public FeedsModel(IFeedService feedService, IUserService userService, ILogger<FeedsModel> logger)
     {
         _feedService = feedService ?? throw new ArgumentNullException(nameof(feedService));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public List<Feed> Feeds { get; set; } = new();
@@ -180,6 +184,16 @@ public class FeedsModel : PageModel
         catch (InvalidOperationException ex)
         {
             ErrorMessage = ex.Message;
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error while deleting feed {FeedId}", feedId);
+            ErrorMessage = "Could not delete the feed because of a database error. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while deleting feed {FeedId}", feedId);
+            ErrorMessage = "An unexpected error occurred while deleting the feed.";
         }
 
         Feeds = await _feedService.GetAllFeedsAsync(cancellationToken);
