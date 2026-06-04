@@ -618,6 +618,12 @@ h4 {
   word-break: break-all;
 }
 
+.feed-title {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 28px;
+}
+
 .search-options {
   margin-bottom: 20px;
 }
