@@ -80,6 +80,41 @@ public class TokenServiceTests
             Assert.NotEqual(result1.PlaintextToken, result2.PlaintextToken);
             Assert.NotEqual(result1.Token.TokenHash, result2.Token.TokenHash);
         }
+
+        [Fact]
+        public async Task ThrowsWhenNameAlreadyExistsForUser()
+        {
+            await Target.CreateTokenAsync(
+                UserId, "Duplicate", DateTime.UtcNow.AddDays(30), Ct);
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => Target.CreateTokenAsync(UserId, "Duplicate", DateTime.UtcNow.AddDays(30), Ct));
+        }
+
+        [Fact]
+        public async Task AllowsSameNameForDifferentUsers()
+        {
+            var otherUserId = Guid.NewGuid();
+            Context.Users.Add(new User
+            {
+                Id = otherUserId,
+                Username = "otheruser",
+                DisplayName = "Other",
+                AuthProvider = AuthProvider.Entra,
+                EntraObjectId = "oid-other",
+                IsEnabled = true,
+                CanLoginToUI = true,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            });
+            await Context.SaveChangesAsync(Ct);
+
+            await Target.CreateTokenAsync(UserId, "Shared", DateTime.UtcNow.AddDays(30), Ct);
+            var result = await Target.CreateTokenAsync(otherUserId, "Shared", DateTime.UtcNow.AddDays(30), Ct);
+
+            Assert.Equal("Shared", result.Token.Name);
+            Assert.Equal(otherUserId, result.Token.UserId);
+        }
     }
 
     public class ValidateTokenAsync : FactsBase

@@ -51,6 +51,13 @@ public class TokenService : ITokenService
                 $"Token expiry cannot exceed {_authOptions.MaxTokenExpiryDays} days from now.");
         }
 
+        var nameTaken = await _context.PersonalAccessTokens
+            .AnyAsync(t => t.UserId == userId && t.Name == name, cancellationToken);
+        if (nameTaken)
+        {
+            throw new ArgumentException($"A token named '{name}' already exists.");
+        }
+
         var plaintextToken = GenerateToken();
         var tokenHash = ComputeHash(plaintextToken);
 
@@ -68,7 +75,16 @@ public class TokenService : ITokenService
         };
 
         _context.PersonalAccessTokens.Add(token);
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (_context.IsUniqueConstraintViolationException(ex))
+        {
+            // Race: another request created a token with the same name between the
+            // check above and the save. The (UserId, Name) unique index is the backstop.
+            throw new ArgumentException($"A token named '{name}' already exists.");
+        }
 
         _logger.LogInformation("Audit: {EventType} - Created PAT {TokenId} for user {UserId} with prefix {TokenPrefix}",
             "TokenCreated", token.Id, userId, token.TokenPrefix);
