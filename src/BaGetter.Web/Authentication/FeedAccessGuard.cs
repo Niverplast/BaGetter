@@ -61,6 +61,36 @@ public static class FeedAccessGuard
     }
 
     /// <summary>
+    /// Returns true when the current user may push to the current feed. Used to hide
+    /// push-only UI (the Upload tab) from pull-only and unauthenticated users. This is
+    /// UI-gating only; the upload endpoint stays protected server-side.
+    /// In Config mode and for the static-auth anonymous fallback, returns true to preserve
+    /// existing behavior. Unauthenticated callers get false.
+    /// </summary>
+    public static async Task<bool> CanPushToCurrentFeedAsync(
+        HttpContext httpContext,
+        IFeedContext feedContext,
+        IPermissionService permissionService,
+        AuthenticationMode authMode,
+        CancellationToken cancellationToken)
+    {
+        if (authMode == AuthenticationMode.Config) return true;
+
+        var user = httpContext.User;
+        if (user.Identity?.IsAuthenticated != true) return false;
+
+        if (user.HasClaim(c => c.Type == ClaimTypes.Anonymous)) return true;
+
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return false;
+
+        if (feedContext.CurrentFeed == null) return false;
+
+        return await permissionService.CanPushAsync(userId, feedContext.CurrentFeed.Id, cancellationToken);
+    }
+
+    /// <summary>
     /// Returns the subset of feeds the current user can pull from, preserving input order.
     /// In Config mode or for the anonymous fallback, returns every feed.
     /// Unauthenticated callers get an empty list.
