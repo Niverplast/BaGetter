@@ -91,7 +91,7 @@ dotnet run --project src/BaGetter        # runs on http://localhost:5000
 Run a single test class or method:
 ```bash
 dotnet test --filter "FullyQualifiedName~UserServiceTests"
-dotnet test --filter "FullyQualifiedName~UserServiceTests.TheGetOrCreateEntraUserAsyncMethod"
+dotnet test --filter "FullyQualifiedName~UserServiceTests+CreateEntraUserAsync"
 ```
 
 EF Core migrations (example for SQLite):
@@ -211,6 +211,8 @@ Suppress CS1591 for non-public XML doc comments.
 ## Testing
 
 xUnit + Moq. Test projects mirror source: `tests/BaGetter.Core.Tests/`, `tests/BaGetter.Web.Tests/`, `tests/BaGetter.Protocol.Tests/`. Integration tests use in-memory SQLite.
+
+Naming convention: the outer test class is named after the type under test — `<Type>Tests` in `BaGetter.Core.Tests`, `<Type>Facts` in `BaGetter.Web.Tests`. Tests for one method are grouped in a nested class named exactly after that method, with a shared-setup `FactsBase` (e.g. `PermissionServiceTests` → `public class CanPushAsync : FactsBase`). Some older `BaGetter.Web.Tests` classes are flat (no nested per-method classes); prefer the nested style for new tests. Do not use the older `The<Method>Method` idiom.
 
 **`BaGetterApplication`** (WebApplicationFactory) is the integration test host — it mocks `SystemTime` to 2020-01-01, creates temp-dir SQLite databases, and wires up `XunitLoggerProvider`. Use `BaGetWebApplicationFactoryExtensions` helpers (`AddPackageAsync`, `AddSymbolPackageAsync`) to seed test data. Override config via in-memory dictionary config sources in test setup.
 

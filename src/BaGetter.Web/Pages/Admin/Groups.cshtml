@@ -183,56 +183,46 @@
                         }
                         else
                         {
-                            <table class="table table-condensed table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Feed</th>
-                                        <th style="width:1%; white-space:nowrap">Pull</th>
-                                        <th style="width:1%; white-space:nowrap">Push</th>
-                                        <th style="width:1%"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var feed in Model.AllFeeds)
-                                    {
-                                        perFeedPerms.TryGetValue(feed.Id, out var feedPerm);
+                            <form method="post" asp-page-handler="SavePermissions">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="groupId" value="@group.Id" />
+                                <table class="table table-condensed table-striped">
+                                    <thead>
                                         <tr>
-                                            <td>
-                                                <form method="post" asp-page-handler="GrantPermission" id="perm-@group.Id-@feed.Id">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="principalId" value="@group.Id" />
-                                                    <input type="hidden" name="principalType" value="@BaGetter.Core.Entities.PrincipalType.Group" />
-                                                    <input type="hidden" name="feedId" value="@feed.Id" />
-                                                </form>
-                                                <strong>@feed.Name</strong>
-                                                <small class="text-muted">(@feed.Slug)</small>
-                                            </td>
-                                            <td>
-                                                <input type="checkbox" name="canPull" value="true"
-                                                       form="perm-@group.Id-@feed.Id"
-                                                       @(feedPerm?.CanPull == true ? "checked" : "") />
-                                            </td>
-                                            <td>
-                                                <input type="checkbox" name="canPush" value="true"
-                                                       form="perm-@group.Id-@feed.Id"
-                                                       @(feedPerm?.CanPush == true ? "checked" : "") />
-                                            </td>
-                                            <td style="white-space:nowrap">
-                                                <button type="submit"
-                                                        form="perm-@group.Id-@feed.Id"
-                                                        class="btn btn-xs btn-primary">
-                                                    Save
-                                                </button>
-                                                @if (Model.SavedGroupId == group.Id && Model.SavedFeedId == feed.Id)
-                                                {
-                                                    <span class="text-success saved-indicator" style="margin-left:6px" title="Permissions saved">&#10003;</span>
-                                                }
-                                            </td>
+                                            <th>Feed</th>
+                                            <th style="width:1%; white-space:nowrap">Pull</th>
+                                            <th style="width:1%; white-space:nowrap">Push</th>
                                         </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            <small class="text-muted">Unchecking both Pull and Push revokes the group's permission for that feed.</small>
+                                    </thead>
+                                    <tbody>
+                                        @{ var rowIndex = 0; }
+                                        @foreach (var feed in Model.AllFeeds)
+                                        {
+                                            perFeedPerms.TryGetValue(feed.Id, out var feedPerm);
+                                            <tr>
+                                                <td>
+                                                    <input type="hidden" name="permissions[@rowIndex].FeedId" value="@feed.Id" />
+                                                    <strong>@feed.Name</strong>
+                                                    <small class="text-muted">(@feed.Slug)</small>
+                                                </td>
+                                                <td>
+                                                    <input type="checkbox" name="permissions[@rowIndex].CanPull" value="true"
+                                                           @(feedPerm?.CanPull == true ? "checked" : "") />
+                                                </td>
+                                                <td>
+                                                    <input type="checkbox" name="permissions[@rowIndex].CanPush" value="true"
+                                                           @(feedPerm?.CanPush == true ? "checked" : "") />
+                                                </td>
+                                            </tr>
+                                            rowIndex++;
+                                        }
+                                    </tbody>
+                                </table>
+                                <div style="display:flex; align-items:center; gap:8px; justify-content:right;">
+                                    <small class="text-muted">Unchecking both Pull and Push revokes the group's permission for that feed.</small>
+                                    <button type="submit" class="btn btn-primary">Save all</button>
+                                </div>
+                            </form>
                         }
                     </div>
                 </div>

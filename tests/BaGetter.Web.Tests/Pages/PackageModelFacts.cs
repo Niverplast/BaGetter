@@ -323,6 +323,25 @@ public class PackageModelFacts
     }
 
     [Fact]
+    public async Task UrlMetadataIsEmptyStringWhenAbsent()
+    {
+        // The Package page guards link rendering with !string.IsNullOrEmpty(...) because
+        // these properties return string.Empty (never null) when the metadata is absent.
+        _packages
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
+            .ReturnsAsync(new List<Package>
+            {
+                CreatePackage("1.0.0"),
+            });
+
+        await _target.OnGetAsync("testpackage", "1.0.0", _cancellation);
+
+        Assert.Equal(string.Empty, _target.Package.ProjectUrlString);
+        Assert.Equal(string.Empty, _target.Package.RepositoryUrlString);
+        Assert.Equal(string.Empty, _target.LicenseUrl);
+    }
+
+    [Fact]
     public async Task RendersReadme()
     {
         using var readmeStream = new MemoryStream();

@@ -224,7 +224,7 @@ else
                         Last updated @Model.LastUpdated.Humanize()
                     </li>
 
-                    @if (Model.Package.ProjectUrlString != null)
+                    @if (!string.IsNullOrEmpty(Model.Package.ProjectUrlString))
                     {
                         <li>
                             <i class="ms-Icon ms-Icon--Globe"></i>
@@ -232,15 +232,15 @@ else
                         </li>
                     }
 
-                    @if (Model.Package.RepositoryUrlString != null)
+                    @if (!string.IsNullOrEmpty(Model.Package.RepositoryUrlString))
                     {
                         <li>
-                            <img class="icon" aria-hidden="true" alt="GitHub logo" src="@Url.Content("~/_content/BaGetter.Web/images/github-32x32.png")" />
+                            <span class="icon github-icon" aria-hidden="true"></span>
                             <a href="@Model.Package.RepositoryUrlString">Source code</a>
                         </li>
                     }
 
-                    @if (Model.LicenseUrl != null)
+                    @if (!string.IsNullOrEmpty(Model.LicenseUrl))
                     {
                         <li>
                             <i class="ms-Icon ms-Icon--Certificate"></i>

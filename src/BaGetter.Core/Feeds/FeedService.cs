@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +42,12 @@ public class FeedService : IFeedService
 
     public async Task<List<Feed>> GetAllFeedsAsync(CancellationToken cancellationToken)
     {
-        return await _context.Feeds.ToListAsync(cancellationToken);
+        // Keep the default feed on top, then sort the rest alphabetically by name.
+        // Both the admin list and the nav dropdown consume this method.
+        return await _context.Feeds
+            .OrderByDescending(f => f.Slug == Feed.DefaultSlug)
+            .ThenBy(f => f.Name)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Feed> CreateFeedAsync(Feed feed, CancellationToken cancellationToken)
