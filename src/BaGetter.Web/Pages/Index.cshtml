@@ -53,6 +53,11 @@
     }
 }
 
+@if (FeedContext.CurrentFeed != null)
+{
+    <h1 class="feed-title">@FeedContext.CurrentFeed.Name</h1>
+}
+
 <div class="search-options form-inline">
     <div class="form-group">
         <label>Package type:</label>
