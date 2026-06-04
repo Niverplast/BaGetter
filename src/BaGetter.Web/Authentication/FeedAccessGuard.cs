@@ -91,6 +91,36 @@ public static class FeedAccessGuard
     }
 
     /// <summary>
+    /// Returns true when the current user may delete (unlist or hard-delete) packages in the
+    /// current feed. Used to gate the Unlist/Delete buttons on the package page and to authorize
+    /// their handlers. Unlike push, this fails closed in Config mode and for the static-auth
+    /// anonymous fallback: delete is a per-user/group permission that only exists in the
+    /// Local/Entra/Hybrid auth modes. Admins pass via <see cref="IPermissionService"/>.
+    /// </summary>
+    public static async Task<bool> CanDeleteFromCurrentFeedAsync(
+        HttpContext httpContext,
+        IFeedContext feedContext,
+        IPermissionService permissionService,
+        AuthenticationMode authMode,
+        CancellationToken cancellationToken)
+    {
+        if (authMode == AuthenticationMode.Config) return false;
+
+        var user = httpContext.User;
+        if (user.Identity?.IsAuthenticated != true) return false;
+
+        if (user.HasClaim(c => c.Type == ClaimTypes.Anonymous)) return false;
+
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return false;
+
+        if (feedContext.CurrentFeed == null) return false;
+
+        return await permissionService.CanDeleteAsync(userId, feedContext.CurrentFeed.Id, cancellationToken);
+    }
+
+    /// <summary>
     /// Returns the subset of feeds the current user can pull from, preserving input order.
     /// In Config mode or for the anonymous fallback, returns every feed.
     /// Unauthenticated callers get an empty list.

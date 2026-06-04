@@ -108,6 +108,11 @@ namespace BaGetter.Database.Sqlite.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("CanDelete")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("CanPull")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")

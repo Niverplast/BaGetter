@@ -10,10 +10,12 @@ using BaGetter.Core.Configuration;
 using BaGetter.Core.Content;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Feeds;
+using BaGetter.Core.Indexing;
 using BaGetter.Core.Search;
 using BaGetter.Web.Authentication;
 using Markdig;
 using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -32,6 +34,7 @@ public class PackageModel : PageModel
     private readonly IUrlGenerator _url;
     private readonly IFeedContext _feedContext;
     private readonly IPermissionService _permissions;
+    private readonly IPackageDeletionService _deletionService;
     private readonly IOptionsSnapshot<NugetAuthenticationOptions> _authOptions;
 
     static PackageModel()
@@ -48,6 +51,7 @@ public class PackageModel : PageModel
         IUrlGenerator url,
         IFeedContext feedContext,
         IPermissionService permissions,
+        IPackageDeletionService deletionService,
         IOptionsSnapshot<NugetAuthenticationOptions> authOptions)
     {
         _packages = packages ?? throw new ArgumentNullException(nameof(packages));
@@ -56,10 +60,17 @@ public class PackageModel : PageModel
         _url = url ?? throw new ArgumentNullException(nameof(url));
         _feedContext = feedContext ?? throw new ArgumentNullException(nameof(feedContext));
         _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+        _deletionService = deletionService ?? throw new ArgumentNullException(nameof(deletionService));
         _authOptions = authOptions ?? throw new ArgumentNullException(nameof(authOptions));
     }
 
     public bool Found { get; private set; }
+
+    /// <summary>
+    /// Whether the current user may unlist/delete packages in this feed. Gates the
+    /// Unlist and Delete buttons on the page. False in Config mode and for anonymous users.
+    /// </summary>
+    public bool CanDelete { get; private set; }
 
     public Package Package { get; private set; }
 
@@ -85,6 +96,9 @@ public class PackageModel : PageModel
         var denied = await FeedAccessGuard.CheckReadAccessAsync(
             HttpContext, _feedContext, _permissions, _authOptions.Value.Mode, cancellationToken);
         if (denied != null) return denied;
+
+        CanDelete = await FeedAccessGuard.CanDeleteFromCurrentFeedAsync(
+            HttpContext, _feedContext, _permissions, _authOptions.Value.Mode, cancellationToken);
 
         var packages = await _packages.FindPackagesAsync(_feedContext.CurrentFeed.Id, id, cancellationToken);
         var listedPackages = packages.Where(p => p.Listed).ToList();
@@ -120,7 +134,11 @@ public class PackageModel : PageModel
 
         UsedBy = dependents.Data;
         DependencyGroups = ToDependencyGroups(Package);
-        Versions = ToVersions(listedPackages, packageVersion);
+
+        // Managers (CanDelete) also see unlisted versions so they can relist them; the
+        // versions table strikes those through. Everyone else only sees listed versions.
+        var versionsToShow = CanDelete ? packages : (IReadOnlyList<Package>)listedPackages;
+        Versions = ToVersions(versionsToShow, packageVersion);
 
         if (Package.HasReadme)
         {
@@ -137,6 +155,48 @@ public class PackageModel : PageModel
 
         return Page();
     }
+
+    public async Task<IActionResult> OnPostUnlistAsync(string id, string version, CancellationToken cancellationToken)
+    {
+        if (!NuGetVersion.TryParse(version, out var nugetVersion)) return NotFound();
+
+        if (!await CanDeleteCurrentFeedAsync(cancellationToken))
+            return StatusCode(StatusCodes.Status403Forbidden);
+
+        await _deletionService.TryUnlistPackageAsync(_feedContext.CurrentFeed.Id, id, nugetVersion, cancellationToken);
+
+        return RedirectToPage(new { id, version });
+    }
+
+    public async Task<IActionResult> OnPostRelistAsync(string id, string version, CancellationToken cancellationToken)
+    {
+        if (!NuGetVersion.TryParse(version, out var nugetVersion)) return NotFound();
+
+        if (!await CanDeleteCurrentFeedAsync(cancellationToken))
+            return StatusCode(StatusCodes.Status403Forbidden);
+
+        await _deletionService.TryRelistPackageAsync(_feedContext.CurrentFeed.Id, id, nugetVersion, cancellationToken);
+
+        return RedirectToPage(new { id, version });
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(string id, string version, CancellationToken cancellationToken)
+    {
+        if (!NuGetVersion.TryParse(version, out var nugetVersion)) return NotFound();
+
+        if (!await CanDeleteCurrentFeedAsync(cancellationToken))
+            return StatusCode(StatusCodes.Status403Forbidden);
+
+        await _deletionService.TryHardDeletePackageAsync(
+            _feedContext.CurrentFeed.Id, _feedContext.CurrentFeed.Slug, id, nugetVersion, cancellationToken);
+
+        // The version is gone; land on the package's default view (latest remaining or not-found).
+        return RedirectToPage(new { id });
+    }
+
+    private Task<bool> CanDeleteCurrentFeedAsync(CancellationToken cancellationToken)
+        => FeedAccessGuard.CanDeleteFromCurrentFeedAsync(
+            HttpContext, _feedContext, _permissions, _authOptions.Value.Mode, cancellationToken);
 
     private static List<DependencyGroupModel> ToDependencyGroups(Package package)
     {
@@ -216,6 +276,7 @@ public class PackageModel : PageModel
                 Downloads = p.Downloads,
                 Selected = p.Version == selectedVersion,
                 LastUpdated = p.Published,
+                Listed = p.Listed,
             })
             .OrderByDescending(m => m.Version)
             .ToList();
@@ -267,5 +328,6 @@ public class PackageModel : PageModel
         public long Downloads { get; set; }
         public bool Selected { get; set; }
         public DateTime LastUpdated { get; set; }
+        public bool Listed { get; set; }
     }
 }

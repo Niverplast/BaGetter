@@ -194,7 +194,24 @@ else
                                 var alwaysShow = Json.Serialize(i < DefaultVisibleVersions);
 
                                 <tr class="@(version.Selected ? "bg-info" : "")" x-show="showAll || @alwaysShow">
-                                    <td><a asp-page="Package" asp-route-version="@version.Version">@version.Version.ToNormalizedString()</a></td>
+                                    <td>
+                                        <a asp-page="Package" asp-route-version="@version.Version"
+                                           style="@(version.Listed ? null : "text-decoration: line-through;")">@version.Version.ToNormalizedString()</a>
+                                        @if (!version.Listed)
+                                        {
+                                            <span class="text-muted" style="margin-left:6px;">(unlisted)</span>
+                                            @if (Model.CanDelete)
+                                            {
+                                                <form method="post" asp-page-handler="Relist"
+                                                      asp-route-id="@Model.Package.Id"
+                                                      asp-route-version="@version.Version.ToNormalizedString()"
+                                                      style="display:inline; margin-left:6px;">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="link-button" title="Relist this version">Relist</button>
+                                                </form>
+                                            }
+                                        }
+                                    </td>
                                     <td>@version.Downloads.ToString("N0")</td>
                                     <td>@version.LastUpdated.ToShortDateString()</td>
                                 </tr>
@@ -291,6 +308,42 @@ else
                             <span class="tag">@tag</span>
                         }
                     </p>
+                </div>
+            }
+
+            @if (Model.CanDelete)
+            {
+                <div>
+                    <h2>Manage</h2>
+
+                    <p class="text-muted">
+                        Unlist hides this version from search and listings but keeps the file.
+                        Delete permanently removes the package and its files.
+                    </p>
+
+                    <form method="post" asp-page-handler="Unlist"
+                          asp-route-id="@Model.Package.Id"
+                          asp-route-version="@Model.Package.NormalizedVersionString"
+                          style="display:inline"
+                          onsubmit="return confirm('Unlist @Model.Package.Id @Model.Package.NormalizedVersionString? It will be hidden from search and listings. You can relist it later.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-default">
+                            <i class="ms-Icon ms-Icon--Hide" aria-hidden="true"></i>
+                            Unlist
+                        </button>
+                    </form>
+
+                    <form method="post" asp-page-handler="Delete"
+                          asp-route-id="@Model.Package.Id"
+                          asp-route-version="@Model.Package.NormalizedVersionString"
+                          style="display:inline"
+                          onsubmit="return confirm('Permanently delete @Model.Package.Id @Model.Package.NormalizedVersionString? This removes the package and its files and cannot be undone.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger">
+                            <i class="ms-Icon ms-Icon--Delete" aria-hidden="true"></i>
+                            Delete
+                        </button>
+                    </form>
                 </div>
             }
         </aside>

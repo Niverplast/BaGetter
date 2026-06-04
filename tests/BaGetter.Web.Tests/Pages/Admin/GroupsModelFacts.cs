@@ -9,7 +9,6 @@ using BaGetter.Core.Feeds;
 using BaGetter.Web.Pages.Admin;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
 using Moq;
@@ -36,25 +35,25 @@ public class GroupsModelFacts
 
             var input = new List<FeedPermissionInput>
             {
-                new() { FeedId = grantFeed, CanPull = true, CanPush = true },
-                new() { FeedId = revokeFeed, CanPull = false, CanPush = false },
+                new() { FeedId = grantFeed, CanPull = true, CanPush = true, CanDelete = true },
+                new() { FeedId = revokeFeed, CanPull = false, CanPush = false, CanDelete = false },
                 new() { FeedId = emptyRow, CanPull = true, CanPush = true },
             };
 
             var result = await _target.OnPostSavePermissionsAsync(groupId, input, CancellationToken.None);
 
-            // Enabled row is granted.
+            // Enabled row is granted, including the delete permission.
             _permissions.Verify(p => p.GrantPermissionAsync(
                 groupId, PrincipalType.Group, grantFeed, true, true,
-                It.IsAny<CancellationToken>(), It.IsAny<PermissionSource>()), Times.Once);
+                It.IsAny<CancellationToken>(), It.IsAny<PermissionSource>(), true), Times.Once);
 
-            // Unchecked-both row revokes the existing permission.
+            // Unchecking pull, push and delete revokes the existing permission.
             _permissions.Verify(p => p.RevokePermissionAsync(existing.Id, It.IsAny<CancellationToken>()), Times.Once);
 
             // The empty-feed row is skipped entirely.
             _permissions.Verify(p => p.GrantPermissionAsync(
                 groupId, PrincipalType.Group, emptyRow, It.IsAny<bool>(), It.IsAny<bool>(),
-                It.IsAny<CancellationToken>(), It.IsAny<PermissionSource>()), Times.Never);
+                It.IsAny<CancellationToken>(), It.IsAny<PermissionSource>(), It.IsAny<bool>()), Times.Never);
 
             var redirect = Assert.IsType<RedirectToPageResult>(result);
             Assert.Equal(groupId, redirect.RouteValues["savedGroupId"]);

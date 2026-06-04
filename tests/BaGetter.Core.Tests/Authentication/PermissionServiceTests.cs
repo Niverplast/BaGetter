@@ -142,6 +142,62 @@ public class PermissionServiceTests
         }
     }
 
+    public class CanDeleteAsync : FactsBase
+    {
+        [Fact]
+        public async Task ReturnsFalseWhenNoPermissions()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "nodelete");
+
+            var result = await Target.CanDeleteAsync(userId, _defaultFeedId, Ct);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ReturnsFalseWhenOnlyPushAndPullGranted()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "pushpullnodelete");
+
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: true, canPull: true, Ct);
+
+            Assert.False(await Target.CanDeleteAsync(userId, _defaultFeedId, Ct));
+        }
+
+        [Fact]
+        public async Task ReturnsTrueWhenUserHasDirectDeletePermission()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "deleteuser");
+
+            await Target.GrantPermissionAsync(
+                userId, PrincipalType.User, _defaultFeedId,
+                canPush: false, canPull: false, Ct,
+                canDelete: true);
+
+            Assert.True(await Target.CanDeleteAsync(userId, _defaultFeedId, Ct));
+        }
+
+        [Fact]
+        public async Task ReturnsTrueWhenUserHasGroupDeletePermission()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "groupdelete");
+            var groupId = await CreateGroupWithUser(userId, "DeleteGroup");
+
+            await Target.GrantPermissionAsync(
+                groupId, PrincipalType.Group, _defaultFeedId,
+                canPush: false, canPull: false, Ct,
+                canDelete: true);
+
+            Assert.True(await Target.CanDeleteAsync(userId, _defaultFeedId, Ct));
+        }
+    }
+
     public class AdminBypass : FactsBase
     {
         [Fact]
@@ -164,6 +220,18 @@ public class PermissionServiceTests
             UserService.Setup(s => s.IsAdminAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             var result = await Target.CanPullAsync(userId, _defaultFeedId, Ct);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task AdminCanDeleteWithoutExplicitPermission()
+        {
+            var userId = Guid.NewGuid();
+            await CreateUser(userId, "admindelete");
+            UserService.Setup(s => s.IsAdminAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            var result = await Target.CanDeleteAsync(userId, _defaultFeedId, Ct);
 
             Assert.True(result);
         }

@@ -328,6 +328,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         permission.Property(p => p.PrincipalId).IsRequired();
         permission.Property(p => p.CanPush).IsRequired().HasDefaultValue(false);
         permission.Property(p => p.CanPull).IsRequired().HasDefaultValue(false);
+        permission.Property(p => p.CanDelete).IsRequired().HasDefaultValue(false);
         permission.Property(p => p.Source).IsRequired().HasDefaultValue(PermissionSource.Manual);
 
         permission.HasOne(p => p.Feed)
