@@ -39,8 +39,10 @@ public class TokensModel : PageModel
     [Range(1, 365)]
     public int ExpiryDays { get; set; } = 90;
 
+    [TempData]
     public string NewTokenPlaintext { get; set; }
 
+    [TempData]
     public string ErrorMessage { get; set; }
 
     public int MaxTokenExpiryDays => _authOptions.Value.MaxTokenExpiryDays;
@@ -109,8 +111,7 @@ public class TokensModel : PageModel
             ErrorMessage = ex.Message;
         }
 
-        Tokens = await _tokenService.GetUserTokensAsync(userId, cancellationToken);
-        return Page();
+        return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostRevokeAsync(Guid tokenId, CancellationToken cancellationToken)

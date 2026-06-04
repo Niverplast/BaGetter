@@ -268,7 +268,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
     {
         token.HasKey(t => t.Id);
         token.HasIndex(t => t.TokenHash).IsUnique();
-        token.HasIndex(t => t.UserId);
+        token.HasIndex(t => new { t.UserId, t.Name }).IsUnique();
 
         token.Property(t => t.Name)
             .HasMaxLength(MaxTokenNameLength)
