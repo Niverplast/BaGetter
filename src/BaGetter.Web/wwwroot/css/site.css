@@ -827,6 +827,14 @@ h4 {
   margin-top: 3px;
 }
 
+/* Render the GitHub logo as a mask filled with the text color so it matches the
+   font icons (currentColor) in both light and dark mode instead of staying black. */
+.package-details-info .github-icon {
+  background-color: currentColor;
+  -webkit-mask: url("../images/github-32x32.png") no-repeat center / contain;
+          mask: url("../images/github-32x32.png") no-repeat center / contain;
+}
+
   .package-details-info .tag {
     background-color: var(--package-details-tag-bg-color);
     padding: 2px 10px;
