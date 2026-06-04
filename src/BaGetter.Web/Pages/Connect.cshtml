@@ -1,4 +1,5 @@
-﻿@page
+@page
+@model BaGetter.Web.Pages.ConnectModel
 @using BaGetter.Core
 @using BaGetter.Core.Configuration
 @using BaGetter.Core.Feeds
@@ -8,11 +9,10 @@
 @inject IFeedContext FeedContext
 
 @{
-    ViewData["Title"] = "Upload \u2014 " + FeedContext.CurrentFeed.Name;
+    ViewData["Title"] = "Connect — " + FeedContext.CurrentFeed.Name;
 
-    var baseUrl = Url.PageLink("/Index");
-    var publishUrl = URL.GetPackagePublishResourceUrl();
     var serviceIndexUrl = URL.GetServiceIndexUrl();
+    var feedSlug = FeedContext.CurrentFeed.Slug;
 
     var authMode = AuthOptions.Value.Mode;
     var hasEntra = authMode is AuthenticationMode.Entra or AuthenticationMode.Hybrid;
@@ -25,17 +25,17 @@
 {
     <div class="text-center" style="margin-top: 60px;">
         <h2>Sign in required</h2>
-        <p>You need to sign in to view upload instructions.</p>
+        <p>You need to sign in to view connection instructions.</p>
         <a asp-page="/Login" class="btn btn-primary">Sign in</a>
     </div>
     return;
 }
 
 <div class="col-sm-12">
-    <h1>Upload</h1>
+    <h1>Connect</h1>
     <hr class="breadcrumb-divider" />
 
-    <div>You can push packages using the service index below.</div>
+    <div>Add this feed as a NuGet source using the service index below.</div>
 
     <div class="feed-url" x-data="{ copied: false }" style="margin-top:12px">
         <span class="feed-url-label">Service index:</span>
@@ -57,23 +57,23 @@
             @if (hasEntra && hasLocal)
             {
                 <span>
-                    Entra (Microsoft) users: sign in to the web UI to generate a personal access token (PAT), then use it as the API key.
+                    Entra (Microsoft) users: sign in to the web UI to generate a personal access token (PAT), then use it as the password / API key below.
                 </span>
                 <br />
                 <span>
-                    Local accounts: use your username and password with basic authentication.
+                    Local accounts: use your username and password.
                 </span>
             }
             else if (hasEntra)
             {
                 <span>
-                    Sign in with your Microsoft account to generate a personal access token (PAT), then use it as the API key when pushing packages.
+                    Sign in with your Microsoft account to generate a personal access token (PAT), then use it as the password / API key below.
                 </span>
             }
             else
             {
                 <span>
-                    Use your local account username and password with basic authentication when pushing packages.
+                    Use your local account username and password below.
                 </span>
             }
         </div>
@@ -89,7 +89,7 @@
         </ul>
 
         <div class="content">
-            <div class="script">
+            <div class="script" x-bind:class="{ 'script-file': active.file }">
                 <template x-for="line in active.content">
                     <div class="script-line" x-text="line"></div>
                 </template>
@@ -98,7 +98,7 @@
             <div class="copy-button">
                 <button class="btn btn-default btn-warning"
                         type="button"
-                        data-tottle="popover"
+                        data-toggle="popover"
                         data-placement="bottom"
                         data-content="Copied"
                         @@click="window.baget.copyTextToClipboard(active.content.join('\n'), $el)">
@@ -122,31 +122,40 @@
     let tabs = [
         {
             name: ".NET CLI",
-            content: ["dotnet nuget push -s @serviceIndexUrl -k YOUR_API_KEY package.nupkg"],
-            documentation: "https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-nuget-push",
+            content: ['dotnet nuget add source @serviceIndexUrl --name "@feedSlug" --username USERNAME --password API_KEY --store-password-in-clear-text'],
+            documentation: "https://learn.microsoft.com/dotnet/core/tools/dotnet-nuget-add-source",
         },
 
         {
             name: "NuGet",
-            content: ["nuget push -Source @serviceIndexUrl -ApiKey YOUR_API_KEY package.nupkg"],
-            documentation: "https://docs.microsoft.com/en-us/nuget/tools/cli-ref-push",
+            content: ['nuget sources Add -Name "@feedSlug" -Source @serviceIndexUrl -Username USERNAME -Password API_KEY'],
+            documentation: "https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-sources",
+        },
+
+        {
+            name: "nuget.config",
+            file: true,
+            content: [
+                '<?xml version="1.0" encoding="utf-8"?>',
+                '<configuration>',
+                '  <packageSources>',
+                '    <add key="@feedSlug" value="@serviceIndexUrl" />',
+                '  </packageSources>',
+                '  <packageSourceCredentials>',
+                '    <@feedSlug>',
+                '      <add key="Username" value="USERNAME" />',
+                '      <add key="ClearTextPassword" value="API_KEY" />',
+                '    </@feedSlug>',
+                '  </packageSourceCredentials>',
+                '</configuration>',
+            ],
+            documentation: "https://learn.microsoft.com/nuget/reference/nuget-config-file",
         },
 
         {
             name: "Paket",
-            content: ["paket push --url @baseUrl package.nupkg"],
-            documentation: "https://fsprojects.github.io/Paket/paket-push.html",
-        },
-
-        // TODO: This is broken...
-        {
-            name: "PowerShellGet",
-            content: [
-                "Register-PSRepository -Name \"BaGet\" -SourceLocation \"@serviceIndexUrl\" "
-                  + "-PublishLocation \"@publishUrl\" -InstallationPolicy \"Trusted\"",
-                "Publish-Module -Name PS-Module -Repository BaGet"
-            ],
-            documentation: "https://docs.microsoft.com/en-us/powershell/module/powershellget/publish-module",
+            content: ['source @serviceIndexUrl username: "USERNAME" password: "API_KEY"'],
+            documentation: "https://fsprojects.github.io/Paket/nuget-dependencies.html",
         },
     ];
 </script>

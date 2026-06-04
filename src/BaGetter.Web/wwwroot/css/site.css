@@ -597,6 +597,27 @@ h4 {
 
 /* Index page
 -------------------------------------------------- */
+.feed-url {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.feed-url-label {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.feed-url code {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  word-break: break-all;
+}
+
 .search-options {
   margin-bottom: 20px;
 }
@@ -739,6 +760,18 @@ h4 {
 
 .tabbed-info .content .script .script-line:before {
   content: "> ";
+}
+
+/* File-content tabs (e.g. nuget.config) show verbatim text: preserve each line's
+   indentation, wrap long lines, and drop the "> " shell-prompt prefix. pre-wrap is
+   scoped to the line (not the container) so the template's source whitespace between
+   generated line divs is not rendered as blank lines. */
+.tabbed-info .content .script.script-file .script-line {
+  white-space: pre-wrap;
+}
+
+.tabbed-info .content .script.script-file .script-line:before {
+  content: "";
 }
 
 .tabbed-info .content .copy-button {
