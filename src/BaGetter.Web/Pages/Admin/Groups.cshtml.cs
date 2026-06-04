@@ -41,9 +41,6 @@ public class GroupsModel : PageModel
     [FromQuery]
     public Guid? SavedGroupId { get; set; }
 
-    [FromQuery]
-    public Guid? SavedFeedId { get; set; }
-
     [BindProperty]
     [Required(ErrorMessage = "Group name is required.")]
     [MaxLength(256)]
@@ -182,45 +179,40 @@ public class GroupsModel : PageModel
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostGrantPermissionAsync(
-        Guid principalId,
-        PrincipalType principalType,
-        Guid feedId,
-        bool canPush,
-        bool canPull,
+    public async Task<IActionResult> OnPostSavePermissionsAsync(
+        Guid groupId,
+        List<FeedPermissionInput> permissions,
         CancellationToken cancellationToken)
     {
         if (!await IsCurrentUserAdminAsync(cancellationToken))
             return RedirectToPage("/Index");
 
-        if (feedId == Guid.Empty)
+        permissions ??= new List<FeedPermissionInput>();
+        foreach (var permission in permissions)
         {
-            ErrorMessage = "Cannot grant permission: no feed was specified.";
-            Groups = await _groupService.GetAllGroupsAsync(cancellationToken);
-            AllUsers = await _userService.GetAllUsersAsync(cancellationToken);
-            await LoadGroupPermissionsAsync(cancellationToken);
-            return Page();
-        }
+            if (permission.FeedId == Guid.Empty)
+                continue;
 
-        // Unchecking both Pull and Push revokes the permission so we don't persist
-        // a (false, false) row that has no effect.
-        if (!canPush && !canPull)
-        {
-            var existing = await _permissionService.GetPermissionAsync(
-                principalId, principalType, feedId, cancellationToken);
-            if (existing != null)
+            // Unchecking both Pull and Push revokes the permission so we don't persist
+            // a (false, false) row that has no effect.
+            if (!permission.CanPush && !permission.CanPull)
             {
-                await _permissionService.RevokePermissionAsync(existing.Id, cancellationToken);
+                var existing = await _permissionService.GetPermissionAsync(
+                    groupId, PrincipalType.Group, permission.FeedId, cancellationToken);
+                if (existing != null)
+                {
+                    await _permissionService.RevokePermissionAsync(existing.Id, cancellationToken);
+                }
+            }
+            else
+            {
+                await _permissionService.GrantPermissionAsync(
+                    groupId, PrincipalType.Group, permission.FeedId,
+                    permission.CanPush, permission.CanPull, cancellationToken);
             }
         }
-        else
-        {
-            await _permissionService.GrantPermissionAsync(
-                principalId, principalType, feedId,
-                canPush, canPull, cancellationToken);
-        }
 
-        return RedirectToPage(new { savedGroupId = principalId, savedFeedId = feedId });
+        return RedirectToPage(new { savedGroupId = groupId });
     }
 
     public async Task<IActionResult> OnPostRevokePermissionAsync(
