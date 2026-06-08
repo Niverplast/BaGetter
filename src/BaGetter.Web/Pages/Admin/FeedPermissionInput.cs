@@ -10,4 +10,5 @@ public class FeedPermissionInput
     public Guid FeedId { get; set; }
     public bool CanPull { get; set; }
     public bool CanPush { get; set; }
+    public bool CanDelete { get; set; }
 }

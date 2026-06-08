@@ -74,6 +74,7 @@ public class FeedPermissionHandler : AuthorizationHandler<FeedPermissionRequirem
         {
             FeedPermissionRequirement.Pull => await _permissionService.CanPullAsync(userId, feedId, cancellationToken),
             FeedPermissionRequirement.Push => await _permissionService.CanPushAsync(userId, feedId, cancellationToken),
+            FeedPermissionRequirement.Delete => await _permissionService.CanDeleteAsync(userId, feedId, cancellationToken),
             FeedPermissionRequirement.Admin => await _userService.IsAdminAsync(userId, cancellationToken),
             _ => false
         };

@@ -114,6 +114,11 @@ namespace BaGetter.Database.PostgreSql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("CanDelete")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("CanPull")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")

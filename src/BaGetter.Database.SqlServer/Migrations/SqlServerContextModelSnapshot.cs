@@ -113,6 +113,11 @@ namespace BaGetter.Database.SqlServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("CanDelete")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("CanPull")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")

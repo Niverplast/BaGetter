@@ -192,6 +192,7 @@
                                             <th>Feed</th>
                                             <th style="width:1%; white-space:nowrap">Pull</th>
                                             <th style="width:1%; white-space:nowrap">Push</th>
+                                            <th style="width:1%; white-space:nowrap">Delete</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -213,13 +214,17 @@
                                                     <input type="checkbox" name="permissions[@rowIndex].CanPush" value="true"
                                                            @(feedPerm?.CanPush == true ? "checked" : "") />
                                                 </td>
+                                                <td>
+                                                    <input type="checkbox" name="permissions[@rowIndex].CanDelete" value="true"
+                                                           @(feedPerm?.CanDelete == true ? "checked" : "") />
+                                                </td>
                                             </tr>
                                             rowIndex++;
                                         }
                                     </tbody>
                                 </table>
                                 <div style="display:flex; align-items:center; gap:8px; justify-content:right;">
-                                    <small class="text-muted">Unchecking both Pull and Push revokes the group's permission for that feed.</small>
+                                    <small class="text-muted">Unchecking Pull, Push and Delete revokes the group's permission for that feed.</small>
                                     <button type="submit" class="btn btn-primary">Save all</button>
                                 </div>
                             </form>

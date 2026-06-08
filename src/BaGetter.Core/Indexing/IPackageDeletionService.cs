@@ -35,4 +35,38 @@ public interface IPackageDeletionService
     /// <param name="cancellationToken"></param>
     /// <returns>False if the package does not exist.</returns>
     Task<bool> TryDeletePackageAsync(Guid feedId, string feedSlug, string id, NuGetVersion version, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Unlist a package (soft delete): hide it from search/listings while keeping the stored file.
+    /// Independent of the feed's <see cref="Configuration.PackageDeletionBehavior"/>.
+    /// </summary>
+    /// <param name="feedId">The feed's id.</param>
+    /// <param name="id">The id of the package to unlist.</param>
+    /// <param name="version">The version of the package to unlist.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>False if the package does not exist.</returns>
+    Task<bool> TryUnlistPackageAsync(Guid feedId, string id, NuGetVersion version, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Relist a previously unlisted package: make it visible in search/listings again.
+    /// The inverse of <see cref="TryUnlistPackageAsync"/>.
+    /// </summary>
+    /// <param name="feedId">The feed's id.</param>
+    /// <param name="id">The id of the package to relist.</param>
+    /// <param name="version">The version of the package to relist.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>False if the package does not exist.</returns>
+    Task<bool> TryRelistPackageAsync(Guid feedId, string id, NuGetVersion version, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Hard delete a package: remove it from the database and delete its storage blobs.
+    /// Independent of the feed's <see cref="Configuration.PackageDeletionBehavior"/>.
+    /// </summary>
+    /// <param name="feedId">The feed's id.</param>
+    /// <param name="feedSlug">The feed's slug, used to prefix storage paths.</param>
+    /// <param name="id">The id of the package to delete.</param>
+    /// <param name="version">The version of the package to delete.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>False if the package did not exist in the database.</returns>
+    Task<bool> TryHardDeletePackageAsync(Guid feedId, string feedSlug, string id, NuGetVersion version, CancellationToken cancellationToken);
 }

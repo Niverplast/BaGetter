@@ -32,6 +32,11 @@ public class PermissionService : IPermissionService
         return await HasPermissionAsync(userId, feedId, p => p.CanPull, cancellationToken);
     }
 
+    public async Task<bool> CanDeleteAsync(Guid userId, Guid feedId, CancellationToken cancellationToken)
+    {
+        return await HasPermissionAsync(userId, feedId, p => p.CanDelete, cancellationToken);
+    }
+
     public async Task<FeedPermission> GetPermissionAsync(
         Guid principalId,
         PrincipalType principalType,
@@ -59,7 +64,8 @@ public class PermissionService : IPermissionService
         bool canPush,
         bool canPull,
         CancellationToken cancellationToken,
-        PermissionSource source = PermissionSource.Manual)
+        PermissionSource source = PermissionSource.Manual,
+        bool canDelete = false)
     {
         var existing = await _context.FeedPermissions.FirstOrDefaultAsync(
             p => p.FeedId == feedId && p.PrincipalType == principalType && p.PrincipalId == principalId,
@@ -69,6 +75,7 @@ public class PermissionService : IPermissionService
         {
             existing.CanPush = canPush;
             existing.CanPull = canPull;
+            existing.CanDelete = canDelete;
             existing.Source = source;
         }
         else
@@ -81,14 +88,15 @@ public class PermissionService : IPermissionService
                 PrincipalId = principalId,
                 CanPush = canPush,
                 CanPull = canPull,
+                CanDelete = canDelete,
                 Source = source
             });
         }
 
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation(
-            "Audit: {EventType} - Granted permission on feed {FeedId} to {PrincipalType} {PrincipalId}: Push={CanPush}, Pull={CanPull}, Source={Source}",
-            "PermissionGranted", feedId, principalType, principalId, canPush, canPull, source);
+            "Audit: {EventType} - Granted permission on feed {FeedId} to {PrincipalType} {PrincipalId}: Push={CanPush}, Pull={CanPull}, Delete={CanDelete}, Source={Source}",
+            "PermissionGranted", feedId, principalType, principalId, canPush, canPull, canDelete, source);
     }
 
     public async Task RevokePermissionsBySourceAsync(

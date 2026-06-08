@@ -193,9 +193,9 @@ public class GroupsModel : PageModel
             if (permission.FeedId == Guid.Empty)
                 continue;
 
-            // Unchecking both Pull and Push revokes the permission so we don't persist
-            // a (false, false) row that has no effect.
-            if (!permission.CanPush && !permission.CanPull)
+            // Unchecking every permission revokes the row so we don't persist an
+            // all-false row that has no effect.
+            if (!permission.CanPush && !permission.CanPull && !permission.CanDelete)
             {
                 var existing = await _permissionService.GetPermissionAsync(
                     groupId, PrincipalType.Group, permission.FeedId, cancellationToken);
@@ -208,7 +208,8 @@ public class GroupsModel : PageModel
             {
                 await _permissionService.GrantPermissionAsync(
                     groupId, PrincipalType.Group, permission.FeedId,
-                    permission.CanPush, permission.CanPull, cancellationToken);
+                    permission.CanPush, permission.CanPull, cancellationToken,
+                    canDelete: permission.CanDelete);
             }
         }
 

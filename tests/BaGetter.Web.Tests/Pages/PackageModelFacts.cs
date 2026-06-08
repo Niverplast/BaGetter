@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
@@ -10,8 +11,13 @@ using BaGetter.Core.Configuration;
 using BaGetter.Core.Content;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Feeds;
+using BaGetter.Core.Indexing;
 using BaGetter.Core.Search;
 using BaGetter.Web.Pages;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
 using Moq;
 using NuGet.Versioning;
@@ -44,6 +50,7 @@ public class PackageModelFacts
         _feedContext.Setup(f => f.CurrentFeed).Returns(defaultFeed);
 
         var permissions = new Mock<IPermissionService>();
+        var deletionService = new Mock<IPackageDeletionService>();
 
         var authOptions = new Mock<IOptionsSnapshot<NugetAuthenticationOptions>>();
         authOptions.Setup(o => o.Value).Returns(new NugetAuthenticationOptions());
@@ -55,6 +62,7 @@ public class PackageModelFacts
             _url.Object,
             _feedContext.Object,
             permissions.Object,
+            deletionService.Object,
             authOptions.Object);
 
         _search
@@ -375,6 +383,42 @@ public class PackageModelFacts
         Assert.Equal(
             "<h1 id=\"my-readme\">My readme</h1>\n<p>Hello world!</p>\n",
             _target.Readme.Value);
+    }
+
+    [Fact]
+    public async Task IncludesUnlistedVersionsStruckThroughForManagers()
+    {
+        _packages
+            .Setup(m => m.FindPackagesAsync(It.IsAny<Guid>(), "testpackage", _cancellation))
+            .ReturnsAsync(new List<Package>
+            {
+                CreatePackage("1.0.0"),
+                CreatePackage("2.0.0", listed: false),
+                CreatePackage("3.0.0"),
+            });
+
+        var permissions = new Mock<IPermissionService>();
+        permissions.Setup(p => p.CanPullAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), _cancellation)).ReturnsAsync(true);
+        permissions.Setup(p => p.CanDeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), _cancellation)).ReturnsAsync(true);
+
+        var authOptions = new Mock<IOptionsSnapshot<NugetAuthenticationOptions>>();
+        authOptions.Setup(o => o.Value).Returns(new NugetAuthenticationOptions { Mode = AuthenticationMode.Entra });
+
+        var target = new PackageModel(
+            _packages.Object, _content.Object, _search.Object, _url.Object,
+            _feedContext.Object, permissions.Object, new Mock<IPackageDeletionService>().Object, authOptions.Object);
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()) }, "TestAuth"));
+        target.PageContext = new PageContext(new ActionContext(
+            new DefaultHttpContext { User = principal }, new RouteData(), new PageActionDescriptor()));
+
+        await target.OnGetAsync("testpackage", "1.0.0", _cancellation);
+
+        Assert.True(target.CanDelete);
+        Assert.Equal(3, target.Versions.Count);
+        var unlisted = Assert.Single(target.Versions, v => !v.Listed);
+        Assert.Equal("2.0.0", unlisted.Version.OriginalVersion);
     }
 
     private Package CreatePackage(
