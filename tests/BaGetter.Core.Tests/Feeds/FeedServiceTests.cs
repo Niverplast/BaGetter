@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,6 +50,9 @@ public class FeedServiceTests
             Assert.True(deleted);
             Assert.False(await Context.Feeds.AnyAsync(f => f.Id == feed.Id, Ct));
             Assert.False(await Context.Packages.AnyAsync(p => p.FeedId == feed.Id, Ct));
+            // Child rows must be gone too, or the package delete would hit a FK constraint.
+            Assert.Empty(await Context.PackageDependencies.ToListAsync(Ct));
+            Assert.Empty(await Context.TargetFrameworks.ToListAsync(Ct));
 
             PackageStorage.Verify(
                 s => s.DeleteAsync("toolfeed", "package.a", It.IsAny<NuGetVersion>(), It.IsAny<CancellationToken>()),
@@ -120,11 +124,21 @@ public class FeedServiceTests
 
         protected void AddPackage(Guid feedId, string id, string version)
         {
+            // Include a dependency and a target framework so deleting the package exercises the
+            // child-row cascade (PackageDependencies' FK is NoAction, so it must be removed too).
             Context.Packages.Add(new Package
             {
                 FeedId = feedId,
                 Id = id,
                 Version = new NuGetVersion(version),
+                Dependencies = new List<PackageDependency>
+                {
+                    new() { Id = "Some.Dependency", VersionRange = "1.0.0", TargetFramework = "net8.0" },
+                },
+                TargetFrameworks = new List<TargetFramework>
+                {
+                    new() { Moniker = "net8.0" },
+                },
             });
         }
 
