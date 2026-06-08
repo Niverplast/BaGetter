@@ -11,6 +11,8 @@ public interface IContext
 
     DbSet<Feed> Feeds { get; set; }
     DbSet<Package> Packages { get; set; }
+    DbSet<PackageDependency> PackageDependencies { get; set; }
+    DbSet<TargetFramework> TargetFrameworks { get; set; }
     DbSet<User> Users { get; set; }
     DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; }
     DbSet<Group> Groups { get; set; }
