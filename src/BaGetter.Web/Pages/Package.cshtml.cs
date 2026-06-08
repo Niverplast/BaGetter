@@ -137,7 +137,7 @@ public class PackageModel : PageModel
 
         // Managers (CanDelete) also see unlisted versions so they can relist them; the
         // versions table strikes those through. Everyone else only sees listed versions.
-        var versionsToShow = CanDelete ? packages : (IReadOnlyList<Package>)listedPackages;
+        var versionsToShow = CanDelete ? packages : listedPackages;
         Versions = ToVersions(versionsToShow, packageVersion);
 
         if (Package.HasReadme)

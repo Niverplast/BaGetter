@@ -746,15 +746,14 @@ h4 {
   }
 
 .tabbed-info .content {
-  display: table;
-  height: 1px;
+  display: flex;
+  align-items: stretch;
 }
 
   .tabbed-info .content .script {
-    display: table-cell;
-    width: 100%;
-    max-width: 1px;
-    padding: 0 10px 8px 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 8px 10px;
     font-family: Consolas, Menlo, Monaco, "Courier New", monospace;
     line-height: 1.5;
     color: var(--tabbed-info-script-text-color);
@@ -781,13 +780,13 @@ h4 {
 }
 
 .tabbed-info .content .copy-button {
-  display: table-cell;
+  display: flex;
+  flex: 0 0 auto;
 }
 
 .tabbed-info .content .copy-button button {
-  height: 100%;
+  height: auto;
   min-height: 42px;
-  vertical-align: baseline;
   border-radius: 0px;
 }
 
