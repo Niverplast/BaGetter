@@ -12,6 +12,8 @@ public class NullContext : IContext
 
     public DbSet<Feed> Feeds { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public DbSet<Package> Packages { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public DbSet<PackageDependency> PackageDependencies { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public DbSet<TargetFramework> TargetFrameworks { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public DbSet<User> Users { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public DbSet<PersonalAccessToken> PersonalAccessTokens { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public DbSet<Group> Groups { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

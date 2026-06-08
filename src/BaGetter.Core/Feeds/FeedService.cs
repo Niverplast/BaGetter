@@ -98,9 +98,23 @@ public class FeedService : IFeedService
         // Feed -> Package is configured with DeleteBehavior.Restrict, so the feed row cannot be
         // removed while it still has packages. Remove the packages first, then the feed, in a
         // single SaveChanges so the whole delete is one atomic transaction.
+        //
+        // Dependencies and TargetFrameworks are eager-loaded and removed explicitly: their DB
+        // foreign keys are NoAction (not cascade), and the relationship is optional, so EF would
+        // otherwise null their PackageKey and orphan the rows rather than delete them. PackageTypes
+        // is a required relationship the database cascades, so it needs no explicit removal.
         var packages = await _context.Packages
             .Where(p => p.FeedId == feedId)
+            .Include(p => p.Dependencies)
+            .Include(p => p.TargetFrameworks)
+            .AsSingleQuery()
             .ToListAsync(cancellationToken);
+
+        foreach (var package in packages)
+        {
+            _context.PackageDependencies.RemoveRange(package.Dependencies);
+            _context.TargetFrameworks.RemoveRange(package.TargetFrameworks);
+        }
 
         _context.Packages.RemoveRange(packages);
         _context.Feeds.Remove(feed);
