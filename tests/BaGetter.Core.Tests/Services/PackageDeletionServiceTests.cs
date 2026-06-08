@@ -134,6 +134,27 @@ public class PackageDeletionServiceTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TryRelist_ReturnsTrueOnlyIfPackageExists(bool packageExists)
+    {
+        // Arrange
+        var cancellationToken = CancellationToken.None;
+        _packages
+            .Setup(p => p.RelistPackageAsync(It.IsAny<Guid>(), _packageId, _packageVersion, cancellationToken))
+            .ReturnsAsync(packageExists);
+
+        // Act
+        var result = await _target.TryRelistPackageAsync(Guid.Empty, _packageId, _packageVersion, cancellationToken);
+
+        // Assert
+        Assert.Equal(packageExists, result);
+        _packages.Verify(
+            p => p.RelistPackageAsync(It.IsAny<Guid>(), _packageId, _packageVersion, cancellationToken),
+            Times.Once);
+    }
+
+    [Theory]
     [InlineData(3, 0)]
     [InlineData(2, 3)]
     [InlineData(1, 6)]

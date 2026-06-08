@@ -51,7 +51,7 @@ public class PackageDeletionService : IPackageDeletionService
         }
     }
 
-    private async Task<bool> TryUnlistPackageAsync(Guid feedId, string id, NuGetVersion version, CancellationToken cancellationToken)
+    public async Task<bool> TryUnlistPackageAsync(Guid feedId, string id, NuGetVersion version, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Unlisting package {PackageId} {PackageVersion}...", id, version);
 
@@ -67,7 +67,23 @@ public class PackageDeletionService : IPackageDeletionService
         return true;
     }
 
-    private async Task<bool> TryHardDeletePackageAsync(Guid feedId, string feedSlug, string id, NuGetVersion version, CancellationToken cancellationToken)
+    public async Task<bool> TryRelistPackageAsync(Guid feedId, string id, NuGetVersion version, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Relisting package {PackageId} {PackageVersion}...", id, version);
+
+        if (!await _packages.RelistPackageAsync(feedId, id, version, cancellationToken))
+        {
+            _logger.LogWarning("Could not find package {PackageId} {PackageVersion}", id, version);
+
+            return false;
+        }
+
+        _logger.LogInformation("Relisted package {PackageId} {PackageVersion}", id, version);
+
+        return true;
+    }
+
+    public async Task<bool> TryHardDeletePackageAsync(Guid feedId, string feedSlug, string id, NuGetVersion version, CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Hard deleting package {PackageId} {PackageVersion} from the database...",

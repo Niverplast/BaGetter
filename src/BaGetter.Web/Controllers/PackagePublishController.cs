@@ -114,7 +114,7 @@ public class PackagePublishController : Controller
             return NotFound();
         }
 
-        if (!await AuthorizePushAsync(cancellationToken))
+        if (!await AuthorizeDeleteAsync(cancellationToken))
         {
             return Unauthorized();
         }
@@ -182,6 +182,34 @@ public class PackagePublishController : Controller
         var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
             return await _permissionService.CanPushAsync(userId, feedId, cancellationToken);
+
+        return false;
+    }
+
+    private async Task<bool> AuthorizeDeleteAsync(CancellationToken cancellationToken)
+    {
+        var authMode = _options.Value.Authentication?.Mode ?? AuthenticationMode.Config;
+
+        if (authMode == AuthenticationMode.Config)
+        {
+            // Static auth mode has no per-user delete permission; the configured API key
+            // governs deletion exactly as it governs push.
+            return await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken);
+        }
+
+        var feedId = _feedContext.CurrentFeed.Id;
+
+        var apiKey = Request.GetApiKey();
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            var authResult = await _feedAuthentication.AuthenticateByTokenAsync(apiKey, cancellationToken);
+            if (authResult.IsAuthenticated && authResult.UserId.HasValue)
+                return await _permissionService.CanDeleteAsync(authResult.UserId.Value, feedId, cancellationToken);
+        }
+
+        var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            return await _permissionService.CanDeleteAsync(userId, feedId, cancellationToken);
 
         return false;
     }
