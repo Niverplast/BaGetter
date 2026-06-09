@@ -114,6 +114,11 @@ public class IndexModel : PageModel
         var framework = Framework == "any" ? null : Framework;
         var tag = Tag == "any" ? null : Tag;
 
+        // Users who can relist also see fully-unlisted packages (struck through) so they can find
+        // and restore them; everyone else only sees listed packages.
+        var canManage = await FeedAccessGuard.CanDeleteFromCurrentFeedAsync(
+            HttpContext, _feedContext, _permissions, authMode, cancellationToken);
+
         var search = await _search.SearchAsync(
             new SearchRequest
             {
@@ -126,6 +131,7 @@ public class IndexModel : PageModel
                 Framework = framework,
                 Tag = tag,
                 IncludeFacets = true,
+                IncludeUnlisted = canManage,
                 Query = Query,
             },
             cancellationToken);

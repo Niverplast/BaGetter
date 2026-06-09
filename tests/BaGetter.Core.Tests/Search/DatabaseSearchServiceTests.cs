@@ -72,6 +72,8 @@ public class DatabaseSearchServiceTests
             Seed("Gamma", "1.0.0-pre", prerelease: true, types: ["Dependency"], frameworks: ["net6.0"], tags: ["preview"]);
             // Empty types and the "any" sentinel (stored for framework-agnostic packages) must not become facets.
             Seed("Epsilon", "1.0.0", prerelease: false, types: [""], frameworks: ["any"], tags: ["any"]);
+            // Fully unlisted: hidden by default, only surfaced when unlisted packages are requested.
+            Seed("Zeta", "1.0.0", prerelease: false, types: ["Dependency"], frameworks: ["net8.0"], tags: ["logging"], listed: false);
             // Different feed: must never leak into this feed's facets or tag filter.
             Seed("Delta", "1.0.0", prerelease: false, types: ["Other"], frameworks: ["net48"], tags: ["other"], feedId: OtherFeedId);
             _context.SaveChanges();
@@ -79,8 +81,8 @@ public class DatabaseSearchServiceTests
             var frameworks = new Mock<IFrameworkCompatibilityService>();
             var builder = new Mock<ISearchResponseBuilder>();
             builder
-                .Setup(b => b.BuildSearch(It.IsAny<IReadOnlyList<PackageRegistration>>()))
-                .Returns((IReadOnlyList<PackageRegistration> r) =>
+                .Setup(b => b.BuildSearch(It.IsAny<IReadOnlyList<PackageRegistration>>(), It.IsAny<bool>()))
+                .Returns((IReadOnlyList<PackageRegistration> r, bool _) =>
                 {
                     _capturedRegistrations = r;
                     return new SearchResponse
@@ -139,9 +141,26 @@ public class DatabaseSearchServiceTests
             Assert.Equal(["Alpha", "Beta"], _capturedRegistrations.Select(r => r.PackageId).OrderBy(id => id).ToArray());
         }
 
+        [Fact]
+        public async Task ExcludesUnlistedPackages_ByDefault()
+        {
+            await _target.SearchAsync(Request(), CancellationToken.None);
+
+            Assert.DoesNotContain("Zeta", _capturedRegistrations.Select(r => r.PackageId));
+        }
+
+        [Fact]
+        public async Task IncludesUnlistedPackages_WhenRequested()
+        {
+            await _target.SearchAsync(Request(includeUnlisted: true), CancellationToken.None);
+
+            Assert.Contains("Zeta", _capturedRegistrations.Select(r => r.PackageId));
+        }
+
         private static SearchRequest Request(
             bool includeFacets = false,
             bool includePrerelease = true,
+            bool includeUnlisted = false,
             string tag = null)
         {
             return new SearchRequest
@@ -152,6 +171,7 @@ public class DatabaseSearchServiceTests
                 IncludePrerelease = includePrerelease,
                 IncludeSemVer2 = true,
                 IncludeFacets = includeFacets,
+                IncludeUnlisted = includeUnlisted,
                 Tag = tag,
             };
         }
@@ -163,14 +183,15 @@ public class DatabaseSearchServiceTests
             string[] types,
             string[] frameworks,
             string[] tags,
-            Guid? feedId = null)
+            Guid? feedId = null,
+            bool listed = true)
         {
             _context.Packages.Add(new Package
             {
                 Id = id,
                 Version = NuGetVersion.Parse(version),
                 FeedId = feedId ?? FeedId,
-                Listed = true,
+                Listed = listed,
                 IsPrerelease = prerelease,
                 SemVerLevel = SemVerLevel.Unknown,
                 Authors = [],

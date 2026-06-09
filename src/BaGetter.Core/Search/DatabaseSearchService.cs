@@ -39,11 +39,12 @@ public class DatabaseSearchService : ISearchService
             request.IncludePrerelease,
             request.IncludeSemVer2,
             request.PackageType,
-            frameworks);
+            frameworks,
+            request.IncludeUnlisted);
 
         if (!string.IsNullOrEmpty(request.Tag))
         {
-            var taggedPackageIds = await GetPackageIdsWithTagAsync(request.FeedId, request.Tag, cancellationToken);
+            var taggedPackageIds = await GetPackageIdsWithTagAsync(request.FeedId, request.Tag, request.IncludeUnlisted, cancellationToken);
             search = search.Where(p => taggedPackageIds.Contains(p.Id));
         }
 
@@ -76,7 +77,8 @@ public class DatabaseSearchService : ISearchService
             request.IncludePrerelease,
             request.IncludeSemVer2,
             request.PackageType,
-            frameworks);
+            frameworks,
+            request.IncludeUnlisted);
 
         var results = await search.ToListAsync(cancellationToken);
         var groupedResults = results
@@ -84,7 +86,7 @@ public class DatabaseSearchService : ISearchService
             .Select(group => new PackageRegistration(group.Key, group.ToList()))
             .ToList();
 
-        var response = _searchBuilder.BuildSearch(groupedResults);
+        var response = _searchBuilder.BuildSearch(groupedResults, request.IncludeUnlisted);
 
         if (request.IncludeFacets)
         {
@@ -176,7 +178,8 @@ public class DatabaseSearchService : ISearchService
         bool includePrerelease,
         bool includeSemVer2,
         string packageType,
-        IReadOnlyList<string> frameworks)
+        IReadOnlyList<string> frameworks,
+        bool includeUnlisted = false)
     {
         if (!includePrerelease)
         {
@@ -198,7 +201,12 @@ public class DatabaseSearchService : ISearchService
             query = query.Where(p => p.TargetFrameworks.Any(f => frameworks.Contains(f.Moniker)));
         }
 
-        return query.Where(p => p.Listed);
+        if (!includeUnlisted)
+        {
+            query = query.Where(p => p.Listed);
+        }
+
+        return query;
     }
 
     private IReadOnlyList<string> GetCompatibleFrameworksOrNull(string framework)
@@ -213,10 +221,10 @@ public class DatabaseSearchService : ISearchService
     /// Tags are stored as a JSON string (value converter), so they can't be filtered in SQL;
     /// the (id, tags) pairs are materialized and matched in memory instead.
     /// </summary>
-    private async Task<List<string>> GetPackageIdsWithTagAsync(Guid feedId, string tag, CancellationToken cancellationToken)
+    private async Task<List<string>> GetPackageIdsWithTagAsync(Guid feedId, string tag, bool includeUnlisted, CancellationToken cancellationToken)
     {
         var rows = await _context.Packages
-            .Where(p => p.FeedId == feedId && p.Listed)
+            .Where(p => p.FeedId == feedId && (includeUnlisted || p.Listed))
             .Select(p => new { p.Id, p.Tags })
             .ToListAsync(cancellationToken);
 

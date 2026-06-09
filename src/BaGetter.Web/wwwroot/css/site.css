@@ -669,6 +669,15 @@ h4 {
   width: 100%;
 }
 
+.search-result .unlisted-version {
+  text-decoration: line-through;
+}
+
+.search-result .unlisted-label {
+  font-style: italic;
+  opacity: 0.7;
+}
+
 .search-result {
   padding-top: 15px;
   padding-bottom: 15px;

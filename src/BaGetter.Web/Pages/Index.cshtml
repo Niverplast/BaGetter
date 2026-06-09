@@ -182,7 +182,16 @@ else
                     <li>
                         <span>
                             <i class="ms-Icon ms-Icon--Flag"></i>
-                            Latest version: @package.Version
+                            Latest version:
+                            @if (package.Listed == false)
+                            {
+                                <span class="unlisted-version" title="This package is unlisted">@package.Version</span>
+                                <span class="unlisted-label">(unlisted)</span>
+                            }
+                            else
+                            {
+                                @package.Version
+                            }
                         </span>
                     </li>
                     @if (package.Tags.Any())

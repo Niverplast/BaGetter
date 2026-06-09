@@ -51,6 +51,13 @@ public class SearchRequest
     public bool IncludeFacets { get; set; }
 
     /// <summary>
+    /// Whether to include packages that have no listed versions. When set, such packages are
+    /// returned (shown via their latest version) with <see cref="Protocol.Models.SearchResult.Listed"/>
+    /// set to <c>false</c> so the UI can mark them. The NuGet protocol search leaves this off.
+    /// </summary>
+    public bool IncludeUnlisted { get; set; }
+
+    /// <summary>
     /// The search query.
     /// </summary>
     public string Query { get; set; }
