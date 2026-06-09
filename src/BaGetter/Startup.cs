@@ -2,6 +2,7 @@ using System;
 using BaGetter.Aliyun;
 using BaGetter.Aws;
 using BaGetter.Azure;
+using BaGetter.DataProtection;
 using BaGetter.Core;
 using BaGetter.Core.Configuration;
 using BaGetter.Core.Entities;
@@ -18,10 +19,13 @@ using BaGetter.Web;
 using BaGetter.Web.Extensions;
 using BaGetter.Web.Middleware;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using HealthCheckOptions = Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions;
 
 namespace BaGetter;
@@ -57,6 +61,23 @@ public class Startup
         services.AddHealthChecks();
 
         services.AddCors();
+
+        ConfigureDataProtection(services);
+    }
+
+    private void ConfigureDataProtection(IServiceCollection services)
+    {
+        // Persist the Data Protection key ring through BaGetter's storage abstraction so it survives
+        // container restarts and new revisions, for every storage backend (FileSystem, Azure Blob,
+        // S3, GCS, OSS, COS). Without persistence the key ring lives in the container's ephemeral
+        // filesystem and is regenerated on every restart, invalidating all existing antiforgery and
+        // auth cookies — form POSTs then fail with HTTP 400 until users clear their cookies.
+        services
+            .AddDataProtection()
+            .SetApplicationName("BaGetter");
+
+        services.AddSingleton<IConfigureOptions<KeyManagementOptions>>(
+            sp => new ConfigureStorageXmlRepository(sp));
     }
 
     private void ConfigureBaGetterApplication(BaGetterApplication app)
