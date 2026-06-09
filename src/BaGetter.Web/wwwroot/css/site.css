@@ -363,8 +363,8 @@ main {
 }
 
 .footer p {
-  text-align: center;    
-  vertical-align: middle;    
+  text-align: center;
+  vertical-align: middle;
 }
 
 h1,
@@ -647,6 +647,25 @@ h4 {
   display: inline-block;
   width: auto;
   vertical-align: middle;
+}
+
+.tag-dropdown-menu {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.tag-dropdown-menu .tag-search {
+  position: sticky;
+  top: 0;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  /* Inherit the menu background so the sticky filter matches light/dark themes. */
+  background: inherit;
+  z-index: 1;
+}
+
+.tag-dropdown-menu .tag-search input {
+  width: 100%;
 }
 
 .search-result {

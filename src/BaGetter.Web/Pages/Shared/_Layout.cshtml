@@ -31,9 +31,9 @@
 
     <link rel="shortcut icon" href="~/_content/BaGetter.Web/favicon.ico">
 
-    <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/office-ui-fabric-core/dist/css/fabric.min.css" />
-    <link rel="stylesheet" href="~/_content/BaGetter.Web/css/site.css" />
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/office-ui-fabric-core/dist/css/fabric.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/css/site.css" asp-append-version="true" />
 
     <title>@ViewData["Title"] - BaGetter</title>
 </head>
@@ -140,10 +140,10 @@
         @Html.AddReleaseInformationAsComment()
     </footer>
 
-    <script src="~/_content/BaGetter.Web/lib/alpinejs/dist/alpine.js"></script>
+    <script src="~/_content/BaGetter.Web/lib/alpinejs/dist/alpine.js" asp-append-version="true"></script>
 
-    <script src="~/_content/BaGetter.Web/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/_content/BaGetter.Web/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="~/_content/BaGetter.Web/lib/jquery/dist/jquery.min.js" asp-append-version="true"></script>
+    <script src="~/_content/BaGetter.Web/lib/bootstrap/dist/js/bootstrap.min.js" asp-append-version="true"></script>
     <script src="~/_content/BaGetter.Web/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
