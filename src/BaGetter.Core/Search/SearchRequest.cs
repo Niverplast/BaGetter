@@ -40,6 +40,17 @@ public class SearchRequest
     public string Framework { get; set; }
 
     /// <summary>
+    /// Filters results to a tag. If null, no filter is applied.
+    /// </summary>
+    public string Tag { get; set; }
+
+    /// <summary>
+    /// Whether to compute the facets (package types, frameworks and tags present in the feed)
+    /// and return them on the <see cref="Protocol.Models.SearchResponse.Facets"/>.
+    /// </summary>
+    public bool IncludeFacets { get; set; }
+
+    /// <summary>
     /// The search query.
     /// </summary>
     public string Query { get; set; }

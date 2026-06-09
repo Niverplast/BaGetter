@@ -63,6 +63,8 @@ public class IndexModelFacts
         Assert.True(_capturedRequest.IncludeSemVer2);
         Assert.Null(_capturedRequest.PackageType);
         Assert.Null(_capturedRequest.Framework);
+        Assert.Null(_capturedRequest.Tag);
+        Assert.True(_capturedRequest.IncludeFacets);
         Assert.Null(_capturedRequest.Query);
     }
 
@@ -73,6 +75,7 @@ public class IndexModelFacts
         _target.PageIndex = 5;
         _target.PackageType = "foo";
         _target.Framework = "bar";
+        _target.Tag = "baz";
         _target.Query = "Hello world";
 
         await _target.OnGetAsync(_cancellation);
@@ -83,6 +86,7 @@ public class IndexModelFacts
         Assert.True(_capturedRequest.IncludeSemVer2);
         Assert.Equal("foo", _capturedRequest.PackageType);
         Assert.Equal("bar", _capturedRequest.Framework);
+        Assert.Equal("baz", _capturedRequest.Tag);
         Assert.Equal("Hello world", _capturedRequest.Query);
     }
 }
