@@ -41,6 +41,12 @@ public class DatabaseSearchService : ISearchService
             request.PackageType,
             frameworks);
 
+        if (!string.IsNullOrEmpty(request.Tag))
+        {
+            var taggedPackageIds = await GetPackageIdsWithTagAsync(request.FeedId, request.Tag, cancellationToken);
+            search = search.Where(p => taggedPackageIds.Contains(p.Id));
+        }
+
         var packageIds = search
             .Select(p => p.Id)
             .Distinct()
@@ -78,7 +84,14 @@ public class DatabaseSearchService : ISearchService
             .Select(group => new PackageRegistration(group.Key, group.ToList()))
             .ToList();
 
-        return _searchBuilder.BuildSearch(groupedResults);
+        var response = _searchBuilder.BuildSearch(groupedResults);
+
+        if (request.IncludeFacets)
+        {
+            response.Facets = await ComputeFacetsAsync(request, cancellationToken);
+        }
+
+        return response;
     }
 
     public async Task<AutocompleteResponse> AutocompleteAsync(AutocompleteRequest request, CancellationToken cancellationToken)
@@ -193,5 +206,84 @@ public class DatabaseSearchService : ISearchService
         if (framework == null) return null;
 
         return _frameworks.FindAllCompatibleFrameworks(framework);
+    }
+
+    /// <summary>
+    /// Finds the IDs of the packages in a feed that carry a given tag.
+    /// Tags are stored as a JSON string (value converter), so they can't be filtered in SQL;
+    /// the (id, tags) pairs are materialized and matched in memory instead.
+    /// </summary>
+    private async Task<List<string>> GetPackageIdsWithTagAsync(Guid feedId, string tag, CancellationToken cancellationToken)
+    {
+        var rows = await _context.Packages
+            .Where(p => p.FeedId == feedId && p.Listed)
+            .Select(p => new { p.Id, p.Tags })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .Where(r => r.Tags != null && r.Tags.Any(t => string.Equals(t, tag, StringComparison.OrdinalIgnoreCase)))
+            .Select(r => r.Id)
+            .Distinct()
+            .ToList();
+    }
+
+    /// <summary>
+    /// Computes the distinct package types, frameworks and tags present in a feed so the UI can
+    /// populate its filter dropdowns with only the values that actually occur. Honors the prerelease
+    /// and SemVer2 toggles, but is independent of the query and the package type/framework/tag filters.
+    /// </summary>
+    private async Task<SearchFacets> ComputeFacetsAsync(SearchRequest request, CancellationToken cancellationToken)
+    {
+        var query = _context.Packages.Where(p => p.FeedId == request.FeedId && p.Listed);
+
+        if (!request.IncludePrerelease)
+        {
+            query = query.Where(p => !p.IsPrerelease);
+        }
+
+        if (!request.IncludeSemVer2)
+        {
+            query = query.Where(p => p.SemVerLevel != SemVerLevel.SemVer2);
+        }
+
+        var packageTypes = await query
+            .SelectMany(p => p.PackageTypes.Select(t => t.Name))
+            .Where(name => !string.IsNullOrEmpty(name))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var frameworks = await query
+            .SelectMany(p => p.TargetFrameworks.Select(f => f.Moniker))
+            .Where(moniker => !string.IsNullOrEmpty(moniker))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        // Tags are stored as a JSON string (value converter), so aggregate them in memory.
+        var tagArrays = await query
+            .Select(p => p.Tags)
+            .ToListAsync(cancellationToken);
+
+        var tags = tagArrays
+            .Where(t => t != null)
+            .SelectMany(t => t)
+            .Where(t => !string.IsNullOrWhiteSpace(t));
+
+        // "any" is the dropdowns' "no filter" sentinel; it's also the moniker stored for
+        // framework-agnostic packages. Drop it so it doesn't show up as a bogus filter value.
+        return new SearchFacets
+        {
+            PackageTypes = SortFacet(packageTypes),
+            Frameworks = SortFacet(frameworks),
+            Tags = SortFacet(tags),
+        };
+    }
+
+    private static IReadOnlyList<string> SortFacet(IEnumerable<string> values)
+    {
+        return values
+            .Where(v => !string.Equals(v, "any", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(v => v, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

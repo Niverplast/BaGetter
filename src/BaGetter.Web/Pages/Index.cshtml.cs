@@ -63,9 +63,20 @@ public class IndexModel : PageModel
     public string Framework { get; set; } = "any";
 
     [BindProperty(SupportsGet = true)]
+    public string Tag { get; set; } = "any";
+
+    [BindProperty(SupportsGet = true)]
     public bool Prerelease { get; set; } = true;
 
     public IReadOnlyList<SearchResult> Packages { get; private set; }
+
+    private SearchFacets Facets { get; set; }
+
+    public IReadOnlyList<string> PackageTypeFacets => Facets?.PackageTypes ?? Array.Empty<string>();
+
+    public IReadOnlyList<string> FrameworkFacets => Facets?.Frameworks ?? Array.Empty<string>();
+
+    public IReadOnlyList<string> TagFacets => Facets?.Tags ?? Array.Empty<string>();
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
@@ -101,6 +112,7 @@ public class IndexModel : PageModel
 
         var packageType = PackageType == "any" ? null : PackageType;
         var framework = Framework == "any" ? null : Framework;
+        var tag = Tag == "any" ? null : Tag;
 
         var search = await _search.SearchAsync(
             new SearchRequest
@@ -112,11 +124,14 @@ public class IndexModel : PageModel
                 IncludeSemVer2 = true,
                 PackageType = packageType,
                 Framework = framework,
+                Tag = tag,
+                IncludeFacets = true,
                 Query = Query,
             },
             cancellationToken);
 
         Packages = search.Data;
+        Facets = search.Facets;
 
         return Page();
     }
