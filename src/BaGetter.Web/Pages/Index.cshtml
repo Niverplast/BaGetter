@@ -113,11 +113,15 @@
                     @(Model.Tag == "any" ? "Any" : Model.Tag)
                     <span class="caret"></span>
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="tag">
+                <ul class="dropdown-menu tag-dropdown-menu" aria-labelledby="tag">
+                    <li class="tag-search">
+                        <input type="text" class="form-control input-sm" placeholder="Filter tags..."
+                               autocomplete="off" oninput="window.baget.filterTags(this)" onclick="event.stopPropagation()" />
+                    </li>
                     <li><a href="@SearchLink(tag: "any", page: 1)">Any</a></li>
                     @foreach (var tag in Model.TagFacets)
                     {
-                        <li><a href="@SearchLink(tag: tag, page: 1)">@tag</a></li>
+                        <li data-tag="@tag"><a href="@SearchLink(tag: tag, page: 1)">@tag</a></li>
                     }
                 </ul>
             </div>
