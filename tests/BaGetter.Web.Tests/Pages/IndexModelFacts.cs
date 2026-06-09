@@ -65,6 +65,7 @@ public class IndexModelFacts
         Assert.Null(_capturedRequest.Framework);
         Assert.Null(_capturedRequest.Tag);
         Assert.True(_capturedRequest.IncludeFacets);
+        Assert.False(_capturedRequest.IncludeUnlisted);
         Assert.Null(_capturedRequest.Query);
     }
 
