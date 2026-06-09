@@ -39,7 +39,7 @@ internal sealed class StorageServiceXmlRepository : IXmlRepository
     {
         // IXmlRepository is a synchronous contract. ASP.NET Core has no synchronization context,
         // so blocking on the async storage call here cannot deadlock.
-        var document = LoadAsync().GetAwaiter().GetResult();
+        var document = ReadAsync().GetAwaiter().GetResult();
         return document?.Root?.Elements().ToList() ?? (IReadOnlyCollection<XElement>)Array.Empty<XElement>();
     }
 
@@ -50,18 +50,33 @@ internal sealed class StorageServiceXmlRepository : IXmlRepository
         StoreAsync(element).GetAwaiter().GetResult();
     }
 
-    private async Task<XDocument> LoadAsync()
+    private async Task<XDocument> ReadAsync()
     {
         using var scope = _services.CreateScope();
         var storage = scope.ServiceProvider.GetRequiredService<IStorageService>();
 
-        await using var stream = await storage.GetAsync(KeyRingPath, CancellationToken.None);
-        if (stream == null)
+        return await TryLoadAsync(storage);
+    }
+
+    private static async Task<XDocument> TryLoadAsync(IStorageService storage)
+    {
+        try
         {
+            await using var stream = await storage.GetAsync(KeyRingPath, CancellationToken.None);
+            if (stream == null)
+            {
+                return null;
+            }
+
+            return await XDocument.LoadAsync(stream, LoadOptions.None, CancellationToken.None);
+        }
+        catch
+        {
+            // No key ring has been persisted yet: storage providers throw a "not found" error for a
+            // missing path rather than returning null. Treat this as an empty ring. The first key is
+            // written by StoreElement, whose Put/Delete surface any genuine storage error.
             return null;
         }
-
-        return await XDocument.LoadAsync(stream, LoadOptions.None, CancellationToken.None);
     }
 
     private async Task StoreAsync(XElement element)
@@ -69,29 +84,26 @@ internal sealed class StorageServiceXmlRepository : IXmlRepository
         using var scope = _services.CreateScope();
         var storage = scope.ServiceProvider.GetRequiredService<IStorageService>();
 
-        XDocument document;
-        bool exists;
-        await using (var existing = await storage.GetAsync(KeyRingPath, CancellationToken.None))
-        {
-            exists = existing != null;
-            document = exists
-                ? await XDocument.LoadAsync(existing, LoadOptions.None, CancellationToken.None)
-                : new XDocument(new XElement(RootElementName));
-        }
-
+        var document = await TryLoadAsync(storage) ?? new XDocument(new XElement(RootElementName));
         document.Root.Add(element);
 
-        // PutAsync refuses to overwrite existing content (packages are immutable), so replace the
-        // key ring by deleting it first.
-        if (exists)
+        byte[] bytes;
+        using (var buffer = new MemoryStream())
         {
-            await storage.DeleteAsync(KeyRingPath, CancellationToken.None);
+            document.Save(buffer);
+            bytes = buffer.ToArray();
         }
 
-        using var buffer = new MemoryStream();
-        document.Save(buffer);
-        buffer.Position = 0;
+        // PutAsync never overwrites existing content, so remove any current key ring first.
+        // DeleteAsync is a no-op when the path doesn't exist.
+        await storage.DeleteAsync(KeyRingPath, CancellationToken.None);
 
-        await storage.PutAsync(KeyRingPath, buffer, "application/xml", CancellationToken.None);
+        using var content = new MemoryStream(bytes);
+        var result = await storage.PutAsync(KeyRingPath, content, "application/xml", CancellationToken.None);
+        if (result != StoragePutResult.Success)
+        {
+            throw new InvalidOperationException(
+                $"Failed to persist the Data Protection key ring to '{KeyRingPath}': {result}.");
+        }
     }
 }
