@@ -334,7 +334,7 @@ public class WebUiLocalLoginTests : IDisposable
         var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
         var user = await userService.CreateLocalUserAsync(
-            TestUsername, "Test User",
+            TestUsername, "Test User", null,
             TestPassword, canLoginToUI,
             createdByUserId: null,
             CancellationToken.None);
@@ -452,7 +452,7 @@ public class WebUiAccessControlTests : IDisposable
             var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var user = await userService.CreateLocalUserAsync(
-                "regular", "Regular User",
+                "regular", "Regular User", null,
                 "RegularPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -493,7 +493,7 @@ public class WebUiAccessControlTests : IDisposable
             var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var user = await userService.CreateLocalUserAsync(
-                "admin", "Admin User",
+                "admin", "Admin User", null,
                 "AdminPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -539,7 +539,7 @@ public class WebUiAccessControlTests : IDisposable
             var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var user = await userService.CreateLocalUserAsync(
-                "localuser", "Local User",
+                "localuser", "Local User", null,
                 "LocalPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -671,7 +671,7 @@ public class WebUiAccountToggleTests : IDisposable
             var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var admin = await userService.CreateLocalUserAsync(
-                AdminUsername, "Admin",
+                AdminUsername, "Admin", null,
                 AdminPassword, canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -684,7 +684,7 @@ public class WebUiAccountToggleTests : IDisposable
                 CancellationToken.None);
 
             var target = await userService.CreateLocalUserAsync(
-                targetUsername, "Target User",
+                targetUsername, "Target User", null,
                 "TargetPassword123!", canLoginToUI: targetCanLoginToUI,
                 createdByUserId: admin.Id, CancellationToken.None);
 
@@ -849,7 +849,7 @@ public class WebUiAccountToggleTests : IDisposable
             var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
             var regularUser = await userService.CreateLocalUserAsync(
-                "nonadmin", "Non Admin",
+                "nonadmin", "Non Admin", null,
                 "NonAdminPass123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
 
@@ -860,7 +860,7 @@ public class WebUiAccountToggleTests : IDisposable
                 CancellationToken.None);
 
             var target = await userService.CreateLocalUserAsync(
-                "victim", "Victim",
+                "victim", "Victim", null,
                 "VictimPassword123!", canLoginToUI: true,
                 createdByUserId: null, CancellationToken.None);
             targetUserId = target.Id;

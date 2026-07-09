@@ -10,6 +10,7 @@ public class User
     public string DisplayName { get; set; }
     public AuthProvider AuthProvider { get; set; }
     public string EntraObjectId { get; set; }
+    public string Email { get; set; }
     public string PasswordHash { get; set; }
     public bool IsEnabled { get; set; } = true;
     public bool IsAdmin { get; set; }

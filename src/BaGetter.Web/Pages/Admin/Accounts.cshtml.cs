@@ -37,6 +37,11 @@ public class AccountsModel : PageModel
     [MaxLength(256)]
     public string NewDisplayName { get; set; }
 
+    [BindProperty]
+    [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+    [MaxLength(256)]
+    public string NewEmail { get; set; }
+
 
     [BindProperty]
     [Required(ErrorMessage = "Password is required.")]
@@ -105,6 +110,7 @@ public class AccountsModel : PageModel
         await _userService.CreateLocalUserAsync(
             NewUsername,
             NewDisplayName ?? NewUsername,
+            NewEmail,
             NewPassword,
             NewCanLoginToUI,
             GetUserId(),

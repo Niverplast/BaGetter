@@ -35,12 +35,12 @@ public class EntraRoleSyncServiceTests
         {
             var principal = CreatePrincipal(oid: "oid-1", email: "alice@test.com", name: "Alice Test");
             UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-1", Ct)).ReturnsAsync((User)null);
-            UserService.Setup(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", Ct))
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", "alice@test.com", Ct))
                 .ReturnsAsync(CreateUserEntity("oid-1", "alice@test.com"));
 
             await Target.OnTokenValidatedAsync(principal, Ct);
 
-            UserService.Verify(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", Ct));
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", "alice@test.com", Ct));
         }
 
         [Fact]

@@ -64,13 +64,14 @@ public class EntraRoleSyncService
         if (user == null)
         {
             _logger.LogInformation("Provisioning new Entra user: {Username} (OID: {Oid})", username, oid);
-            user = await _userService.CreateEntraUserAsync(oid, username, displayName, cancellationToken);
+            user = await _userService.CreateEntraUserAsync(oid, username, displayName, email, cancellationToken);
         }
         else
         {
             var changed = false;
             if (user.DisplayName != displayName) { user.DisplayName = displayName; changed = true; }
             if (user.Username != username) { user.Username = username; changed = true; }
+            if (!string.IsNullOrEmpty(email) && user.Email != email) { user.Email = email; changed = true; }
 
             if (changed)
             {
