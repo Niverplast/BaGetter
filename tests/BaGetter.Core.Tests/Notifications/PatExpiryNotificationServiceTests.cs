@@ -50,6 +50,23 @@ public class PatExpiryNotificationServiceTests
         }
 
         [Fact]
+        public async Task DoesNotResendWhenAlreadyNotifiedAtANearerThreshold()
+        {
+            // Token is 5 days out -> due threshold 7, but it was already notified at the nearer
+            // 2-day threshold. Since the recorded threshold <= the due threshold, no email is sent
+            // and the recorded threshold is left untouched.
+            var user = SeedUser();
+            SeedToken(user.Id, daysUntilExpiry: 5, alreadyNotified: 2);
+            var target = BuildTarget();
+
+            var sent = await target.RunOnceAsync(Ct);
+
+            Assert.Equal(0, sent);
+            Assert.Empty(Sent);
+            Assert.Equal(2, ReloadToken().ExpiryNotificationThresholdDays);
+        }
+
+        [Fact]
         public async Task SendsNextThresholdAsExpiryApproaches()
         {
             var user = SeedUser();

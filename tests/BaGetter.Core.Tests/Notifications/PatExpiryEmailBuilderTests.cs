@@ -55,6 +55,34 @@ public class PatExpiryEmailBuilderTests
         }
 
         [Fact]
+        public void IncludesTokenPageLinkWhenBaseUrlHasNoTrailingSlash()
+        {
+            var message = BuildBuilder("https://packages.example.com").Build(Token(), daysUntilExpiry: 2);
+
+            Assert.Contains("""<a href="https://packages.example.com/account/tokens">""", message.Body);
+        }
+
+        [Fact]
+        public void ThrowsWhenTokenHasNoUser()
+        {
+            var token = Token();
+            token.User = null;
+
+            Assert.Throws<ArgumentException>(() => BuildBuilder().Build(token, daysUntilExpiry: 2));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void ThrowsWhenTokenOwnerHasNoEmail(string email)
+        {
+            var token = Token();
+            token.User.Email = email;
+
+            Assert.Throws<ArgumentException>(() => BuildBuilder().Build(token, daysUntilExpiry: 2));
+        }
+
+        [Fact]
         public void OmitsLinkWhenBaseUrlNotConfigured()
         {
             var message = BuildBuilder().Build(Token(), daysUntilExpiry: 2);

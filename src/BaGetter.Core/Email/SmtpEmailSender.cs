@@ -30,26 +30,7 @@ public class SmtpEmailSender : IEmailSender
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var mimeMessage = new MimeMessage();
-        mimeMessage.From.Add(new MailboxAddress(_emailOptions.FromName, _emailOptions.FromAddress));
-        foreach (var recipient in message.To)
-        {
-            mimeMessage.To.Add(MailboxAddress.Parse(recipient));
-        }
-
-        mimeMessage.Subject = message.Subject;
-
-        var bodyBuilder = new BodyBuilder();
-        if (message.IsBodyHtml)
-        {
-            bodyBuilder.HtmlBody = message.Body;
-        }
-        else
-        {
-            bodyBuilder.TextBody = message.Body;
-        }
-
-        mimeMessage.Body = bodyBuilder.ToMessageBody();
+        var mimeMessage = BuildMimeMessage(message);
 
         var secureSocketOptions = _smtpOptions.UseStartTls
             ? SecureSocketOptions.StartTls
@@ -75,5 +56,34 @@ public class SmtpEmailSender : IEmailSender
 
         await client.SendAsync(mimeMessage, cancellationToken);
         await client.DisconnectAsync(true, cancellationToken);
+    }
+
+    /// <summary>
+    /// Translates an <see cref="EmailMessage"/> into a MailKit <see cref="MimeMessage"/>,
+    /// taking the sender from configuration and the body kind from <see cref="EmailMessage.IsBodyHtml"/>.
+    /// </summary>
+    internal MimeMessage BuildMimeMessage(EmailMessage message)
+    {
+        var mimeMessage = new MimeMessage();
+        mimeMessage.From.Add(new MailboxAddress(_emailOptions.FromName, _emailOptions.FromAddress));
+        foreach (var recipient in message.To)
+        {
+            mimeMessage.To.Add(MailboxAddress.Parse(recipient));
+        }
+
+        mimeMessage.Subject = message.Subject;
+
+        var bodyBuilder = new BodyBuilder();
+        if (message.IsBodyHtml)
+        {
+            bodyBuilder.HtmlBody = message.Body;
+        }
+        else
+        {
+            bodyBuilder.TextBody = message.Body;
+        }
+
+        mimeMessage.Body = bodyBuilder.ToMessageBody();
+        return mimeMessage;
     }
 }

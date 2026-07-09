@@ -44,6 +44,34 @@ public class EntraRoleSyncServiceTests
         }
 
         [Fact]
+        public async Task StoresUpnAsEmailWhenNoMailClaimPresent()
+        {
+            // No email/mail claim, so the UPN is the best deliverable address available.
+            var principal = CreatePrincipal(oid: "oid-upn", upn: "carol@test.com", preferredUsername: "carol@corp.local");
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-upn", Ct)).ReturnsAsync((User)null);
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-upn", "carol@test.com", "carol@test.com", "carol@test.com", Ct))
+                .ReturnsAsync(CreateUserEntity("oid-upn", "carol@test.com"));
+
+            await Target.OnTokenValidatedAsync(principal, Ct);
+
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-upn", "carol@test.com", "carol@test.com", "carol@test.com", Ct));
+        }
+
+        [Fact]
+        public async Task DoesNotUsePreferredUsernameAsEmail()
+        {
+            // preferred_username is often a non-deliverable UPN, so it must never be stored as the mailbox.
+            var principal = CreatePrincipal(oid: "oid-pu", preferredUsername: "dave@corp.local");
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-pu", Ct)).ReturnsAsync((User)null);
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-pu", "oid-pu", "oid-pu", null, Ct))
+                .ReturnsAsync(CreateUserEntity("oid-pu", "oid-pu"));
+
+            await Target.OnTokenValidatedAsync(principal, Ct);
+
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-pu", "oid-pu", "oid-pu", null, Ct));
+        }
+
+        [Fact]
         public async Task UpdatesDisplayNameForExistingUser()
         {
             var user = CreateUserEntity("oid-2", "bob@test.com", displayName: "Old Name");
@@ -261,7 +289,9 @@ public class EntraRoleSyncServiceTests
             string email = null,
             string name = null,
             string[] roles = null,
-            string roleClaim = "roles")
+            string roleClaim = "roles",
+            string preferredUsername = null,
+            string upn = null)
         {
             var claims = new List<Claim>();
 
@@ -270,6 +300,12 @@ public class EntraRoleSyncServiceTests
 
             if (email != null)
                 claims.Add(new Claim(ClaimTypes.Email, email));
+
+            if (preferredUsername != null)
+                claims.Add(new Claim("preferred_username", preferredUsername));
+
+            if (upn != null)
+                claims.Add(new Claim(ClaimTypes.Upn, upn));
 
             if (name != null)
                 claims.Add(new Claim("name", name));

@@ -20,6 +20,11 @@ public class PatExpiryEmailBuilder : IPatExpiryEmailBuilder
     {
         ArgumentNullException.ThrowIfNull(token);
 
+        if (token.User is null || string.IsNullOrEmpty(token.User.Email))
+            throw new ArgumentException(
+                "Token must have an associated user with an email address. Load the token with Include(t => t.User).",
+                nameof(token));
+
         var whenText = daysUntilExpiry <= 0
             ? "today"
             : daysUntilExpiry == 1 ? "in 1 day" : $"in {daysUntilExpiry} days";
