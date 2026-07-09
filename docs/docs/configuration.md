@@ -417,6 +417,92 @@ If you set `ListConfiguredServices` to `false` the currently used services for d
 
 
 
+## Email
+
+BaGetter can send emails. This is currently used for [personal access token expiry notifications](authentication.md#expiry-notifications).
+
+Email is **disabled by default**. Enable it by adding an `Email` section and setting `Type` to a backend:
+
+| Backend | `Type` | Notes |
+|---------|--------|-------|
+| SMTP | `Smtp` | Delivers over SMTP using MailKit. |
+| Microsoft Graph | `Graph` | Sends via `users/{id}/sendMail`. Requires the Azure storage provider and the `Mail.Send` application permission on the identity used. |
+| Disabled | `Null` (or the section omitted) | Drops all messages. The default. |
+
+### SMTP
+
+```json
+{
+    ...
+
+    "Email": {
+        "Type": "Smtp",
+        "FromAddress": "nuget@example.com",
+        "FromName": "BaGetter",
+        "Host": "smtp.example.com",
+        "Port": 587,
+        "UseStartTls": true,
+        "Username": "",
+        "Password": ""
+    },
+
+    ...
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `FromAddress` | -- | Address messages are sent from. |
+| `FromName` | -- | Display name messages are sent from. |
+| `Host` | -- | SMTP server host name. |
+| `Port` | `587` | SMTP server port. |
+| `UseStartTls` | `true` | When `true`, upgrade the connection with STARTTLS; otherwise MailKit auto-negotiates the most secure option the server supports. |
+| `Username` | -- | Optional. When empty, no authentication is attempted. |
+| `Password` | -- | Optional SMTP password. |
+
+:::warning
+
+BaGetter refuses to send SMTP credentials over an unencrypted connection. When `Username` is set, either keep `UseStartTls` enabled or use a server that supports TLS, otherwise sending fails.
+
+:::
+
+### Microsoft Graph
+
+Requires the Azure provider (`app.AddGraphEmail()`, wired up by default in the BaGetter host). The message is sent from the `SenderUserId` mailbox — `FromAddress`/`FromName` apply to SMTP only.
+
+```json
+{
+    ...
+
+    "Email": {
+        "Type": "Graph",
+        "SenderUserId": "nuget@example.com",
+        // Optional client-secret auth (e.g. local dev). Omit all three to use the
+        // deployed managed identity (DefaultAzureCredential).
+        "TenantId": "",
+        "ClientId": "",
+        "ClientSecret": ""
+    },
+
+    ...
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `SenderUserId` | -- | The mailbox to send as: a user's object id or user principal name. |
+| `TenantId` | -- | Optional tenant id for client-secret authentication. |
+| `ClientId` | -- | Optional client (application) id for client-secret authentication. |
+| `ClientSecret` | -- | Optional client secret. |
+
+When `TenantId`, `ClientId`, and `ClientSecret` are all set, a client-secret credential is used; otherwise `DefaultAzureCredential` (the deployed managed identity) is used.
+
+:::info
+
+All email settings can be provided via environment variables (`Email__Type`, `Email__Host`, ...) or [Docker secrets](#load-secrets-from-files) (e.g. `/run/secrets/Email__Password`).
+
+:::
+
 ## Load secrets from files
 
 Mostly useful when running containerised (e.g. using Docker, Podman, Kubernetes, etc), the application will look for files named in the same pattern as environment variables under `/run/secrets`.
