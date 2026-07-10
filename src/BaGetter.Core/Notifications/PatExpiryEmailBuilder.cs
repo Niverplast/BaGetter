@@ -34,11 +34,14 @@ public class PatExpiryEmailBuilder : IPatExpiryEmailBuilder
         var tokensLink = BuildTokensPageLink(_options.WebBaseUrl);
         var callToAction = tokensLink is null
             ? "Create a replacement token on your account's Tokens page before then."
-            : $"""<a href="{tokensLink}">Create a replacement token</a> before then.""";
+            : $"""<a href=\"{System.Net.WebUtility.HtmlEncode(tokensLink)}\">Create a replacement token</a> before then.""";
+
+        var tokenNameHtml = System.Net.WebUtility.HtmlEncode(token.Name);
+        var tokenPrefixHtml = System.Net.WebUtility.HtmlEncode(token.TokenPrefix);
 
         var body =
             $"""
-            <p>Your BaGetter personal access token <strong>{token.Name}</strong> (prefix <code>{token.TokenPrefix}</code>) expires {whenText}, on <strong>{token.ExpiresAtUtc:yyyy-MM-dd HH:mm} UTC</strong>.</p>
+            <p>Your BaGetter personal access token <strong>{tokenNameHtml}</strong> (prefix <code>{tokenPrefixHtml}</code>) expires {whenText}, on <strong>{token.ExpiresAtUtc:yyyy-MM-dd HH:mm} UTC</strong>.</p>
             <p>Once it expires, any client using it will start failing authentication. {callToAction}</p>
             """;
 
