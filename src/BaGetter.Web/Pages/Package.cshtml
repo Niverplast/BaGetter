@@ -62,7 +62,7 @@ else
                 </ul>
 
                 <div class="content">
-                    <div class="script" x-text="`${active.prefix} ${active.content}`"></div>
+                    <div class="script"><span class="script-prefix" x-text="active.prefix ? active.prefix + ' ' : ''"></span><span x-text="active.content"></span></div>
 
                     <div class="copy-button">
                         <button class="btn btn-default btn-warning"
@@ -398,6 +398,11 @@ else
                     content: ["Install-Package @Model.Package.Id -Version @Model.Package.NormalizedVersionString"]
                 },
                 </text>
+            }
+            {
+                name: "TwinCAT Package Manager",
+                prefix: ">",
+                content: ["TcPkg install @Model.Package.Id=@Model.Package.NormalizedVersionString"]
             }
         ];
     </script>

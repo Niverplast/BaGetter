@@ -792,6 +792,11 @@ h4 {
     border-width: 1px 0 1px 1px;
   }
 
+  .tabbed-info .content .script .script-prefix {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
 .tabbed-info .content .script .script-line:before {
   content: "> ";
 }
