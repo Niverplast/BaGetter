@@ -73,7 +73,7 @@ public class UserServiceTests
         public async Task ReturnsEntraUser()
         {
             var user = await Target.CreateEntraUserAsync(
-                "oid-123", "entrauser", "Entra User", Ct);
+                "oid-123", "entrauser", "Entra User", "entrauser@test.com", Ct);
 
             var result = await Target.FindByEntraObjectIdAsync("oid-123", Ct);
 
@@ -89,13 +89,14 @@ public class UserServiceTests
         public async Task CreatesEntraUserWithCorrectProperties()
         {
             var result = await Target.CreateEntraUserAsync(
-                "oid-abc", "entrauser", "Entra Display", Ct);
+                "oid-abc", "entrauser", "Entra Display", "entra@test.com", Ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("entrauser", result.Username);
             Assert.Equal("Entra Display", result.DisplayName);
             Assert.Equal(AuthProvider.Entra, result.AuthProvider);
             Assert.Equal("oid-abc", result.EntraObjectId);
+            Assert.Equal("entra@test.com", result.Email);
             Assert.True(result.IsEnabled);
             Assert.True(result.CanLoginToUI);
             Assert.Null(result.PasswordHash);
@@ -108,7 +109,7 @@ public class UserServiceTests
         public async Task CreatesLocalUserWithHashedPassword()
         {
             var result = await Target.CreateLocalUserAsync(
-                "localuser", "Local User", "MyPassword123!", true, AdminUserId, Ct);
+                "localuser", "Local User", "local@test.com", "MyPassword123!", true, AdminUserId, Ct);
 
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("localuser", result.Username);
@@ -147,7 +148,7 @@ public class UserServiceTests
         public async Task ReturnsFalseWhenNoPasswordHashSet()
         {
             var user = await Target.CreateEntraUserAsync(
-                "oid-1", "entrauser", "Entra", Ct);
+                "oid-1", "entrauser", "Entra", "entra@test.com", Ct);
 
             var result = await Target.VerifyPasswordAsync(user, "anything");
 
@@ -390,7 +391,7 @@ public class UserServiceTests
         protected async Task<User> CreateLocalUser(string username, string password = "TestPassword123!")
         {
             return await Target.CreateLocalUserAsync(
-                username, $"{username} Display",
+                username, $"{username} Display", $"{username}@test.com",
                 password, true, AdminUserId, Ct);
         }
 

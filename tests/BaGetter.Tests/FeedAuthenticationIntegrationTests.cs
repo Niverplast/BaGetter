@@ -342,7 +342,7 @@ public class FeedAuthenticationIntegrationTests : IDisposable
         var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
         var user = await userService.CreateLocalUserAsync(
-            LocalUsername, "Test User",
+            LocalUsername, "Test User", null,
             LocalPassword, canLoginToUI: false,
             createdByUserId: null,
             CancellationToken.None);
@@ -473,7 +473,7 @@ public class HybridFeedAuthenticationIntegrationTests : IDisposable
         var feedService = scope.ServiceProvider.GetRequiredService<IFeedService>();
 
         var user = await userService.CreateLocalUserAsync(
-            "hybriduser", "Hybrid User",
+            "hybriduser", "Hybrid User", null,
             "HybridPassword123!", canLoginToUI: false,
             createdByUserId: null,
             CancellationToken.None);

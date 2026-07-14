@@ -280,3 +280,6 @@ charts/
 Chart.lock
 
 .claude
+
+# keyring
+DataProtection

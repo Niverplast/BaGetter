@@ -15,5 +15,12 @@ public class PersonalAccessToken
     public DateTime? RevokedAtUtc { get; set; }
     public bool IsRevoked { get; set; }
 
+    /// <summary>
+    /// The smallest expiry-notification threshold (in days before expiry) that has
+    /// already been emailed for this token, or <c>null</c> if none has been sent yet.
+    /// Used by the expiry-notification scanner to avoid re-sending the same warning.
+    /// </summary>
+    public int? ExpiryNotificationThresholdDays { get; set; }
+
     public User User { get; set; }
 }

@@ -7,10 +7,12 @@ using System.Text;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Configuration;
 using BaGetter.Core.Content;
+using BaGetter.Core.Email;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Feeds;
 using BaGetter.Core.Indexing;
 using BaGetter.Core.Metadata;
+using BaGetter.Core.Notifications;
 using BaGetter.Core.Search;
 using BaGetter.Core.ServiceIndex;
 using BaGetter.Core.Statistics;
@@ -86,6 +88,9 @@ public static partial class DependencyInjectionExtensions
         services.AddBaGetterOptions<StorageOptions>(nameof(BaGetterOptions.Storage));
         services.AddBaGetterOptions<StatisticsOptions>(nameof(BaGetterOptions.Statistics));
         services.AddBaGetterOptions<NugetAuthenticationOptions>(nameof(BaGetterOptions.Authentication));
+        services.AddBaGetterOptions<EmailOptions>(nameof(BaGetterOptions.Email));
+        services.AddBaGetterOptions<SmtpEmailOptions>(nameof(BaGetterOptions.Email));
+        services.AddBaGetterOptions<PatExpiryNotificationOptions>(nameof(BaGetterOptions.PatExpiryNotification));
     }
 
     private static void AddBaGetServices(this IServiceCollection services)
@@ -137,6 +142,11 @@ public static partial class DependencyInjectionExtensions
         services.TryAddTransient<DisabledUpstreamClient>();
         services.TryAddSingleton<NullStorageService>();
         services.TryAddTransient<PackageDatabase>();
+
+        services.TryAddSingleton<NullEmailSender>();
+        services.TryAddTransient<SmtpEmailSender>();
+
+        services.TryAddSingleton<IPatExpiryEmailBuilder, PatExpiryEmailBuilder>();
     }
 
     private static void AddDefaultProviders(this IServiceCollection services)
@@ -169,6 +179,23 @@ public static partial class DependencyInjectionExtensions
 
             return null;
         });
+
+        services.AddProvider<IEmailSender>((provider, configuration) =>
+        {
+            if (configuration.HasEmailType("smtp"))
+            {
+                return provider.GetRequiredService<SmtpEmailSender>();
+            }
+
+            // Email is optional: fall back to the no-op sender when it is
+            // explicitly disabled or simply not configured.
+            if (configuration.HasEmailType("null") || string.IsNullOrEmpty(configuration[_emailTypeKey]))
+            {
+                return provider.GetRequiredService<NullEmailSender>();
+            }
+
+            return null;
+        });
     }
 
     private static void AddFallbackServices(this IServiceCollection services)
@@ -193,6 +220,8 @@ public static partial class DependencyInjectionExtensions
         // the database search service's registration until the very end.
         services.TryAddTransient<ISearchIndexer>(provider => provider.GetRequiredService<NullSearchIndexer>());
         services.TryAddTransient<ISearchService>(provider => provider.GetRequiredService<DatabaseSearchService>());
+
+        services.TryAddTransient<IEmailSender>(provider => provider.GetRequiredService<NullEmailSender>());
     }
 
     private static HttpClient HttpClientFactory(IServiceProvider provider)

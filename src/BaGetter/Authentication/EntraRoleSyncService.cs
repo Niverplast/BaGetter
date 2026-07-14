@@ -51,8 +51,14 @@ public class EntraRoleSyncService
             return;
         }
 
+        // Only a verified mail or email claim (or UPN) is stored as the mailbox, since User.Email now drives
+        // notification delivery. preferred_username is deliberately not used: it is often a UPN that
+        // is not a deliverable address, so notifications sent to it would bounce.
         var email = principal.FindFirstValue(ClaimTypes.Email)
-                    ?? principal.FindFirstValue("preferred_username");
+                    ?? principal.FindFirstValue("mail")
+                    ?? principal.FindFirstValue("email")
+                    ?? principal.FindFirstValue(ClaimTypes.Upn)
+                    ?? principal.FindFirstValue("upn");
         var displayName = principal.FindFirstValue(ClaimTypes.GivenName) is { } given
                           && principal.FindFirstValue(ClaimTypes.Surname) is { } surname
             ? $"{given} {surname}"
@@ -64,13 +70,14 @@ public class EntraRoleSyncService
         if (user == null)
         {
             _logger.LogInformation("Provisioning new Entra user: {Username} (OID: {Oid})", username, oid);
-            user = await _userService.CreateEntraUserAsync(oid, username, displayName, cancellationToken);
+            user = await _userService.CreateEntraUserAsync(oid, username, displayName, email, cancellationToken);
         }
         else
         {
             var changed = false;
             if (user.DisplayName != displayName) { user.DisplayName = displayName; changed = true; }
             if (user.Username != username) { user.Username = username; changed = true; }
+            if (!string.IsNullOrEmpty(email) && user.Email != email) { user.Email = email; changed = true; }
 
             if (changed)
             {

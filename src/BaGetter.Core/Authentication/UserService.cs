@@ -49,6 +49,7 @@ public class UserService : IUserService
         string entraObjectId,
         string username,
         string displayName,
+        string email,
         CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
@@ -59,6 +60,7 @@ public class UserService : IUserService
             DisplayName = displayName,
             AuthProvider = AuthProvider.Entra,
             EntraObjectId = entraObjectId,
+            Email = email,
             IsEnabled = true,
             CanLoginToUI = true,
             CreatedAtUtc = now,
@@ -76,6 +78,7 @@ public class UserService : IUserService
     public async Task<User> CreateLocalUserAsync(
         string username,
         string displayName,
+        string email,
         string password,
         bool canLoginToUI,
         Guid? createdByUserId,
@@ -88,6 +91,7 @@ public class UserService : IUserService
             Username = username,
             DisplayName = displayName,
             AuthProvider = AuthProvider.Local,
+            Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password, BcryptWorkFactor),
             IsEnabled = true,
             CanLoginToUI = canLoginToUI,

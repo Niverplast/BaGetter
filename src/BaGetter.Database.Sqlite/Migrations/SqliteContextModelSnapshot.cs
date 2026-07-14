@@ -366,6 +366,9 @@ namespace BaGetter.Database.Sqlite.Migrations
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ExpiryNotificationThresholdDays")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsRevoked")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
@@ -448,6 +451,10 @@ namespace BaGetter.Database.Sqlite.Migrations
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
