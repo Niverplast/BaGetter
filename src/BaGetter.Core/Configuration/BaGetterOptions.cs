@@ -78,4 +78,8 @@ public class BaGetterOptions
     public StatisticsOptions Statistics { get; set; }
 
     public NugetAuthenticationOptions Authentication { get; set; }
+
+    public EmailOptions Email { get; set; }
+
+    public PatExpiryNotificationOptions PatExpiryNotification { get; set; }
 }

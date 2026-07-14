@@ -35,12 +35,55 @@ public class EntraRoleSyncServiceTests
         {
             var principal = CreatePrincipal(oid: "oid-1", email: "alice@test.com", name: "Alice Test");
             UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-1", Ct)).ReturnsAsync((User)null);
-            UserService.Setup(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", Ct))
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", "alice@test.com", Ct))
                 .ReturnsAsync(CreateUserEntity("oid-1", "alice@test.com"));
 
             await Target.OnTokenValidatedAsync(principal, Ct);
 
-            UserService.Verify(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", Ct));
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-1", "alice@test.com", "Alice Test", "alice@test.com", Ct));
+        }
+
+        [Fact]
+        public async Task UsesRawEmailClaimWhenClaimTypeMappingDisabled()
+        {
+            // Microsoft.Identity.Web's JsonWebTokenHandler defaults MapInboundClaims to false, so
+            // Entra ID tokens surface the raw "email" claim instead of the mapped ClaimTypes.Email.
+            var principal = CreatePrincipal(oid: "oid-rawemail", rawEmail: "erin@test.com", name: "Erin Test");
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-rawemail", Ct)).ReturnsAsync((User)null);
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-rawemail", "erin@test.com", "Erin Test", "erin@test.com", Ct))
+                .ReturnsAsync(CreateUserEntity("oid-rawemail", "erin@test.com"));
+
+            await Target.OnTokenValidatedAsync(principal, Ct);
+
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-rawemail", "erin@test.com", "Erin Test", "erin@test.com", Ct));
+        }
+
+        [Fact]
+        public async Task StoresUpnAsEmailWhenNoMailClaimPresent()
+        {
+            // No email/mail claim, so the UPN is the best deliverable address available.
+            var principal = CreatePrincipal(oid: "oid-upn", upn: "carol@test.com", preferredUsername: "carol@corp.local");
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-upn", Ct)).ReturnsAsync((User)null);
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-upn", "carol@test.com", "carol@test.com", "carol@test.com", Ct))
+                .ReturnsAsync(CreateUserEntity("oid-upn", "carol@test.com"));
+
+            await Target.OnTokenValidatedAsync(principal, Ct);
+
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-upn", "carol@test.com", "carol@test.com", "carol@test.com", Ct));
+        }
+
+        [Fact]
+        public async Task DoesNotUsePreferredUsernameAsEmail()
+        {
+            // preferred_username is often a non-deliverable UPN, so it must never be stored as the mailbox.
+            var principal = CreatePrincipal(oid: "oid-pu", preferredUsername: "dave@corp.local");
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-pu", Ct)).ReturnsAsync((User)null);
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-pu", "oid-pu", "oid-pu", null, Ct))
+                .ReturnsAsync(CreateUserEntity("oid-pu", "oid-pu"));
+
+            await Target.OnTokenValidatedAsync(principal, Ct);
+
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-pu", "oid-pu", "oid-pu", null, Ct));
         }
 
         [Fact]
@@ -261,7 +304,10 @@ public class EntraRoleSyncServiceTests
             string email = null,
             string name = null,
             string[] roles = null,
-            string roleClaim = "roles")
+            string roleClaim = "roles",
+            string preferredUsername = null,
+            string upn = null,
+            string rawEmail = null)
         {
             var claims = new List<Claim>();
 
@@ -270,6 +316,15 @@ public class EntraRoleSyncServiceTests
 
             if (email != null)
                 claims.Add(new Claim(ClaimTypes.Email, email));
+
+            if (rawEmail != null)
+                claims.Add(new Claim("email", rawEmail));
+
+            if (preferredUsername != null)
+                claims.Add(new Claim("preferred_username", preferredUsername));
+
+            if (upn != null)
+                claims.Add(new Claim(ClaimTypes.Upn, upn));
 
             if (name != null)
                 claims.Add(new Claim("name", name));
