@@ -44,6 +44,21 @@ public class EntraRoleSyncServiceTests
         }
 
         [Fact]
+        public async Task UsesRawEmailClaimWhenClaimTypeMappingDisabled()
+        {
+            // Microsoft.Identity.Web's JsonWebTokenHandler defaults MapInboundClaims to false, so
+            // Entra ID tokens surface the raw "email" claim instead of the mapped ClaimTypes.Email.
+            var principal = CreatePrincipal(oid: "oid-rawemail", rawEmail: "erin@test.com", name: "Erin Test");
+            UserService.Setup(s => s.FindByEntraObjectIdAsync("oid-rawemail", Ct)).ReturnsAsync((User)null);
+            UserService.Setup(s => s.CreateEntraUserAsync("oid-rawemail", "erin@test.com", "Erin Test", "erin@test.com", Ct))
+                .ReturnsAsync(CreateUserEntity("oid-rawemail", "erin@test.com"));
+
+            await Target.OnTokenValidatedAsync(principal, Ct);
+
+            UserService.Verify(s => s.CreateEntraUserAsync("oid-rawemail", "erin@test.com", "Erin Test", "erin@test.com", Ct));
+        }
+
+        [Fact]
         public async Task StoresUpnAsEmailWhenNoMailClaimPresent()
         {
             // No email/mail claim, so the UPN is the best deliverable address available.
@@ -291,7 +306,8 @@ public class EntraRoleSyncServiceTests
             string[] roles = null,
             string roleClaim = "roles",
             string preferredUsername = null,
-            string upn = null)
+            string upn = null,
+            string rawEmail = null)
         {
             var claims = new List<Claim>();
 
@@ -300,6 +316,9 @@ public class EntraRoleSyncServiceTests
 
             if (email != null)
                 claims.Add(new Claim(ClaimTypes.Email, email));
+
+            if (rawEmail != null)
+                claims.Add(new Claim("email", rawEmail));
 
             if (preferredUsername != null)
                 claims.Add(new Claim("preferred_username", preferredUsername));
