@@ -1,19 +1,23 @@
 using System;
+using Azure.Core;
 using Azure.Data.Tables;
 using Azure.Identity;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using BaGetter.Azure.Configuration;
+using BaGetter.Azure.Email;
 using BaGetter.Azure.Storage;
 using BaGetter.Azure.Table;
 using BaGetter.Core;
 using BaGetter.Core.Configuration;
+using BaGetter.Core.Email;
 using BaGetter.Core.Extensions;
 using BaGetter.Core.Search;
 using BaGetter.Core.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Microsoft.Graph;
 
 namespace BaGetter.Azure
 {
@@ -120,6 +124,49 @@ namespace BaGetter.Azure
             Action<AzureBlobStorageOptions> configure)
         {
             app.AddAzureBlobStorage();
+            app.Services.Configure(configure);
+            return app;
+        }
+
+        public static BaGetterApplication AddGraphEmail(this BaGetterApplication app)
+        {
+            app.Services.AddBaGetterOptions<GraphEmailOptions>(nameof(BaGetterOptions.Email));
+            app.Services.AddTransient<GraphEmailSender>();
+
+            app.Services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<GraphEmailOptions>>().Value;
+
+                TokenCredential credential;
+                if (!string.IsNullOrEmpty(options.TenantId)
+                    && !string.IsNullOrEmpty(options.ClientId)
+                    && !string.IsNullOrEmpty(options.ClientSecret))
+                {
+                    credential = new ClientSecretCredential(options.TenantId, options.ClientId, options.ClientSecret);
+                }
+                else
+                {
+                    credential = new DefaultAzureCredential();
+                }
+
+                return new GraphServiceClient(credential, ["https://graph.microsoft.com/.default"]);
+            });
+
+            app.Services.AddProvider<IEmailSender>((provider, config) =>
+            {
+                if (!config.HasEmailType("graph")) return null;
+
+                return provider.GetRequiredService<GraphEmailSender>();
+            });
+
+            return app;
+        }
+
+        public static BaGetterApplication AddGraphEmail(
+            this BaGetterApplication app,
+            Action<GraphEmailOptions> configure)
+        {
+            app.AddGraphEmail();
             app.Services.Configure(configure);
             return app;
         }

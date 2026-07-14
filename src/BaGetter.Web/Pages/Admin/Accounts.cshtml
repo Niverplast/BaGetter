@@ -34,6 +34,11 @@
                     <input asp-for="NewDisplayName" class="form-control" />
                 </div>
                 <div class="form-group">
+                    <label asp-for="NewEmail">Email</label>
+                    <input asp-for="NewEmail" type="email" class="form-control" />
+                    <span asp-validation-for="NewEmail" class="text-danger"></span>
+                </div>
+                <div class="form-group">
                     <label asp-for="NewPassword">Password</label>
                     <input asp-for="NewPassword" class="form-control" />
                     <span asp-validation-for="NewPassword" class="text-danger"></span>
@@ -60,6 +65,7 @@
                 <tr>
                     <th>Username</th>
                     <th>Display Name</th>
+                    <th>Email</th>
                     <th>Provider</th>
                     <th>Groups</th>
                     <th>Enabled</th>
@@ -74,6 +80,7 @@
                     <tr class="@(!user.IsEnabled ? "text-muted" : "")">
                         <td>@user.Username</td>
                         <td>@user.DisplayName</td>
+                        <td>@(string.IsNullOrEmpty(user.Email) ? "—" : user.Email)</td>
                         <td>
                             @if (user.AuthProvider == BaGetter.Core.Entities.AuthProvider.Entra)
                             {

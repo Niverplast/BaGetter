@@ -42,6 +42,14 @@ public class ValidateBaGetterOptions
             "Null",
         };
 
+    private static readonly HashSet<string> _validEmailTypes
+        = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Smtp",
+            "Graph",
+            "Null",
+        };
+
     public ValidateOptionsResult Validate(string name, BaGetterOptions options)
     {
         var failures = new List<string>();
@@ -72,11 +80,29 @@ public class ValidateBaGetterOptions
                 $"Allowed values: {string.Join(", ", _validSearchTypes)}");
         }
 
+        ValidateEmail(options, failures);
+
         ValidateAuthentication(options, failures);
 
         if (failures.Count != 0) return ValidateOptionsResult.Fail(failures);
 
         return ValidateOptionsResult.Success;
+    }
+
+    private static void ValidateEmail(BaGetterOptions options, List<string> failures)
+    {
+        var type = options.Email?.Type;
+
+        // Email is optional: an omitted section or empty Type means email is disabled.
+        if (string.IsNullOrEmpty(type))
+            return;
+
+        if (!_validEmailTypes.Contains(type))
+        {
+            failures.Add(
+                $"The '{nameof(BaGetterOptions.Email)}:{nameof(EmailOptions.Type)}' config is invalid. " +
+                $"Allowed values: {string.Join(", ", _validEmailTypes)} (or omit to disable email)");
+        }
     }
 
     private static void ValidateAuthentication(BaGetterOptions options, List<string> failures)

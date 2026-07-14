@@ -25,6 +25,7 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
     public const int MaxUsernameLength = 256;
     public const int MaxDisplayNameLength = 256;
     public const int MaxEntraObjectIdLength = 128;
+    public const int MaxEmailLength = 256;
     public const int MaxPasswordHashLength = 256;
     public const int MaxTokenNameLength = 256;
     public const int MaxTokenHashLength = 128;
@@ -226,6 +227,9 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
 
         user.Property(u => u.EntraObjectId)
             .HasMaxLength(MaxEntraObjectIdLength);
+
+        user.Property(u => u.Email)
+            .HasMaxLength(MaxEmailLength);
 
         user.Property(u => u.PasswordHash)
             .HasMaxLength(MaxPasswordHashLength);

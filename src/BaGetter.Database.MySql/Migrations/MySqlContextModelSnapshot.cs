@@ -378,6 +378,9 @@ namespace BaGetter.Database.MySql.Migrations
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("ExpiryNotificationThresholdDays")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsRevoked")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
@@ -462,6 +465,10 @@ namespace BaGetter.Database.MySql.Migrations
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 

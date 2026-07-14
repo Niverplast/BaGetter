@@ -15,6 +15,7 @@ public static partial class DependencyInjectionExtensions
     private static readonly string _databaseTypeKey = $"{nameof(BaGetterOptions.Database)}:{nameof(DatabaseOptions.Type)}";
     private static readonly string _searchTypeKey = $"{nameof(BaGetterOptions.Search)}:{nameof(SearchOptions.Type)}";
     private static readonly string _storageTypeKey = $"{nameof(BaGetterOptions.Storage)}:{nameof(StorageOptions.Type)}";
+    private static readonly string _emailTypeKey = $"{nameof(BaGetterOptions.Email)}:{nameof(EmailOptions.Type)}";
 
     private static readonly string _databaseSearchType = "Database";
 
@@ -67,6 +68,19 @@ public static partial class DependencyInjectionExtensions
     public static bool HasStorageType(this IConfiguration config, string value)
     {
         return config[_storageTypeKey].Equals(value, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Determine whether an email type is currently active. Unlike the other
+    /// types, email is optional, so this is null-safe: an unset
+    /// <c>Email:Type</c> matches nothing.
+    /// </summary>
+    /// <param name="config">The application's configuration.</param>
+    /// <param name="value">The email type that should be checked.</param>
+    /// <returns>Whether the email type is active.</returns>
+    public static bool HasEmailType(this IConfiguration config, string value)
+    {
+        return string.Equals(config[_emailTypeKey], value, StringComparison.OrdinalIgnoreCase);
     }
 
     public static IServiceCollection AddBaGetDbContextProvider<TContext>(

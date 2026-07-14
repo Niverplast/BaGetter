@@ -184,7 +184,7 @@ public class FeedPermissionTests : IDisposable
         try
         {
             var user = await userService.CreateLocalUserAsync(
-                LocalUsername, "Permission Test User",
+                LocalUsername, "Permission Test User", null,
                 LocalPassword, canLoginToUI: false,
                 createdByUserId: null,
                 CancellationToken.None);
