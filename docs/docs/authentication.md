@@ -123,7 +123,7 @@ When a user signs in via Entra ID:
 
 1. The user is redirected to Microsoft's login page
 2. After successful authentication, the OIDC token is validated
-3. BaGetter automatically provisions a local user record linked to the Entra Object ID
+3. BaGetter automatically provisions a local user record linked to the Entra Object ID, capturing the user's email from the token's `email`, `mail`, or UPN claim (used for [token expiry notifications](#expiry-notifications))
 4. The `roles` claim is read from the token
 5. **Admin sync (bidirectional):** If the token contains the `Admin` role, `IsAdmin` is set to `true`. If not, `IsAdmin` is set to `false`. Admin status is always driven by the token — there is no way to persist admin for an Entra user outside of the App Role.
 6. **Group membership sync (full reconciliation):** The user is added to all BaGetter groups whose `AppRoleValue` matches a role in the token, and removed from role-linked groups whose role is no longer present. Manually-managed groups (no `AppRoleValue`) are never touched.
@@ -131,7 +131,7 @@ When a user signs in via Entra ID:
 
 ## Local accounts
 
-When `Mode` is `Local` or `Hybrid`, administrators can create local user accounts. Local accounts use bcrypt-hashed passwords and support account lockout after repeated failed login attempts.
+When `Mode` is `Local` or `Hybrid`, administrators can create local user accounts. Local accounts use bcrypt-hashed passwords and support account lockout after repeated failed login attempts. Each account can also carry an optional email address (set from the admin **Accounts** page), used for [token expiry notifications](#expiry-notifications).
 
 ### Account lockout
 
@@ -177,6 +177,43 @@ The maximum allowed token lifetime is controlled by the `MaxTokenExpiryDays` set
     }
 }
 ```
+
+### Expiry notifications
+
+BaGetter can email token owners before their personal access tokens expire, so they can create a replacement before clients start failing authentication. This requires:
+
+- [Email](configuration.md#email) to be configured (`Email:Type` set to `Smtp` or `Graph`). When email is disabled, the scanner does not run.
+- The token owner to have a stored email address. Local users get one from the admin **Accounts** page; Entra users have it derived from their token's `email`, `mail`, or UPN claim on sign-in. Owners without an email address are skipped (with a warning logged).
+
+A background scanner wakes every `ScanIntervalHours` and emails owners as each configured threshold (whole days before expiry) is crossed. Each threshold is sent at most once per token.
+
+```json
+{
+    "Email": {
+        "Type": "Smtp"
+        // ... see the Email configuration section
+    },
+    "PatExpiryNotification": {
+        "Enabled": true,
+        "ScanIntervalHours": 24,
+        "NotificationDaysBeforeExpiry": [ 14, 7, 2, 0 ],
+        "WebBaseUrl": "https://packages.example.com"
+    }
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `Enabled` | `true` | Whether the scanner runs. When `false`, no scanning or emailing happens regardless of email configuration. |
+| `ScanIntervalHours` | `1` | How often (in hours) the scanner looks for tokens nearing expiry. Minimum `1`. |
+| `NotificationDaysBeforeExpiry` | `[14, 7, 2, 0]` | Thresholds, in whole days before expiry, at which an owner is emailed. `0` means the expiry day itself. Values must be distinct and zero or greater. |
+| `WebBaseUrl` | -- | Public base URL of this site (e.g. `https://packages.example.com`), used to link owners to the token page. Must be an absolute `http(s)` URL when set. Omit for a name-only reference. |
+
+:::info
+
+The scanner runs outside an HTTP request and cannot infer the site URL, so `WebBaseUrl` must be configured for notification emails to include a working link.
+
+:::
 
 ### Using PATs with NuGet clients
 

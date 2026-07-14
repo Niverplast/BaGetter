@@ -5,8 +5,10 @@ using BaGetter.Azure;
 using BaGetter.DataProtection;
 using BaGetter.Core;
 using BaGetter.Core.Configuration;
+using BaGetter.Core.Email;
 using BaGetter.Core.Entities;
 using BaGetter.Core.Extensions;
+using BaGetter.Core.Notifications;
 using BaGetter.Core.Search;
 using BaGetter.Core.Storage;
 using BaGetter.Database.MySql;
@@ -57,6 +59,10 @@ public class Startup
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<IPackageDatabase>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchService>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchIndexer>);
+        services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<IEmailSender>);
+
+        // Emails token owners as their personal access tokens approach expiry.
+        services.AddHostedService<PatExpiryNotificationService>();
 
         services.AddHealthChecks();
 
@@ -106,6 +112,10 @@ public class Startup
 
         // Add search providers.
         //app.AddAzureSearch();
+
+        // Add email providers. SMTP and the no-op sender are registered by the
+        // core defaults; Graph needs its Azure client wired up here.
+        app.AddGraphEmail();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
