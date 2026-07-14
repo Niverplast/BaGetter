@@ -158,6 +158,7 @@ internal static class ServiceCollectionExtensions
             // "ID tokens" does not need to be enabled under Implicit grant
             // in the Azure app registration.
             options.ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectResponseType.Code;
+            options.MapInboundClaims = false; // Don't map claims to Microsoft-specific claim types, keep the original claim types from the token.
 
             options.TokenValidationParameters.NameClaimType = "name";
             options.TokenValidationParameters.RoleClaimType = entraOptions.RoleClaim;
