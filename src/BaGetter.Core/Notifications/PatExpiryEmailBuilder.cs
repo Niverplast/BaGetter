@@ -34,7 +34,7 @@ public class PatExpiryEmailBuilder : IPatExpiryEmailBuilder
         var tokensLink = BuildTokensPageLink(_options.WebBaseUrl);
         var callToAction = tokensLink is null
             ? "Create a replacement token on your account's Tokens page before then."
-            : $"""<a href=\"{System.Net.WebUtility.HtmlEncode(tokensLink)}\">Create a replacement token</a> before then.""";
+            : $"""<a href="{System.Net.WebUtility.HtmlEncode(tokensLink)}">Create a replacement token</a> before then.""";
 
         var tokenNameHtml = System.Net.WebUtility.HtmlEncode(token.Name);
         var tokenPrefixHtml = System.Net.WebUtility.HtmlEncode(token.TokenPrefix);
