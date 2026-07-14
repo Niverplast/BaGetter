@@ -56,6 +56,7 @@ public class EntraRoleSyncService
         // is not a deliverable address, so notifications sent to it would bounce.
         var email = principal.FindFirstValue(ClaimTypes.Email)
                     ?? principal.FindFirstValue("mail")
+                    ?? principal.FindFirstValue("email")
                     ?? principal.FindFirstValue(ClaimTypes.Upn)
                     ?? principal.FindFirstValue("upn");
         var displayName = principal.FindFirstValue(ClaimTypes.GivenName) is { } given
