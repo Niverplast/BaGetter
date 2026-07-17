@@ -15,5 +15,6 @@ public interface IFeedService
     Task<Feed> CreateFeedAsync(Feed feed, CancellationToken cancellationToken);
     Task<Feed> UpdateFeedAsync(Feed feed, CancellationToken cancellationToken);
     Task<bool> DeleteFeedAsync(Guid feedId, CancellationToken cancellationToken);
+    Task ReorderFeedsAsync(IReadOnlyList<Guid> orderedFeedIds, CancellationToken cancellationToken);
     Task EnsureDefaultFeedExistsAsync(CancellationToken cancellationToken);
 }

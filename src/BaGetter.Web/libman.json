@@ -58,6 +58,15 @@
         "LICENSE.txt",
         "README.md"
       ]
+    },
+    {
+      "library": "sortablejs@1.15.6",
+      "destination": "wwwroot/lib/sortablejs/",
+      "files": [
+        "Sortable.min.js",
+        "LICENSE",
+        "README.md"
+      ]
     }
   ]
 }
