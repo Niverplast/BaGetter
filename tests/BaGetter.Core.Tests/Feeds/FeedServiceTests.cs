@@ -20,18 +20,117 @@ public class FeedServiceTests
     public class GetAllFeedsAsync : FactsBase
     {
         [Fact]
-        public async Task ReturnsDefaultFeedFirstThenAlphabeticalByName()
+        public async Task ReturnsFeedsBySortOrder()
         {
-            // Seeded out of order; "Default" would not sort first alphabetically (D > A),
-            // so a correct result proves both the default-on-top and the alphabetical rules.
-            AddFeed("zebra", "Zebra");
-            AddFeed(Feed.DefaultSlug, "Default");
-            AddFeed("apple", "Apple");
+            // SortOrder is reverse-alphabetical here, so ordering by SortOrder (not Name) is what a pass proves.
+            AddFeed("apple", "Apple", sortOrder: 2);
+            AddFeed("mango", "Mango", sortOrder: 1);
+            AddFeed("zebra", "Zebra", sortOrder: 0);
             await Context.SaveChangesAsync(Ct);
 
             var feeds = await Target.GetAllFeedsAsync(Ct);
 
-            Assert.Equal(new[] { "Default", "Apple", "Zebra" }, feeds.Select(f => f.Name).ToArray());
+            Assert.Equal(new[] { "Zebra", "Mango", "Apple" }, feeds.Select(f => f.Name).ToArray());
+        }
+
+        [Fact]
+        public async Task TiesBrokenByName()
+        {
+            // Same SortOrder for all three, so Name is the only remaining tiebreak.
+            AddFeed("zebra", "Zebra", sortOrder: 0);
+            AddFeed("apple", "Apple", sortOrder: 0);
+            AddFeed("mango", "Mango", sortOrder: 0);
+            await Context.SaveChangesAsync(Ct);
+
+            var feeds = await Target.GetAllFeedsAsync(Ct);
+
+            Assert.Equal(new[] { "Apple", "Mango", "Zebra" }, feeds.Select(f => f.Name).ToArray());
+        }
+    }
+
+    public class CreateFeedAsync : FactsBase
+    {
+        [Fact]
+        public async Task AppendsNewFeedAtEndOfSortOrder()
+        {
+            // Highest existing SortOrder is 5, so the new feed must take 6 (max + 1, not count).
+            AddFeed("apple", "Apple", sortOrder: 0);
+            AddFeed("mango", "Mango", sortOrder: 5);
+            await Context.SaveChangesAsync(Ct);
+
+            var feed = await Target.CreateFeedAsync(new Feed { Slug = "zebra", Name = "Zebra" }, Ct);
+
+            Assert.Equal(6, feed.SortOrder);
+        }
+
+        [Fact]
+        public async Task FirstFeedGetsSortOrderZero()
+        {
+            var feed = await Target.CreateFeedAsync(new Feed { Slug = "apple", Name = "Apple" }, Ct);
+
+            Assert.Equal(0, feed.SortOrder);
+        }
+    }
+
+    public class ReorderFeedsAsync : FactsBase
+    {
+        [Fact]
+        public async Task AssignsSortOrderByRequestedOrder()
+        {
+            // The default feed starts on top; the request moves it to the bottom.
+            var def = AddFeed(Feed.DefaultSlug, "Default", sortOrder: 0);
+            var apple = AddFeed("apple", "Apple", sortOrder: 1);
+            var zebra = AddFeed("zebra", "Zebra", sortOrder: 2);
+            await Context.SaveChangesAsync(Ct);
+
+            await Target.ReorderFeedsAsync(new[] { apple.Id, zebra.Id, def.Id }, Ct);
+
+            var feeds = await Target.GetAllFeedsAsync(Ct);
+            Assert.Equal(new[] { "Apple", "Zebra", "Default" }, feeds.Select(f => f.Name).ToArray());
+        }
+
+        [Fact]
+        public async Task IgnoresUnknownFeedIds()
+        {
+            // An unknown id in the request must be skipped without consuming a SortOrder slot.
+            var apple = AddFeed("apple", "Apple", sortOrder: 0);
+            var zebra = AddFeed("zebra", "Zebra", sortOrder: 1);
+            await Context.SaveChangesAsync(Ct);
+
+            await Target.ReorderFeedsAsync(new[] { zebra.Id, Guid.NewGuid(), apple.Id }, Ct);
+
+            Assert.Equal(0, zebra.SortOrder);
+            Assert.Equal(1, apple.SortOrder);
+        }
+
+        [Fact]
+        public async Task AppendsFeedsMissingFromRequest()
+        {
+            // Only zebra is in the request; apple and mango are appended in (SortOrder, Name) order.
+            var apple = AddFeed("apple", "Apple", sortOrder: 0);
+            var mango = AddFeed("mango", "Mango", sortOrder: 1);
+            var zebra = AddFeed("zebra", "Zebra", sortOrder: 2);
+            await Context.SaveChangesAsync(Ct);
+
+            await Target.ReorderFeedsAsync(new[] { zebra.Id }, Ct);
+
+            Assert.Equal(0, zebra.SortOrder);
+            Assert.Equal(1, apple.SortOrder);
+            Assert.Equal(2, mango.SortOrder);
+        }
+
+        [Fact]
+        public async Task IgnoresDuplicateIds()
+        {
+            // The duplicate apple id must be counted once, so zebra still lands at SortOrder 1.
+            var apple = AddFeed("apple", "Apple", sortOrder: 0);
+            var zebra = AddFeed("zebra", "Zebra", sortOrder: 1);
+            await Context.SaveChangesAsync(Ct);
+
+            await Target.ReorderFeedsAsync(new[] { apple.Id, apple.Id, zebra.Id }, Ct);
+
+            Assert.Equal(0, apple.SortOrder);
+            Assert.Equal(1, zebra.SortOrder);
         }
     }
 
@@ -108,13 +207,14 @@ public class FeedServiceTests
             Target = new FeedService(Context, PackageStorage.Object, Mock.Of<ILogger<FeedService>>());
         }
 
-        protected Feed AddFeed(string slug, string name)
+        protected Feed AddFeed(string slug, string name, int sortOrder = 0)
         {
             var feed = new Feed
             {
                 Id = Guid.NewGuid(),
                 Slug = slug,
                 Name = name,
+                SortOrder = sortOrder,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow,
             };

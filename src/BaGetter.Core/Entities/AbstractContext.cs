@@ -88,6 +88,8 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         feed.Property(f => f.Description)
             .HasMaxLength(DefaultMaxStringLength);
 
+        feed.Property(f => f.SortOrder).IsRequired().HasDefaultValue(0);
+
         feed.Property(f => f.CreatedAtUtc).IsRequired();
         feed.Property(f => f.UpdatedAtUtc).IsRequired();
 

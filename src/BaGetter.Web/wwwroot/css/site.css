@@ -136,6 +136,12 @@
     border-color: #444;
   }
 
+  /* Bootstrap draws a 2px #ddd line between adjacent <tbody> elements; the Feed
+     Management table puts each feed in its own <tbody>, so override it for dark mode. */
+  .table > tbody + tbody {
+    border-top-color: #444;
+  }
+
   .table > thead > tr > th {
     border-bottom-color: #555;
   }
@@ -1085,6 +1091,10 @@ code {
     border-left: 3px solid #ddd;
     margin: 4px 0 8px 8px;
 }
+
+.drag-handle { cursor: grab; color: #999; }
+.drag-handle:active { cursor: grabbing; }
+tbody.feed-group.sortable-ghost { opacity: 0.5; }
 
 /* Auto-fade confirmation checkmarks after a brief delay. */
 .saved-indicator {

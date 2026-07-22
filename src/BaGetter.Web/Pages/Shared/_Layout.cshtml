@@ -66,7 +66,7 @@
                                         <ul class="dropdown-menu">
                                             @foreach (var feed in accessibleFeeds)
                                             {
-                                                var feedHref = feed.Slug == Feed.DefaultSlug ? "/" : "/feeds/" + feed.Slug;
+                                                var feedHref = "/feeds/" + feed.Slug;
                                                 var isActive = feed.Slug == currentSlug;
                                                 <li class="@(isActive ? "active" : "")">
                                                     <a href="@feedHref">@feed.Name</a>

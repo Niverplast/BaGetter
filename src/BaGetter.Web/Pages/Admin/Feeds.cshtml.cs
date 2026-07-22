@@ -199,4 +199,16 @@ public class FeedsModel : PageModel
         Feeds = await _feedService.GetAllFeedsAsync(cancellationToken);
         return Page();
     }
+
+    public async Task<IActionResult> OnPostReorderAsync([FromBody] List<Guid> orderedFeedIds, CancellationToken cancellationToken)
+    {
+        if (!await IsCurrentUserAdminAsync(cancellationToken))
+            return Forbid();
+
+        if (orderedFeedIds == null || orderedFeedIds.Count == 0)
+            return BadRequest();
+
+        await _feedService.ReorderFeedsAsync(orderedFeedIds, cancellationToken);
+        return new OkResult();
+    }
 }
