@@ -15,6 +15,7 @@ public class FeedResponse
     public string Slug { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
+    public int SortOrder { get; set; }
 
     public PackageOverwriteAllowed? AllowPackageOverwrites { get; set; }
     public PackageDeletionBehavior? PackageDeletionBehavior { get; set; }
@@ -47,6 +48,7 @@ public class FeedResponse
         Slug = feed.Slug,
         Name = feed.Name,
         Description = feed.Description,
+        SortOrder = feed.SortOrder,
         AllowPackageOverwrites = feed.AllowPackageOverwrites,
         PackageDeletionBehavior = feed.PackageDeletionBehavior,
         IsReadOnlyMode = feed.IsReadOnlyMode,
