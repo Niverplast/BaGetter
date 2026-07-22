@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Authentication;
 using BaGetter.Core.Configuration;
-using BaGetter.Core.Entities;
 using BaGetter.Core.Feeds;
 using BaGetter.Core.Search;
 using BaGetter.Protocol.Models;
@@ -85,13 +84,19 @@ public class IndexModel : PageModel
         var authMode = _authOptions.Value.Mode;
         var currentFeed = _feedContext.CurrentFeed;
 
-        // For Local/Entra/Hybrid modes, check whether the signed-in user can access the
-        // current feed. Unauthenticated visitors are handled by the view/layout which
+        // For Local/Entra/Hybrid modes, decide which feed the signed-in user lands on.
+        // On the root route, feed ordering always wins: redirect to the first feed (by
+        // SortOrder) the user can pull, even when they could access the default-slug feed.
+        // On an explicit /feeds/{slug} route, only redirect away when the user can't pull
+        // the requested feed. Unauthenticated visitors are handled by the view/layout which
         // renders a "Sign in required" prompt.
         if (authMode != AuthenticationMode.Config && User.Identity?.IsAuthenticated == true)
         {
-            if (currentFeed == null ||
-                !await _permissions.CanPullAsync(GetUserIdOrEmpty(), currentFeed.Id, cancellationToken))
+            var mustSelectLandingFeed = _feedContext.IsDefaultRoute
+                || currentFeed == null
+                || !await _permissions.CanPullAsync(GetUserIdOrEmpty(), currentFeed.Id, cancellationToken);
+
+            if (mustSelectLandingFeed)
             {
                 var allFeeds = await _feedService.GetAllFeedsAsync(cancellationToken);
                 var accessible = await FeedAccessGuard.FilterAccessibleFeedsAsync(
@@ -104,9 +109,16 @@ public class IndexModel : PageModel
                     return Page();
                 }
 
-                var target = accessible.OrderBy(f => f.Slug, StringComparer.OrdinalIgnoreCase).First();
-                var targetUrl = target.Slug == Feed.DefaultSlug ? "/" : $"/feeds/{target.Slug}/";
-                return Redirect(targetUrl);
+                var target = accessible.First();
+
+                // Redirect unless we're already on the target feed, which avoids a redirect
+                // loop when the default-slug feed (served at "/") is itself the target.
+                // Every feed — including the default — has a stable /feeds/{slug} URL so it
+                // stays reachable even though "/" always redirects to the first accessible feed.
+                if (target.Id != currentFeed?.Id)
+                {
+                    return Redirect($"/feeds/{target.Slug}/");
+                }
             }
         }
 

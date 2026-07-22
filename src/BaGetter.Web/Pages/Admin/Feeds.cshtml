@@ -52,9 +52,16 @@
     }
     else
     {
-        <table class="table table-striped">
+        <p class="text-muted">
+            Drag the <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span> handle to reorder feeds.
+            The order is saved automatically and controls the feed list in the navigation dropdown.
+            When a signed-in user opens the site, they are redirected to the first feed in this order
+            that they have permission to access.
+        </p>
+        <table class="table table-striped" id="feeds-table">
             <thead>
                 <tr>
+                    <th style="width:1%"></th>
                     <th>Slug</th>
                     <th>Name</th>
                     <th>Description</th>
@@ -62,11 +69,12 @@
                     <th style="width:1%"></th>
                 </tr>
             </thead>
-            <tbody>
                 @foreach (var feed in Model.Feeds)
                 {
                     var isDefault = feed.Slug == Feed.DefaultSlug;
+                    <tbody class="feed-group" data-feed-id="@feed.Id">
                     <tr>
+                        <td class="drag-handle-cell"><span class="glyphicon glyphicon-menu-hamburger drag-handle" title="Drag to reorder" aria-hidden="true"></span></td>
                         <td>
                             @feed.Slug
                             @if (isDefault)
@@ -99,7 +107,7 @@
                         </td>
                     </tr>
                     <tr class="feed-edit-row">
-                        <td colspan="5" class="feed-edit-cell">
+                        <td colspan="6" class="feed-edit-cell">
                             <div id="edit-@feed.Id" class="collapse feed-edit-panel">
                                 <form method="post" asp-page-handler="Edit">
                                     @Html.AntiForgeryToken()
@@ -117,8 +125,49 @@
                             </div>
                         </td>
                     </tr>
+                    </tbody>
                 }
-            </tbody>
         </table>
     }
 </div>
+
+@section Scripts {
+    <script src="~/_content/BaGetter.Web/lib/sortablejs/Sortable.min.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            var table = document.getElementById('feeds-table');
+            if (!table) return;
+
+            var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            var token = tokenInput ? tokenInput.value : '';
+
+            new Sortable(table, {
+                draggable: 'tbody.feed-group',
+                handle: '.drag-handle',
+                animation: 150,
+                onEnd: function (evt) {
+                    if (evt.oldIndex === evt.newIndex) return;
+
+                    var order = [];
+                    table.querySelectorAll('tbody.feed-group').forEach(function (g) {
+                        order.push(g.getAttribute('data-feed-id'));
+                    });
+
+                    fetch(window.location.pathname + '?handler=Reorder', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify(order)
+                    }).then(function (response) {
+                        // Save failed => DB unchanged; reload to show the real order.
+                        if (!response.ok) location.reload();
+                    }).catch(function () {
+                        location.reload();
+                    });
+                }
+            });
+        })();
+    </script>
+}
