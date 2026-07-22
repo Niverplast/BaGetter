@@ -13,6 +13,7 @@ public class Feed
     public string Slug { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
+    public int SortOrder { get; set; }
 
     // Per-feed overrides — null means "use global default"
     public PackageOverwriteAllowed? AllowPackageOverwrites { get; set; }

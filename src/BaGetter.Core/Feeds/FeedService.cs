@@ -51,10 +51,10 @@ public class FeedService : IFeedService
 
     public async Task<List<Feed>> GetAllFeedsAsync(CancellationToken cancellationToken)
     {
-        // Keep the default feed on top, then sort the rest alphabetically by name.
-        // Both the admin list and the nav dropdown consume this method.
+        // Sort by the admin-controlled SortOrder, with Name as a stable tiebreak.
+        // The admin list, the nav dropdown, and GET /api/v1/feeds all consume this method.
         return await _context.Feeds
-            .OrderByDescending(f => f.Slug == Feed.DefaultSlug)
+            .OrderBy(f => f.SortOrder)
             .ThenBy(f => f.Name)
             .ToListAsync(cancellationToken);
     }
@@ -71,6 +71,9 @@ public class FeedService : IFeedService
         feed.Id = Guid.NewGuid();
         feed.CreatedAtUtc = DateTime.UtcNow;
         feed.UpdatedAtUtc = DateTime.UtcNow;
+
+        var maxSortOrder = await _context.Feeds.MaxAsync(f => (int?)f.SortOrder, cancellationToken);
+        feed.SortOrder = (maxSortOrder ?? -1) + 1;
 
         _context.Feeds.Add(feed);
         await _context.SaveChangesAsync(cancellationToken);
@@ -140,6 +143,29 @@ public class FeedService : IFeedService
         return true;
     }
 
+    public async Task ReorderFeedsAsync(IReadOnlyList<Guid> orderedFeedIds, CancellationToken cancellationToken)
+    {
+        var feeds = await _context.Feeds.ToListAsync(cancellationToken);
+        var feedsById = feeds.ToDictionary(f => f.Id);
+
+        var next = 0;
+
+        // Remove == false when the id is a duplicate or unknown, so both are skipped.
+        foreach (var feedId in orderedFeedIds)
+        {
+            if (feedsById.Remove(feedId, out var feed))
+                feed.SortOrder = next++;
+        }
+
+        // Append any feeds not named in the request, keeping their relative order.
+        foreach (var feed in feedsById.Values.OrderBy(f => f.SortOrder).ThenBy(f => f.Name))
+        {
+            feed.SortOrder = next++;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task EnsureDefaultFeedExistsAsync(CancellationToken cancellationToken)
     {
         var exists = await _context.Feeds
@@ -153,6 +179,7 @@ public class FeedService : IFeedService
             Id = Feed.DefaultId,
             Slug = Feed.DefaultSlug,
             Name = "Default",
+            SortOrder = 0,
             MirrorEnabled = false,
             CreatedAtUtc = DateTime.UtcNow,
             UpdatedAtUtc = DateTime.UtcNow,
