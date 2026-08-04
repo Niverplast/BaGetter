@@ -211,22 +211,50 @@ else
         </div>
     }
 
-    var showPreviousLink = Model.PageIndex > 1;
-    var showNextLink = Model.Packages.Count >= IndexModel.ResultsPerPage;
-
-    if (showPreviousLink || showNextLink)
+    if (Model.TotalPages > 1)
     {
-        <nav aria-label="Search page navigation">
-            <ul class="pager">
-                @if (showPreviousLink)
+        var onFirstPage = Model.PageIndex <= 1;
+        var onLastPage = Model.PageIndex >= Model.TotalPages;
+
+        <nav class="text-center" aria-label="Search page navigation">
+            <ul class="pagination">
+                <li class="@(onFirstPage ? "disabled" : null)">
+                    @if (onFirstPage)
+                    {
+                        <span aria-label="Previous">&lsaquo;</span>
+                    }
+                    else
+                    {
+                        <a href="@SearchLink(page: Model.PageIndex - 1)" aria-label="Previous">&lsaquo;</a>
+                    }
+                </li>
+
+                @foreach (var pageNumber in PageWindow(Model.PageIndex, Model.TotalPages))
                 {
-                    <li><a href="@SearchLink(page:Model.PageIndex - 1)">Previous</a></li>
+                    if (pageNumber == 0)
+                    {
+                        <li class="disabled"><span>&hellip;</span></li>
+                    }
+                    else if (pageNumber == Model.PageIndex)
+                    {
+                        <li class="active"><span>@pageNumber</span></li>
+                    }
+                    else
+                    {
+                        <li><a href="@SearchLink(page: pageNumber)">@pageNumber</a></li>
+                    }
                 }
 
-                @if (showNextLink)
-                {
-                    <li><a href="@SearchLink(page: Model.PageIndex + 1)">Next</a></li>
-                }
+                <li class="@(onLastPage ? "disabled" : null)">
+                    @if (onLastPage)
+                    {
+                        <span aria-label="Next">&rsaquo;</span>
+                    }
+                    else
+                    {
+                        <a href="@SearchLink(page: Model.PageIndex + 1)" aria-label="Next">&rsaquo;</a>
+                    }
+                </li>
             </ul>
         </nav>
     }
@@ -297,6 +325,23 @@ else
     {
         if (string.IsNullOrEmpty(framework) || framework == "any") return "Any";
         return _frameworkNames.GetValueOrDefault(framework, framework);
+    }
+
+    // Page numbers to render: always the first and last page, plus the pages around the current one.
+    // A 0 marks a gap between two non-adjacent pages, rendered as an ellipsis.
+    private static IEnumerable<int> PageWindow(int current, int total)
+    {
+        const int Edge = 1, Around = 2;
+
+        var last = 0;
+        for (var page = 1; page <= total; page++)
+        {
+            if (page > Edge && page <= total - Edge && (page < current - Around || page > current + Around)) continue;
+            if (last != 0 && page - last > 1) yield return 0;
+
+            yield return page;
+            last = page;
+        }
     }
 
     private string SearchLink(
