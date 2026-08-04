@@ -69,6 +69,8 @@ public class IndexModel : PageModel
 
     public IReadOnlyList<SearchResult> Packages { get; private set; }
 
+    public int TotalPages { get; private set; } = 1;
+
     private SearchFacets Facets { get; set; }
 
     public IReadOnlyList<string> PackageTypeFacets => Facets?.PackageTypes ?? Array.Empty<string>();
@@ -150,6 +152,7 @@ public class IndexModel : PageModel
 
         Packages = search.Data;
         Facets = search.Facets;
+        TotalPages = Math.Max(1, (int)Math.Ceiling(search.TotalHits / (double)ResultsPerPage));
 
         return Page();
     }
