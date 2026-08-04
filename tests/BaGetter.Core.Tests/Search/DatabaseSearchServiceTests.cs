@@ -157,17 +157,28 @@ public class DatabaseSearchServiceTests
             Assert.Contains("Zeta", _capturedRegistrations.Select(r => r.PackageId));
         }
 
+        [Fact]
+        public async Task ReportsTotalHits_DisregardingTake()
+        {
+            var response = await _target.SearchAsync(Request(take: 1), CancellationToken.None);
+
+            // One package on the page, but all four listed packages of the feed counted.
+            Assert.Single(response.Data);
+            Assert.Equal(4, response.TotalHits);
+        }
+
         private static SearchRequest Request(
             bool includeFacets = false,
             bool includePrerelease = true,
             bool includeUnlisted = false,
-            string tag = null)
+            string tag = null,
+            int take = 20)
         {
             return new SearchRequest
             {
                 FeedId = FeedId,
                 Skip = 0,
-                Take = 20,
+                Take = take,
                 IncludePrerelease = includePrerelease,
                 IncludeSemVer2 = true,
                 IncludeFacets = includeFacets,
