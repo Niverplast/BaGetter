@@ -48,6 +48,12 @@ public class DatabaseSearchService : ISearchService
             search = search.Where(p => taggedPackageIds.Contains(p.Id));
         }
 
+        // Count over distinct IDs, not rows: rows are per-version.
+        var totalHits = await search
+            .Select(p => p.Id)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
         var packageIds = search
             .Select(p => p.Id)
             .Distinct()
@@ -87,6 +93,7 @@ public class DatabaseSearchService : ISearchService
             .ToList();
 
         var response = _searchBuilder.BuildSearch(groupedResults, request.IncludeUnlisted);
+        response.TotalHits = totalHits;
 
         if (request.IncludeFacets)
         {
