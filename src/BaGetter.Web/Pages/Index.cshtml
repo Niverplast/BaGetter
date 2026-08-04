@@ -216,7 +216,7 @@ else
         var onFirstPage = Model.PageIndex <= 1;
         var onLastPage = Model.PageIndex >= Model.TotalPages;
 
-        <nav aria-label="Search page navigation">
+        <nav class="text-center" aria-label="Search page navigation">
             <ul class="pagination">
                 <li class="@(onFirstPage ? "disabled" : null)">
                     @if (onFirstPage)
