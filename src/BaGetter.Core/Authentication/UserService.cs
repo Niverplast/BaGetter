@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core.Configuration;
@@ -13,6 +16,11 @@ namespace BaGetter.Core.Authentication;
 public class UserService : IUserService
 {
     private const int BcryptWorkFactor = 12;
+    private static readonly TimeSpan VerifyCacheTtl = TimeSpan.FromMinutes(5);
+
+    // ponytail: in-process cache, one entry per user; each replica keeps its own copy.
+    private static readonly ConcurrentDictionary<Guid, (byte[] Fingerprint, DateTime ExpiresUtc)> VerifyCache = new();
+    private static readonly byte[] VerifyCacheKey = RandomNumberGenerator.GetBytes(32);
 
     private readonly IContext _context;
     private readonly NugetAuthenticationOptions _authOptions;
@@ -133,7 +141,21 @@ public class UserService : IUserService
         if (user == null) throw new ArgumentNullException(nameof(user));
         if (string.IsNullOrEmpty(user.PasswordHash)) return Task.FromResult(false);
 
+        // Basic auth re-sends credentials on every request; skip bcrypt when this exact
+        // password was verified against this exact hash recently. A password change alters
+        // PasswordHash, so it invalidates the entry immediately.
+        var fingerprint = HMACSHA256.HashData(VerifyCacheKey, Encoding.UTF8.GetBytes(user.PasswordHash + ":" + password));
+        if (VerifyCache.TryGetValue(user.Id, out var cached)
+            && cached.ExpiresUtc > DateTime.UtcNow
+            && CryptographicOperations.FixedTimeEquals(cached.Fingerprint, fingerprint))
+        {
+            return Task.FromResult(true);
+        }
+
         var result = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+        if (result)
+            VerifyCache[user.Id] = (fingerprint, DateTime.UtcNow.Add(VerifyCacheTtl));
+
         return Task.FromResult(result);
     }
 
@@ -158,6 +180,7 @@ public class UserService : IUserService
     {
         var user = await FindByIdAsync(userId, cancellationToken);
         if (user == null) return;
+        if (user.FailedLoginCount == 0 && user.LockedUntilUtc == null) return;
 
         user.FailedLoginCount = 0;
         user.LockedUntilUtc = null;
