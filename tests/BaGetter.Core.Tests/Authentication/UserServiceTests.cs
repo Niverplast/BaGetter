@@ -154,6 +154,19 @@ public class UserServiceTests
 
             Assert.False(result);
         }
+
+        [Fact]
+        public async Task CachedSuccessDoesNotSurvivePasswordChange()
+        {
+            var user = await CreateLocalUser("cacheduser", "OldPassword");
+            Assert.True(await Target.VerifyPasswordAsync(user, "OldPassword"));
+
+            await Target.SetPasswordAsync(user.Id, "NewPassword", Ct);
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
+
+            Assert.False(await Target.VerifyPasswordAsync(updated, "OldPassword"));
+            Assert.True(await Target.VerifyPasswordAsync(updated, "NewPassword"));
+        }
     }
 
     public class RecordFailedLoginAsync : FactsBase
@@ -239,6 +252,18 @@ public class UserServiceTests
             var updated = await Target.FindByIdAsync(user.Id, Ct);
             Assert.Equal(0, updated.FailedLoginCount);
             Assert.Null(updated.LockedUntilUtc);
+        }
+
+        [Fact]
+        public async Task SkipsWriteWhenNothingToReset()
+        {
+            var user = await CreateLocalUser("cleanuser");
+            var before = user.UpdatedAtUtc;
+
+            await Target.ResetFailedLoginCountAsync(user.Id, Ct);
+
+            var updated = await Target.FindByIdAsync(user.Id, Ct);
+            Assert.Equal(before, updated.UpdatedAtUtc);
         }
     }
 
